@@ -1531,8 +1531,8 @@
             <div id="adminUserSelection">
                 <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Please select whose content you want to manage:</p>
                 <div style="display:flex; gap:10px; justify-content:center;">
-                    <button class="user-select-btn" data-target-user="mica">Manage Mica</button>
-                    <button class="user-select-btn" data-target-user="angel">Manage Angel</button>
+                    <button class="user-select-btn" data-target-user="mica">Manage Others</button>
+                    <button class="user-select-btn" data-target-user="kate">Manage Kate</button>
                 </div>
             </div>
 
@@ -1888,15 +1888,16 @@
         // =========================================================
         // IMPORTANT: PASTE YOUR FIREBASE CONFIGURATION HERE
         // =========================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
-            authDomain: "mica-cutie.firebaseapp.com",
-            projectId: "mica-cutie",
-            storageBucket: "mica-cutie.firebasestorage.app",
-            messagingSenderId: "323886769074",
-            appId: "1:323886769074:web:a0a97cee18d40d05597aab",
-            measurementId: "G-N60M2CTS9H"
-        };
+       const firebaseConfig = {
+  apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
+  authDomain: "mica-cutie.firebaseapp.com",
+  databaseURL: "https://mica-cutie-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "mica-cutie",
+  storageBucket: "mica-cutie.firebasestorage.app",
+  messagingSenderId: "323886769074",
+  appId: "1:323886769074:web:a0a97cee18d40d05597aab",
+  measurementId: "G-N60M2CTS9H"
+};
         // =========================================================
 
         // Initialize Firebase
@@ -3150,8 +3151,8 @@
 
                 if (pass === 'micacutie') {
                     user = 'mica';
-                } else if (pass === 'angelcutie') {
-                    user = 'angel';
+                } else if (pass === 'katecutie') {
+                    user = 'kate';
                 }
 
                 if (user) {
