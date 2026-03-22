@@ -1532,7 +1532,7 @@
                 <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Please select whose content you want to manage:</p>
                 <div style="display:flex; gap:10px; justify-content:center;">
                     <button class="user-select-btn" data-target-user="kate">Manage Kate</button>
-                    <button class="user-select-btn" data-target-user="angel">Manage Angel</button>
+                    <button class="user-select-btn" data-target-user="baby">Manage Baby</button>
                 </div>
             </div>
 
@@ -2345,7 +2345,7 @@
 
             openBtn.onclick = () => {
                 const pass = prompt("Enter Admin Password:");
-                if (pass === "admin112003") { 
+                if (pass === "admin123") { 
                     modal.style.display = 'flex';
                     setupDeviceMonitor();
                     // Reset to selection screen
@@ -3151,8 +3151,8 @@
 
                 if (pass === 'katecutie') {
                     user = 'kate';
-                } else if (pass === 'angelcutie') {
-                    user = 'angel';
+                } else if (pass === 'babycutie') {
+                    user = 'baby';
                 }
 
                 if (user) {
@@ -3552,5 +3552,4 @@
     });
     </script>
 </body>
-
 </html>
