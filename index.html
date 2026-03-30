@@ -1443,6 +1443,10 @@
             100% { transform: translateY(0px); }
         }
 
+        @keyframes maintSpin {
+            100% { transform: rotate(360deg); }
+        }
+
         .fw-input, .fw-textarea {
             width: 100%;
             padding: 14px; 
@@ -1567,6 +1571,17 @@
                 <p style="font-size: 14px; color: #888;">Estimated Completion:</p>
                 <h3 id="maint-endtime-text" style="color: #d81b60; margin-bottom: 10px;">--</h3>
                 <div id="maint-countdown" style="font-size: 28px; font-weight: bold; color: #b71550; font-family: monospace; background: rgba(255,255,255,0.8); padding: 10px 20px; border-radius: 10px; border: 2px dashed #ffb7c5;">00:00:00</div>
+                
+                <!-- NEW: Maintenance Mini Player -->
+                <div id="maint-player-container" style="display: none; margin-top: 20px; background: rgba(255, 255, 255, 0.9); padding: 10px 15px; border-radius: 15px; border: 1px solid #ffb7c5; align-items: center; gap: 15px; text-align: left;">
+                    <div id="maint-disc" style="width: 40px; height: 40px; min-width: 40px; border-radius: 50%; background: conic-gradient(#d81b60, #ffb7c5, #fff, #d81b60); animation: maintSpin 3s linear infinite; animation-play-state: paused; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"></div>
+                    <div style="flex-grow: 1; overflow: hidden;">
+                        <div id="maint-song-title" style="font-size: 13px; font-weight: bold; color: #d81b60; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading Music...</div>
+                        <div id="maint-song-time" style="font-size: 11px; color: #888; margin-top: 2px;">0:00 / 0:00</div>
+                    </div>
+                    <button id="maint-play-btn" style="background: white; color: #d81b60; border: 1px solid #ffb7c5; border-radius: 50%; width: 35px; height: 35px; min-width: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(216,27,96,0.15); transition: transform 0.2s;">▶️</button>
+                </div>
+                <audio id="maintAudio" style="display: none;" crossorigin="anonymous" loop></audio>
             </div>
         </div>
         <div class="maintenance-content" id="maint-done-content" style="display: none;">
@@ -2142,10 +2157,93 @@
         // --- MAINTENANCE MODE LOGIC (ADVANCED SCHEDULE) ---
         let maintInterval = null;
         let isMaintenanceActiveLocally = false;
+        let maintMusicInitialized = false;
+
+        async function initMaintMusic() {
+            if (maintMusicInitialized) {
+                const maintAudio = document.getElementById('maintAudio');
+                if (maintAudio && maintAudio.paused && maintAudio.src) {
+                    maintAudio.play().catch(() => {});
+                }
+                return;
+            }
+
+            const maintAudio = document.getElementById('maintAudio');
+            const maintDisc = document.getElementById('maint-disc');
+            const maintTitle = document.getElementById('maint-song-title');
+            const maintTime = document.getElementById('maint-song-time');
+            const maintPlayBtn = document.getElementById('maint-play-btn');
+
+            try {
+                const songsQuery = query(collection(db, 'songs'), orderBy('timestamp', 'desc'));
+                const songsSnap = await getDocs(songsQuery);
+                
+                if (!songsSnap.empty) {
+                    const songData = songsSnap.docs[0].data();
+                    maintAudio.src = songData.url;
+                    maintTitle.textContent = songData.title || "Unknown Song";
+                    
+                    maintAudio.play().then(() => {
+                        maintPlayBtn.textContent = '⏸️';
+                        maintDisc.style.animationPlayState = 'running';
+                    }).catch((e) => {
+                        console.log("Autoplay blocked, waiting for user interaction.", e);
+                        maintPlayBtn.textContent = '▶️';
+                        maintDisc.style.animationPlayState = 'paused';
+                        
+                        const playOnInteraction = () => {
+                            if (isMaintenanceActiveLocally && maintAudio.paused) {
+                                maintAudio.play().catch(()=>{});
+                            }
+                            document.removeEventListener('click', playOnInteraction);
+                        };
+                        document.addEventListener('click', playOnInteraction);
+                    });
+                } else {
+                    maintTitle.textContent = "No music available";
+                }
+            } catch (e) {
+                console.error("Failed to load maint music", e);
+                maintTitle.textContent = "Music error";
+            }
+
+            maintPlayBtn.onclick = () => {
+                if(maintAudio.paused) {
+                    maintAudio.play();
+                } else {
+                    maintAudio.pause();
+                }
+            };
+
+            maintAudio.onplay = () => {
+                maintPlayBtn.textContent = '⏸️';
+                maintDisc.style.animationPlayState = 'running';
+            };
+
+            maintAudio.onpause = () => {
+                maintPlayBtn.textContent = '▶️';
+                maintDisc.style.animationPlayState = 'paused';
+            };
+
+            maintAudio.ontimeupdate = () => {
+                const format = t => {
+                    if (isNaN(t)) return "0:00";
+                    const m = Math.floor(t / 60);
+                    const s = Math.floor(t % 60);
+                    return `${m}:${s.toString().padStart(2, '0')}`;
+                };
+                maintTime.textContent = `${format(maintAudio.currentTime)} / ${format(maintAudio.duration)}`;
+            };
+
+            maintMusicInitialized = true;
+        }
 
         function triggerMaintenanceDone() {
             if (!isMaintenanceActiveLocally) return;
             isMaintenanceActiveLocally = false;
+            
+            const maintAudio = document.getElementById('maintAudio');
+            if (maintAudio) maintAudio.pause();
             
             const maintOverlay = document.getElementById('maintenance-overlay');
             const activeContent = document.getElementById('maint-active-content');
@@ -2219,7 +2317,10 @@
                         maintOverlay.style.opacity = '1';
                         document.getElementById('maint-active-content').style.display = 'block';
                         document.getElementById('maint-done-content').style.display = 'none';
+                        document.getElementById('maint-player-container').style.display = 'flex';
                         isMaintenanceActiveLocally = true;
+                        
+                        initMaintMusic();
                     }
                     
                     // Constantly update text in case admin shifts the time/message while maintenance is active
@@ -4153,4 +4254,4 @@
     });
     </script>
 </body>
-</html>
+</html>c
