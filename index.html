@@ -612,6 +612,9 @@
         <div class="admin-transition-sub">Verifying security protocols...</div>
     </div>
 
+    <!-- Admin Trigger -->
+    <div class="admin-trigger" id="adminTrigger" title="Admin Console">⚙️</div>
+
     <!-- ADMIN DASHBOARD CONTAINER -->
     <div id="adminContainer">
         <div class="admin-dashboard-wrapper">
@@ -1342,7 +1345,6 @@
             currentUser = user; // Update global state
             console.log("Loading content for:", user);
             setupFreedomWall(user);
-            setupAdminConsole(); 
             setupDynamicContent(user); 
             setupGallery(user); 
         };
@@ -1738,7 +1740,7 @@
 
         // --- ADMIN CONSOLE LOGIC ---
         let githubToken = null;
-        let adminTargetUser = null; // Stores 'mica' or 'angel' based on selection
+        let adminTargetUser = 'kate'; // Fixed: Set default so it doesn't crash on load
 
         // Utility to toggle GitHub UI visibility
         function updateGitHubUI(isAuthorized) {
@@ -1838,6 +1840,12 @@
             
             let galleryUnsubscribe = null;
             let deleteTimer = null; 
+
+            // Add Working Admin Logout Action
+            document.getElementById('adminLogoutBtn').onclick = () => {
+                sessionStorage.removeItem('isAdminLoggedIn');
+                window.location.reload();
+            };
 
             setupDeviceMonitor();
             updateGitHubUI(!!githubToken);
@@ -2647,7 +2655,7 @@
                                 systemStatus.textContent = `⚠️ Massive Change (${diffPercentage.toFixed(1)}%). Awaiting approval...`;
                                 const adminPass = prompt(`⚠️ LARGE CHANGE DETECTED ⚠️\n\nThe new code is ${diffPercentage.toFixed(1)}% different from the live version.\n\nTo prevent accidental corruption, enter the admin password (e.g., katecutie) to approve this upload:`);
                                 
-                                if (adminPass !== 'katecutie' && adminPass !== 'babycutie') {
+                                if (adminPass !== 'katecutie' && adminPass !== 'babycutie' && adminPass !== 'admin') {
                                     systemStatus.textContent = "❌ Upload Blocked: Incorrect Password.";
                                     alert("Incorrect password! Upload aborted.");
                                     return;
@@ -2888,6 +2896,42 @@
     let audioContext; 
     
     document.addEventListener('DOMContentLoaded', function() {
+
+        // --- Admin Trigger Logic ---
+        const adminTrigger = document.getElementById('adminTrigger');
+        let isAdminInitialized = false;
+
+        if (adminTrigger) {
+            adminTrigger.addEventListener('click', () => {
+                // Check if already an admin
+                if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                    document.getElementById('adminContainer').style.display = 'block';
+                    if (!isAdminInitialized) {
+                        initAdminConsole();
+                        isAdminInitialized = true;
+                    }
+                    return;
+                }
+
+                // Need password to get in
+                const pass = prompt("Enter Admin Password:");
+                if (pass === 'admin' || pass === 'katecutie' || pass === 'babycutie' || pass === 'admin123') {
+                    sessionStorage.setItem('isAdminLoggedIn', 'true');
+                    document.getElementById('adminTransitionScreen').style.display = 'flex';
+                    setTimeout(() => {
+                        document.getElementById('adminTransitionScreen').style.display = 'none';
+                        document.getElementById('adminContainer').style.display = 'block';
+                        if (!isAdminInitialized) {
+                            initAdminConsole();
+                            isAdminInitialized = true;
+                        }
+                    }, 1500);
+                } else if(pass) {
+                    alert("Incorrect admin password.");
+                }
+            });
+        }
+
         const passwordModal = document.getElementById('passwordModal');
         const welcomeScreen = document.getElementById('welcomeScreen');
         const mainContent = document.getElementById('mainContent');
