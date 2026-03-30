@@ -232,65 +232,21 @@
             background: #ff9eb0;
         }
         
-        /* Modal Common Styles */
-        .custom-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 200;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 20px;
-            width: 95%;
-            max-width: 550px;
+        /* Main Container Common Styles */
+        .container {
+            width: 100%;
+            max-width: 1200px; 
+            padding: 30px; 
+            margin-top: 50px;
             position: relative;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 28px;
-            cursor: pointer;
-            color: #888;
-            transition: color 0.3s;
-            z-index: 10;
-        }
-        
-        .close-modal:hover {
-            color: #d81b60;
+            z-index: 100;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* Admin Styles */
-        .admin-trigger {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.5);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-size: 12px;
-            z-index: 2000;
-            color: #d81b60;
-        }
-
-        /* Admin User Selection */
         #adminUserSelection {
             display: flex;
             flex-direction: column;
@@ -317,9 +273,8 @@
             color: white;
         }
 
-        /* Main Admin Tabs Container */
         #adminTabsAndContent {
-            display: none; /* Hidden until user selected */
+            display: none; 
             padding-top: 10px;
         }
         
@@ -371,7 +326,6 @@
             padding-bottom: 5px;
         }
 
-        /* Admin Song/Gallery/Letter List Styles */
         .admin-list-container {
             max-height: 200px; 
             overflow-y: auto; 
@@ -574,20 +528,6 @@
             transition: opacity 0.8s ease;
         }
         
-        /* Main Content */
-        .container {
-            width: 100%;
-            max-width: 1200px; /* Increased from 900px */
-            padding: 30px; /* Increased padding */
-            margin-top: 50px;
-            position: relative;
-            z-index: 100;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        
         .tabs {
             display: flex;
             justify-content: center;
@@ -627,7 +567,7 @@
             background: white;
             border-radius: 20px;
             padding: 30px;
-            min-height: 600px; /* Increased min-height */
+            min-height: 600px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             position: relative;
             overflow: hidden;
@@ -651,7 +591,6 @@
 
         .tab-content.active {
             display: block;
-            /* Default fade in for other tabs, overriden by specific ID above for gallery */
         }
         
         /* Love Letter Tab */
@@ -698,7 +637,6 @@
         .letter-content::-webkit-scrollbar,
         .fw-messages::-webkit-scrollbar,
         .fw-textarea::-webkit-scrollbar,
-        .modal-content::-webkit-scrollbar,
         #deviceListContainer::-webkit-scrollbar,
         #adminGalleryList::-webkit-scrollbar,
         #adminLettersList::-webkit-scrollbar,
@@ -714,7 +652,6 @@
         .letter-content::-webkit-scrollbar-track,
         .fw-messages::-webkit-scrollbar-track,
         .fw-textarea::-webkit-scrollbar-track,
-        .modal-content::-webkit-scrollbar-track,
         #deviceListContainer::-webkit-scrollbar-track,
         #adminGalleryList::-webkit-scrollbar-track,
         #adminLettersList::-webkit-scrollbar-track,
@@ -731,7 +668,6 @@
         .letter-content::-webkit-scrollbar-thumb,
         .fw-messages::-webkit-scrollbar-thumb,
         .fw-textarea::-webkit-scrollbar-thumb,
-        .modal-content::-webkit-scrollbar-thumb,
         #deviceListContainer::-webkit-scrollbar-thumb,
         #adminGalleryList::-webkit-scrollbar-thumb,
         #adminLettersList::-webkit-scrollbar-thumb,
@@ -762,7 +698,6 @@
             overflow: hidden;
         }
 
-        /* Glassmorphism accent */
         .modern-player::before {
             content: '';
             position: absolute;
@@ -795,7 +730,6 @@
             font-weight: 500;
         }
 
-        /* LIQUID WAVE VISUALIZER CONTAINER (Wrapper) */
         .visualizer-wrapper {
             position: relative;
             width: 140px;
@@ -803,7 +737,6 @@
             margin: 0 auto;
         }
 
-        /* BEAT WAVE RING (OUTSIDE) */
         .beat-wave {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -814,7 +747,6 @@
             transition: transform 0.05s ease-out, opacity 0.05s ease-out;
         }
 
-        /* LIQUID WAVE CIRCLE (INSIDE) */
         .liquid-container {
             width: 100%;
             height: 100%;
@@ -824,7 +756,7 @@
             position: relative;
             overflow: hidden;
             background: #fff0f5;
-            z-index: 1; /* Above the beat wave */
+            z-index: 1; 
         }
 
         .liquid-box {
@@ -837,7 +769,7 @@
 
         .liquid {
             position: absolute;
-            top: 100%; /* Start empty */
+            top: 100%; 
             left: 0;
             width: 100%;
             height: 100%;
@@ -870,10 +802,10 @@
             transform: translate(-50%, -50%);
             z-index: 2;
             font-weight: bold;
-            color: #d81b60; /* Pink text when empty */
+            color: #d81b60; 
             font-size: 18px;
-            mix-blend-mode: difference; /* Matches text color against bg */
-            color: #fff; /* White against the dark pink liquid */
+            mix-blend-mode: difference; 
+            color: #fff; 
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
@@ -930,7 +862,6 @@
             box-shadow: 0 10px 25px rgba(216, 27, 96, 0.4);
         }
 
-        /* Progress Bar (Linear - keeping for scrubbing) */
         .progress-container {
             display: flex;
             align-items: center;
@@ -962,7 +893,6 @@
             transition: width 0.1s linear;
         }
 
-        /* Volume Control */
         .volume-container {
             display: flex;
             align-items: center;
@@ -993,7 +923,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        /* Song List Items */
         .song {
             background: #fff0f5;
             padding: 15px;
@@ -1006,7 +935,6 @@
             border: 1px solid transparent;
         }
         
-        /* Song list animation */
         .song-animated {
             opacity: 0;
             transform: translateX(20px);
@@ -1050,7 +978,6 @@
             display: none;
         }
         
-        /* Custom small play button in list */
         .custom-play-btn {
             outline: none;
             border: none;
@@ -1074,7 +1001,6 @@
             transform: scale(1.1);
         }
         
-        /* Notes Tab */
         .note {
             background: #fce4ec;
             padding: 15px;
@@ -1083,7 +1009,6 @@
             border-left: 4px solid #d81b60;
         }
         
-        /* Gallery Tab Styling */
         #galleryContainer {
             max-height: 500px;
             overflow-y: auto;
@@ -1101,10 +1026,10 @@
             overflow: hidden;
             height: 150px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: none; /* Removed transition */
-            cursor: default; /* Removed pointer cursor */
+            transition: none; 
+            cursor: default; 
             position: relative;
-            opacity: 0; /* Start hidden for animation */
+            opacity: 0; 
             animation: galleryFadeIn 0.6s ease-out forwards;
         }
         
@@ -1114,7 +1039,7 @@
         }
         
         .gallery-item:hover {
-            transform: none; /* Removed hover effect */
+            transform: none; 
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
@@ -1134,29 +1059,25 @@
             padding: 5px;
             font-size: 11px;
             text-align: center;
-            opacity: 1; /* Always show caption on item for simplicity */
+            opacity: 1; 
             transition: none;
         }
         
-        /* Removed Full Image View Modal CSS */
-
-        
-        /* Music Layout for splitting Artist List and Song List */
         .music-layout {
             display: flex;
             gap: 20px;
         }
 
         .artist-list-container {
-            flex-basis: 30%; /* Artist list takes 30% of space on desktop */
+            flex-basis: 30%; 
             max-height: 400px;
-            overflow-y: auto; /* Make it scrollable */
+            overflow-y: auto; 
             padding-right: 5px;
             border-right: 1px dashed #ffb7c5;
         }
 
         #songListContainer {
-            flex-basis: 70%; /* Song list takes 70% of space on desktop */
+            flex-basis: 70%; 
             max-height: 400px;
             overflow-y: auto;
         }
@@ -1191,12 +1112,6 @@
             background: #ffe4ef;
         }
 
-        
-        /* Remove unused styles */
-        .artist-songs { display: none; }
-        .artist.expanded .artist-songs { display: none; } /* Ensure old nesting style is irrelevant */
-
-        /* Container for floating emojis */
         #floatingElementsContainer {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -1205,7 +1120,6 @@
             z-index: -1;
         }
 
-        /* FLOATING ELEMENT STYLES (FIXED) */
         .heart, .teddy-bear {
             position: absolute;
             z-index: -1;
@@ -1216,17 +1130,13 @@
         .heart {
             color: #d81b60;
             font-size: 24px;
-            /* Use float animation */
             animation: float 6s ease-in-out infinite;
         }
         
         .teddy-bear {
             font-size: 32px;
-            /* Use float animation with different speed */
             animation: float 8s ease-in-out infinite;
         }
-        /* END FLOATING ELEMENT STYLES */
-
 
         #phClock {
             position: absolute;
@@ -1254,28 +1164,18 @@
             z-index: 20;
         }
 
-        /* TULIP RAIN STYLES (FIXED) */
         .tulip-drop {
             position: absolute;
             font-size: 30px;
-            /* Added default duration 5s to ensure valid CSS syntax for animations */
             animation: tulipFall 5s linear forwards;
             opacity: 0.9;
             z-index: 0;
-            top: -10%; /* Start off-screen */
+            top: -10%; 
         }
 
         @keyframes tulipFall {
-            0% {
-                top: -10%;
-                opacity: 1;
-                transform: translateX(0) rotate(0deg);
-            }
-            100% {
-                top: 110%;
-                opacity: 0;
-                transform: translateX(20px) rotate(360deg);
-            }
+            0% { top: -10%; opacity: 1; transform: translateX(0) rotate(0deg); }
+            100% { top: 110%; opacity: 0; transform: translateX(20px) rotate(360deg); }
         }
 
         #musicBgOverlay {
@@ -1314,7 +1214,6 @@
             100% { transform: rotate(360deg);}
         }
 
-        /* Hidden Audio Element used for logic */
         #nowPlayingAudio {
             display: none;
         }
@@ -1381,48 +1280,32 @@
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
         }
-        
-        @keyframes heart-fall {
-            0% {
-                transform: translateY(-40px) scale(1.2) rotate(-10deg);
-                opacity: 0.7;
-            }
-            80% {
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(420px) scale(1) rotate(10deg);
-                opacity: 0;
-            }
-        }
 
-        /* Improved Input/Textarea Styles */
         .fw-input, .fw-textarea {
             width: 100%;
-            padding: 14px; /* More padding for comfort */
-            border: 2px solid #ffe4e9; /* Softer but visible border */
-            border-radius: 12px; /* More rounded */
+            padding: 14px; 
+            border: 2px solid #ffe4e9; 
+            border-radius: 12px; 
             margin-bottom: 12px;
             font-family: 'Montserrat', sans-serif;
-            font-size: 16px; /* Prevents zoom on iOS */
+            font-size: 16px; 
             outline: none;
-            background-color: #fff9fb; /* Light pink tint background */
+            background-color: #fff9fb; 
             color: #555;
             transition: all 0.3s ease;
-            -webkit-user-select: text; /* Ensure selectability */
+            -webkit-user-select: text; 
             -moz-user-select: text;
             -ms-user-select: text;
             user-select: text;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); /* Subtle inner shadow */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); 
         }
 
         .fw-input:focus, .fw-textarea:focus {
             border-color: #d81b60;
             background-color: #fff;
-            box-shadow: 0 4px 12px rgba(216, 27, 96, 0.1); /* Glow effect */
+            box-shadow: 0 4px 12px rgba(216, 27, 96, 0.1); 
         }
         
-        /* Placeholder styling */
         ::placeholder {
             color: #bbb;
             opacity: 1;
@@ -1433,17 +1316,16 @@
             min-height: 80px;
         }
         
-        /* Freedom Wall Message Card - Updated */
         .fw-message-card {
-            background: #fff0f5; /* Lavender Blush - very light pink */
-            border: 1px solid #ffb7c5; /* Soft pink border */
-            border-radius: 15px; /* More rounded */
+            background: #fff0f5; 
+            border: 1px solid #ffb7c5; 
+            border-radius: 15px; 
             padding: 15px;
             margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(216, 27, 96, 0.05); /* Subtle pinkish shadow */
+            box-shadow: 0 4px 10px rgba(216, 27, 96, 0.05); 
             animation: fadeIn 0.4s ease;
-            position: relative; /* For potential decorative elements */
-            border-left: 5px solid #d81b60; /* Keep the accent */
+            position: relative; 
+            border-left: 5px solid #d81b60; 
         }
 
         .fw-message-header {
@@ -1453,7 +1335,7 @@
             margin-bottom: 10px;
             font-size: 12px;
             color: #888;
-            border-bottom: 1px dashed #ffc1e3; /* Separator */
+            border-bottom: 1px dashed #ffc1e3; 
             padding-bottom: 8px;
         }
 
@@ -1472,7 +1354,6 @@
             font-family: 'Montserrat', sans-serif;
         }
         
-        /* Empty state styling */
         .empty-wall-message {
             text-align: center;
             color: #ffb7c5;
@@ -1488,11 +1369,11 @@
             padding: 20px;
             border-radius: 15px;
             border: 2px dashed #ffb7c5;
-            margin-bottom: 40px; /* Increased spacing */
+            margin-bottom: 40px; 
         }
         
         #fwPostBtn {
-            margin-top: 15px; /* Added spacing for button */
+            margin-top: 15px; 
             width: 100%;
         }
 
@@ -1521,184 +1402,178 @@
         </div>
     </div>
 
-    <!-- ADMIN CONSOLE MODAL -->
-    <div class="custom-modal" id="adminModal">
-        <div class="modal-content">
-            <span class="close-modal" id="closeAdminModal">&times;</span>
-            <h2 style="color: #d81b60; margin-bottom: 15px; font-family: 'Dancing Script', cursive;">Admin Console</h2>
-            
-            <!-- USER SELECTION (First Step) -->
-            <div id="adminUserSelection">
-                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Please select whose content you want to manage:</p>
-                <div style="display:flex; gap:10px; justify-content:center;">
-                    <button class="user-select-btn" data-target-user="kate">Manage Kate</button>
-                    <button class="user-select-btn" data-target-user="baby">Manage Baby</button>
+    <!-- ADMIN DASHBOARD CONTAINER (Fullscreen Replacement) -->
+    <div class="container" id="adminContainer" style="display: none;">
+        <!-- Admin Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: #d81b60; font-family: 'Dancing Script', cursive;">Admin Dashboard</h2>
+            <button id="adminLogoutBtn" class="tab" style="background: #ffb7c5; color: white;">🔒 Log Out</button>
+        </div>
+        
+        <!-- USER SELECTION (First Step) -->
+        <div id="adminUserSelection">
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Please select whose content you want to manage:</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="user-select-btn" data-target-user="kate">Manage Kate</button>
+                <button class="user-select-btn" data-target-user="baby">Manage Baby</button>
+            </div>
+        </div>
+
+        <!-- MAIN TABS (Hidden until user selected) -->
+        <div id="adminTabsAndContent">
+            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <span id="adminTargetLabel" style="font-weight: bold; color: #d81b60; font-size: 14px;">Target: Unknown</span>
+                <button id="backToUserSelect" style="font-size: 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; padding: 4px 8px;">Change User</button>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" data-target="admin-letters">💌 Letters</button>
+                <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
+                <button class="admin-tab-btn" data-target="admin-music">🎵 Music</button>
+                <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
+                <button class="admin-tab-btn" data-target="admin-devices">📱 Devices</button>
+            </div>
+
+            <!-- Tab: Add Letters -->
+            <div class="admin-panel active" id="admin-letters">
+                <h4 class="admin-section-title">Existing Letters</h4>
+                <div style="margin-bottom: 15px;">
+                        <button class="submit-btn" id="scanLettersBtn" style="width: 100%; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5; margin-bottom: 10px;">Refresh List</button>
+                        <div id="adminLettersList" class="admin-list-container">
+                        <p style="text-align: center; color: #999; font-size: 12px;">Click refresh to load...</p>
+                    </div>
+                </div>
+                
+                <h4 class="admin-section-title">Add New Letter</h4>
+                <div class="admin-form-group">
+                    <input type="text" id="adminLetterTitle" class="fw-input" placeholder="Letter Title (e.g. Happy Anniversary)">
+                    <input type="text" id="adminLetterDate" class="fw-input" placeholder="Date Label (e.g. 11-20-2025)">
+                    <textarea id="adminLetterContent" class="fw-textarea" style="height: 150px;" placeholder="Write your heart out here..."></textarea>
+                </div>
+                <button class="submit-btn" id="postLetterBtn" style="width: 100%">Post Letter</button>
+            </div>
+
+            <!-- Tab: Manage Notes -->
+            <div class="admin-panel" id="admin-notes">
+                <h4 class="admin-section-title">Daily Notes</h4>
+                <button class="submit-btn" id="scanNotesBtn" style="width: 100%; margin-bottom: 15px; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5;">Load Current Notes</button>
+                
+                <div class="admin-form-group">
+                    <p style="font-size: 12px; color: #666; margin-bottom: 5px;">Write each note on a new line:</p>
+                    <textarea id="adminNotesContent" class="fw-textarea" style="height: 200px;" placeholder="1. Drink water&#10;2. Smile often&#10;3. I love you"></textarea>
+                </div>
+                <button class="submit-btn" id="saveNotesBtn" style="width: 100%">Save Notes & Update Time</button>
+            </div>
+
+            <!-- Tab: Music Manager (Shared) -->
+            <div class="admin-panel" id="admin-music">
+                <p style="font-size: 12px; color: #888; font-style: italic; margin-bottom: 15px; text-align:center;">Music library is shared between users.</p>
+                
+                <div style="border-bottom: 2px dashed #eee; margin-bottom: 20px; padding-bottom: 15px;">
+                    <h4 class="admin-section-title">Manage Library</h4>
+                    <input type="text" id="adminSongSearch" class="fw-input" placeholder="Search to delete..." style="font-size: 13px; padding: 8px; margin-bottom: 10px;">
+                    <div id="adminSongList" class="admin-list-container">
+                        <p style="text-align: center; color: #999; font-size: 12px;">Loading songs...</p>
+                    </div>
+                </div>
+
+                <!-- GitHub Login -->
+                <div class="gh-status-box" id="ghStatusBox">
+                    <p style="font-size: 13px; margin-bottom: 12px; color: #555;">Connect to GitHub to manage assets</p>
+                    <button id="ghLoginBtn" class="gh-btn">
+                        <svg height="20" viewBox="0 0 16 16" width="20" fill="white" style="margin-right:8px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                        Login with GitHub
+                    </button>
+                </div>
+
+                <!-- Authorized UI (Hidden until login) -->
+                <div id="ghMusicAuthorizedUI" style="display: none;">
+                    <div class="admin-form-group">
+                        <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
+                        <select id="ghRepoSelectMusic" class="repo-select">
+                            <option value="">Loading repositories...</option>
+                        </select>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                        <h4 class="admin-section-title">Scan Existing Music</h4>
+                        <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Auto-adds mp3s from <code>/music</code> folder in repo.</p>
+                        <button id="scanMusicBtn" class="submit-btn" style="background: #7c3aed; width: 100%;">🔎 Scan Repository</button>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                        <h4 class="admin-section-title">Upload New Song</h4>
+                        <div class="admin-form-group">
+                            <input type="text" id="uploadArtistName" class="fw-input" placeholder="Artist Name">
+                            <input type="text" id="uploadSongTitle" class="fw-input" placeholder="Song Title">
+                            
+                            <div class="file-input-wrapper" onclick="document.getElementById('musicFileInput').click()">
+                                <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3</p>
+                                <span id="fileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
+                                <input type="file" id="musicFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                            </div>
+                        </div>
+                        
+                        <button id="startUploadBtn" class="submit-btn" style="width: 100%;">Upload & Sync</button>
+                    </div>
+                    
+                    <p id="musicStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
                 </div>
             </div>
 
-            <!-- MAIN TABS (Hidden until user selected) -->
-            <div id="adminTabsAndContent" style="display: none;">
-                <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom:1px solid #eee; padding-bottom:10px;">
-                    <span id="adminTargetLabel" style="font-weight: bold; color: #d81b60; font-size: 14px;">Target: Unknown</span>
-                    <button id="backToUserSelect" style="font-size: 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; padding: 4px 8px;">Change User</button>
-                </div>
-
-                <div class="admin-tabs">
-                    <button class="admin-tab-btn active" data-target="admin-letters">💌 Letters</button>
-                    <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
-                    <button class="admin-tab-btn" data-target="admin-music">🎵 Music</button>
-                    <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
-                    <button class="admin-tab-btn" data-target="admin-devices">📱 Devices</button>
-                </div>
-
-                <!-- Tab: Add Letters -->
-                <div class="admin-panel active" id="admin-letters">
-                    <h4 class="admin-section-title">Existing Letters</h4>
-                    <div style="margin-bottom: 15px;">
-                         <button class="submit-btn" id="scanLettersBtn" style="width: 100%; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5; margin-bottom: 10px;">Refresh List</button>
-                         <div id="adminLettersList" class="admin-list-container">
-                            <p style="text-align: center; color: #999; font-size: 12px;">Click refresh to load...</p>
-                        </div>
+            <!-- Tab: Gallery Manager (UPDATED for GitHub) -->
+            <div class="admin-panel" id="admin-gallery">
+                <div id="ghGalleryAuthStatus">
+                    <div class="gh-status-box" style="background: #fff5f7; border-color: #ffb7c5;">
+                        <p style="font-size: 13px; color: #d81b60;">⚠️ Please authorize GitHub in the Music tab first.</p>
                     </div>
-                    
-                    <h4 class="admin-section-title">Add New Letter</h4>
-                    <div class="admin-form-group">
-                        <input type="text" id="adminLetterTitle" class="fw-input" placeholder="Letter Title (e.g. Happy Anniversary)">
-                        <input type="text" id="adminLetterDate" class="fw-input" placeholder="Date Label (e.g. 11-20-2025)">
-                        <textarea id="adminLetterContent" class="fw-textarea" style="height: 150px;" placeholder="Write your heart out here..."></textarea>
-                    </div>
-                    <button class="submit-btn" id="postLetterBtn" style="width: 100%">Post Letter</button>
                 </div>
 
-                <!-- Tab: Manage Notes -->
-                <div class="admin-panel" id="admin-notes">
-                    <h4 class="admin-section-title">Daily Notes</h4>
-                    <button class="submit-btn" id="scanNotesBtn" style="width: 100%; margin-bottom: 15px; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5;">Load Current Notes</button>
+                <div id="ghGalleryAuthorizedUI" style="display: none;">
+                    <h4 class="admin-section-title">Upload Image</h4>
                     
                     <div class="admin-form-group">
-                        <p style="font-size: 12px; color: #666; margin-bottom: 5px;">Write each note on a new line:</p>
-                        <textarea id="adminNotesContent" class="fw-textarea" style="height: 200px;" placeholder="1. Drink water&#10;2. Smile often&#10;3. I love you"></textarea>
-                    </div>
-                    <button class="submit-btn" id="saveNotesBtn" style="width: 100%">Save Notes & Update Time</button>
-                </div>
-
-                <!-- Tab: Music Manager (Shared) -->
-                <div class="admin-panel" id="admin-music">
-                    <p style="font-size: 12px; color: #888; font-style: italic; margin-bottom: 15px; text-align:center;">Music library is shared between users.</p>
-                    
-                    <!-- New: Database Management (Delete Songs) -->
-                    <div style="border-bottom: 2px dashed #eee; margin-bottom: 20px; padding-bottom: 15px;">
-                        <h4 class="admin-section-title">Manage Library</h4>
-                        <input type="text" id="adminSongSearch" class="fw-input" placeholder="Search to delete..." style="font-size: 13px; padding: 8px; margin-bottom: 10px;">
-                        <div id="adminSongList" class="admin-list-container">
-                            <p style="text-align: center; color: #999; font-size: 12px;">Loading songs...</p>
-                        </div>
-                    </div>
-
-                    <!-- GitHub Login -->
-                    <div class="gh-status-box" id="ghStatusBox">
-                        <p style="font-size: 13px; margin-bottom: 12px; color: #555;">Connect to GitHub to manage assets</p>
-                        <button id="ghLoginBtn" class="gh-btn">
-                            <svg height="20" viewBox="0 0 16 16" width="20" fill="white" style="margin-right:8px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-                            Login with GitHub
-                        </button>
-                    </div>
-
-                    <!-- Authorized UI (Hidden until login) -->
-                    <div id="ghMusicAuthorizedUI" style="display: none;">
-                        <div class="admin-form-group">
-                            <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
-                            <select id="ghRepoSelectMusic" class="repo-select">
-                                <option value="">Loading repositories...</option>
-                            </select>
-                        </div>
-
-                        <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
-                            <h4 class="admin-section-title">Scan Existing Music</h4>
-                            <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Auto-adds mp3s from <code>/music</code> folder in repo.</p>
-                            <button id="scanMusicBtn" class="submit-btn" style="background: #7c3aed; width: 100%;">🔎 Scan Repository</button>
-                        </div>
-
-                        <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
-                            <h4 class="admin-section-title">Upload New Song</h4>
-                            <div class="admin-form-group">
-                                <input type="text" id="uploadArtistName" class="fw-input" placeholder="Artist Name">
-                                <input type="text" id="uploadSongTitle" class="fw-input" placeholder="Song Title">
-                                
-                                <div class="file-input-wrapper" onclick="document.getElementById('musicFileInput').click()">
-                                    <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3</p>
-                                    <span id="fileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
-                                    <input type="file" id="musicFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
-                                </div>
-                            </div>
-                            
-                            <button id="startUploadBtn" class="submit-btn" style="width: 100%;">Upload & Sync</button>
-                        </div>
+                        <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
+                        <select id="ghRepoSelectGallery" class="repo-select">
+                            <option value="">Loading repositories...</option>
+                        </select>
                         
-                        <p id="musicStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
-                    </div>
-                </div>
-
-                <!-- Tab: Gallery Manager (UPDATED for GitHub) -->
-                <div class="admin-panel" id="admin-gallery">
-                    <!-- GitHub Auth Status -->
-                    <div id="ghGalleryAuthStatus">
-                        <div class="gh-status-box" style="background: #fff5f7; border-color: #ffb7c5;">
-                            <p style="font-size: 13px; color: #d81b60;">⚠️ Please authorize GitHub in the Music tab first.</p>
-                        </div>
-                    </div>
-
-                    <!-- Gallery Authorized UI -->
-                    <div id="ghGalleryAuthorizedUI" style="display: none;">
-                        <h4 class="admin-section-title">Upload Image</h4>
+                        <input type="text" id="adminImgCaption" class="fw-input" placeholder="Caption (optional)" style="font-size: 13px; margin-top:10px;">
                         
-                        <div class="admin-form-group">
-                            <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
-                            <select id="ghRepoSelectGallery" class="repo-select">
-                                <option value="">Loading repositories...</option>
-                            </select>
-                            
-                            <input type="text" id="adminImgCaption" class="fw-input" placeholder="Caption (optional)" style="font-size: 13px; margin-top:10px;">
-                            
-                            <div class="file-input-wrapper" onclick="document.getElementById('galleryFileInput').click()">
-                                <p style="color: #888; margin-bottom: 5px; font-size: 12px;">🖼️ Click to Select Image (JPG/PNG)</p>
-                                <span id="galleryFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
-                                <input type="file" id="galleryFileInput" accept="image/jpeg, image/png" style="display: none;" onchange="document.getElementById('galleryFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
-                            </div>
+                        <div class="file-input-wrapper" onclick="document.getElementById('galleryFileInput').click()">
+                            <p style="color: #888; margin-bottom: 5px; font-size: 12px;">🖼️ Click to Select Image (JPG/PNG)</p>
+                            <span id="galleryFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
+                            <input type="file" id="galleryFileInput" accept="image/jpeg, image/png" style="display: none;" onchange="document.getElementById('galleryFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
                         </div>
-
-                        <button id="addImgBtn" class="submit-btn" style="width: 100%; margin-bottom: 10px;">Upload & Add</button>
-                        <p id="galleryStatus" style="margin-top: 5px; margin-bottom:20px; font-size: 12px; color: #d81b60; text-align: center;"></p>
-
-                        <!-- DELETE ALL FEATURE -->
-                         <h4 class="admin-section-title" style="margin-top: 25px; border-bottom-color: #ff4d4d;">Danger Zone</h4>
-                         <button id="deleteAllGalleryBtn" class="submit-btn" style="width: 100%; background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2;" disabled>Delete All Images (15s)</button>
                     </div>
 
-                    <h4 class="admin-section-title">Manage Images</h4>
-                    <div id="adminGalleryList" class="admin-list-container">
-                        <p style="text-align:center; color:#999; font-size:12px;">Loading images...</p>
-                    </div>
+                    <button id="addImgBtn" class="submit-btn" style="width: 100%; margin-bottom: 10px;">Upload & Add</button>
+                    <p id="galleryStatus" style="margin-top: 5px; margin-bottom:20px; font-size: 12px; color: #d81b60; text-align: center;"></p>
+
+                     <h4 class="admin-section-title" style="margin-top: 25px; border-bottom-color: #ff4d4d;">Danger Zone</h4>
+                     <button id="deleteAllGalleryBtn" class="submit-btn" style="width: 100%; background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2;" disabled>Delete All Images (15s)</button>
                 </div>
 
-                <!-- Tab: Device Monitor (Shared) -->
-                <div class="admin-panel" id="admin-devices">
-                    <h4 class="admin-section-title">Active & Recent</h4>
-                    <div id="deviceListActive" class="admin-list-container">
-                        <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
-                    </div>
+                <h4 class="admin-section-title">Manage Images</h4>
+                <div id="adminGalleryList" class="admin-list-container">
+                    <p style="text-align:center; color:#999; font-size:12px;">Loading images...</p>
+                </div>
+            </div>
 
-                    <h4 class="admin-section-title">History</h4>
-                    <div id="deviceListHistory" class="admin-list-container">
-                        <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
-                    </div>
+            <!-- Tab: Device Monitor (Shared) -->
+            <div class="admin-panel" id="admin-devices">
+                <h4 class="admin-section-title">Active & Recent</h4>
+                <div id="deviceListActive" class="admin-list-container">
+                    <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
+                </div>
+
+                <h4 class="admin-section-title">History</h4>
+                <div id="deviceListHistory" class="admin-list-container">
+                    <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Admin Trigger Button -->
-    <div class="admin-trigger" id="openAdminBtn">🔒</div>
 
     <!-- Welcome Screen -->
     <div class="welcome-screen" id="welcomeScreen">
@@ -1729,11 +1604,9 @@
             <button class="tab" data-tab="gallery">
                 <span>🌷</span> Gallery
             </button>
-            <!-- NEW FREEDOM WALL TAB -->
             <button class="tab" data-tab="freedom-wall">
                 <span>🕊️</span> Freedom Wall
             </button>
-            <!-- LOGOUT BUTTON -->
             <button class="tab" id="logoutButton">
                 <span>🔒</span> Log Out
             </button>
@@ -1744,7 +1617,6 @@
             <div class="tab-content active" id="love-letter">
                 <h2>My Dearest Letters</h2>
                 <br>
-                <!-- Dynamic Letters Container -->
                 <div id="lettersContainer">
                     <p style="text-align:center; color: #888; font-style: italic;">Loading letters...</p>
                 </div>
@@ -1755,22 +1627,18 @@
                 <h2>Music Area</h2>
                 <br>
                 
-                <!-- MODERN MUSIC PLAYER -->
                 <div class="modern-player" id="modernPlayer">
                     <div class="player-info">
                         <div class="player-title" id="playerTitle">No Song Playing</div>
                         <div class="player-artist" id="playerArtist">Select a song to start</div>
                     </div>
                     
-                    <!-- VISUALIZER WRAPPER -->
                     <div class="visualizer-wrapper">
                         <div class="beat-wave" id="beatWave"></div>
-                        <!-- LIQUID WAVE CIRCLE PROGRESS -->
                         <div class="liquid-container">
                             <div class="liquid-box">
                                 <div class="liquid" id="liquidWave"></div>
                             </div>
-                            <!-- Overlay Time Text -->
                             <div class="liquid-time" id="liquidTimeText">0:00</div>
                         </div>
                     </div>
@@ -1784,18 +1652,13 @@
                     </div>
 
                     <div class="player-controls">
-                        <!-- Loop Button -->
                         <button class="control-btn" id="loopBtn" title="Loop" style="font-size: 14px;">🔁</button>
                         
-                        <!-- Play/Pause -->
                         <button class="control-btn main-play" id="mainPlayBtn">
-                            <!-- Play Icon -->
                             <svg id="playIcon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                            <!-- Pause Icon (Hidden by default) -->
                             <svg id="pauseIcon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                         </button>
                         
-                        <!-- Next Button (Sequential) -->
                         <button class="control-btn" id="nextBtn" title="Next Song">⏭️</button>
                     </div>
 
@@ -1804,20 +1667,16 @@
                         <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="1">
                     </div>
 
-                    <!-- Hidden Native Audio for Logic -->
                     <audio id="nowPlayingAudio" controls style="display: none;" crossorigin="anonymous"></audio>
                 </div>
 
                 <input type="text" id="artistSearch" placeholder="Search artist or song..." style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 10px; border: 1px solid #ffb7c5; font-size: 16px; background: #fff5f7; color: #d81b60;">
                 
-                <!-- NEW MUSIC LAYOUT: Side-by-Side -->
                 <div class="music-layout">
-                    <!-- LEFT: Artist List (Scrollable) -->
                     <div class="artist-list-container" id="artistList">
                         <p style="text-align: center; color: #888;">Loading artists...</p>
                     </div>
                     
-                    <!-- RIGHT: Song List -->
                     <div id="songListContainer">
                         <p style="text-align: center; color: #888;">Select an artist to view their songs.</p>
                     </div>
@@ -1831,12 +1690,11 @@
                 <br>
                 <br>
                 <div id="notesContainer">
-                    <!-- Dynamic Notes will appear here -->
                     <div class="note"><p>Loading notes...</p></div>
                 </div>
             </div>
             
-            <!-- Gallery Tab (Now Dynamic and Scrollable) -->
+            <!-- Gallery Tab -->
             <div class="tab-content" id="gallery">
                 <h2>Flowers for you</h2>
                 <div id="galleryContainer">
@@ -1867,9 +1725,7 @@
     </div>
     
     <!-- Decorative elements -->
-    <div id="floatingElementsContainer">
-        <!-- Floating emojis dynamically created here -->
-    </div>
+    <div id="floatingElementsContainer"></div>
     <div id="heartDropContainer"></div>
     <div id="musicBgOverlay"></div>
     <div id="mainBgOverlay"></div>
@@ -1882,35 +1738,26 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithPopup, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         
-        // =========================================================
-        // IMPORTANT: PASTE YOUR FIREBASE CONFIGURATION HERE
-        // =========================================================
-       const firebaseConfig = {
-  apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
-  authDomain: "mica-cutie.firebaseapp.com",
-  databaseURL: "https://mica-cutie-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "mica-cutie",
-  storageBucket: "mica-cutie.firebasestorage.app",
-  messagingSenderId: "323886769074",
-  appId: "1:323886769074:web:a0a97cee18d40d05597aab",
-  measurementId: "G-N60M2CTS9H"
-};
-        // =========================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
+            authDomain: "mica-cutie.firebaseapp.com",
+            databaseURL: "https://mica-cutie-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "mica-cutie",
+            storageBucket: "mica-cutie.firebasestorage.app",
+            messagingSenderId: "323886769074",
+            appId: "1:323886769074:web:a0a97cee18d40d05597aab",
+            measurementId: "G-N60M2CTS9H"
+        };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // Global State for User Context
         let currentUser = sessionStorage.getItem('loggedInUser') || null; 
         
-        // --- Shared utility functions ---
-        
-        /** Converts a File object to a Base64 string (content only). */
         const toBase64 = file => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -1918,7 +1765,6 @@
             reader.onerror = error => reject(error);
         });
 
-        /** Fetches the SHA hash of a file in a GitHub repository, used for updates or deletion. */
         async function getShaAndPath(repo, path, token) {
             const [owner, name] = repo.split('/');
             const apiUrl = `https://api.github.com/repos/${owner}/${name}/contents/${path}`;
@@ -1929,36 +1775,30 @@
                 const data = await response.json();
                 return { sha: data.sha, path: data.path };
             }
-            return { sha: null, path: null }; // File does not exist
+            return { sha: null, path: null };
         }
         
-        /** Checks if a file exists on GitHub (returns boolean). */
         async function checkFileExists(repo, path, token) {
             const [owner, name] = repo.split('/');
             const apiUrl = `https://api.github.com/repos/${owner}/${name}/contents/${path}`;
             
             try {
                 const response = await fetch(apiUrl, {
-                    method: 'HEAD', // Use HEAD request for efficiency
-                    headers: { 
-                        'Authorization': `token ${token}` 
-                    }
+                    method: 'HEAD',
+                    headers: { 'Authorization': `token ${token}` }
                 });
-                return response.status === 200; // 200 OK means file exists
+                return response.status === 200;
             } catch (e) {
                 console.error("GitHub existence check failed:", e);
-                return false; // Treat error as non-existence or failure
+                return false; 
             }
         }
-
 
         function escapeHtml(text) {
             if (!text) return text;
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
-        // --- End Shared utility functions ---
 
-        // Auth Logic (Anonymous by default for viewers)
         async function initAuth() {
             try {
                 if(!auth.currentUser) {
@@ -1966,9 +1806,12 @@
                 }
                 console.log("Firebase Auth Successful");
                 setupNotificationSystem();
-
-                // Only setup content if logged in
-                if (currentUser) {
+                
+                // Route based on session state on initialization
+                const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+                if (isAdmin) {
+                    initAdminConsole();
+                } else if (currentUser) {
                     loadUserContent(currentUser);
                 }
             } catch (error) {
@@ -1976,19 +1819,13 @@
             }
         }
 
-        // Expose helper for main script to call on login
         window.loadUserContent = function(user) {
-            currentUser = user; // Update global state
-            console.log("Loading content for:", user);
+            currentUser = user; 
             setupFreedomWall(user);
-            setupAdminConsole(); 
             setupDynamicContent(user); 
             setupGallery(user); 
         };
         
-        // Removed openFullView and closeFullView functions as requested
-
-        // --- NOTIFICATION SYSTEM ---
         function setupNotificationSystem() {
             window.notifyUser = (title, body, icon) => {
                 showToast(title, body, icon);
@@ -2007,7 +1844,6 @@
             setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 500); }, 4000);
         }
 
-        // --- LOGIN TRACKING LOGIC ---
         window.logDeviceLogin = async function(user) {
             try {
                 const userAgent = navigator.userAgent;
@@ -2027,7 +1863,7 @@
                 } catch (e) {}
 
                 await addDoc(collection(db, 'device_logs'), {
-                    user: user, // Log who logged in
+                    user: user,
                     device: deviceType,
                     details: userAgent,
                     location: location,
@@ -2036,7 +1872,6 @@
             } catch (error) { console.error("Error logging device:", error); }
         };
 
-        // --- ADMIN CONSOLE: DEVICE MONITOR (Shared/Global) ---
         function setupDeviceMonitor() {
             const activeList = document.getElementById('deviceListActive');
             const historyList = document.getElementById('deviceListHistory');
@@ -2077,7 +1912,6 @@
             });
         }
 
-        // --- GALLERY LOGIC (Dynamic per User) ---
         function setupGallery(user) {
             const collectionName = `${user}_gallery`;
             const galleryContainer = document.getElementById('publicGallery');
@@ -2091,16 +1925,13 @@
                     return;
                 }
 
-                // Show images from Firestore
                 snapshot.docs.forEach((doc, index) => {
                     const data = doc.data();
                     if (data.url) {
                         const item = document.createElement('div');
                         item.className = 'gallery-item';
-                        item.style.animationDelay = `${index * 0.1}s`; // Staggered fade-in
+                        item.style.animationDelay = `${index * 0.1}s`; 
                         
-                        // NOTE: Removed click handler to remove the larger view feature
-
                         item.innerHTML = `
                             <img src="${data.url}" alt="${escapeHtml(data.caption || 'Image')}" onerror="this.src='https://placehold.co/200x200/ffb7c5/d81b60?text=Image+Error'">
                             ${data.caption ? `<div class="gallery-caption">${escapeHtml(data.caption)}</div>` : ''}
@@ -2114,13 +1945,11 @@
             });
         }
 
-        // --- DYNAMIC CONTENT LOADERS ---
         function setupDynamicContent(user) {
             let lettersLoaded = false;
             let notesLoaded = false;
-            let allSongsData = {}; // Store songs data here globally for click handling
+            let allSongsData = {}; 
 
-            // 1. Load Love Letters
             const lettersCol = collection(db, `${user}_love_letters`);
             const q = query(lettersCol, orderBy('timestamp', 'desc')); 
             const lettersContainer = document.getElementById('lettersContainer');
@@ -2160,7 +1989,6 @@
                 lettersLoaded = true;
             });
 
-            // 2. Load Notes
             const notesDocRef = doc(db, 'content', `${user}_daily_notes`);
             const notesContainer = document.getElementById('notesContainer');
             const updateDateLabel = document.getElementById('notesUpdateDate');
@@ -2188,22 +2016,19 @@
                 notesLoaded = true;
             });
 
-            // 3. Load Music (Shared) - REVISED FOR SIDE-BY-SIDE LAYOUT
             const artistListContainer = document.getElementById('artistList');
             const songListContainer = document.getElementById('songListContainer');
             
             onSnapshot(collection(db, 'songs'), (snapshot) => {
                 artistListContainer.innerHTML = ''; 
-                allSongsData = {}; // Reset global song data
+                allSongsData = {}; 
 
-                // Group songs by artist
                 snapshot.forEach(doc => {
                     const song = doc.data();
                     if(!allSongsData[song.artist]) allSongsData[song.artist] = [];
                     allSongsData[song.artist].push(song);
                 });
                 
-                // Sort artists and render the list
                 const sortedArtists = Object.keys(allSongsData).sort();
                 sortedArtists.forEach(artistName => {
                     const songs = allSongsData[artistName];
@@ -2213,7 +2038,6 @@
                     artistHeader.textContent = `${escapeHtml(artistName)} (${songs.length})`;
                     artistHeader.setAttribute('data-artist-name', artistName);
                     
-                    // 4. Add Click Listener to show songs on the right
                     artistHeader.addEventListener('click', function() {
                         displayArtistSongs(artistName, songs, this);
                     });
@@ -2221,23 +2045,18 @@
                     artistListContainer.appendChild(artistHeader);
                 });
                 
-                // Pass full song data to global scope for player initialization
                 if(window.updateAllSongs) window.updateAllSongs(allSongsData);
             });
 
-            // Function to display songs on the right with animation
             function displayArtistSongs(artistName, songs, clickedElement) {
-                // Remove active class from all artist headers
                 document.querySelectorAll('.artist-header').forEach(header => {
                     header.classList.remove('active-artist');
                 });
 
-                // Add active class to the clicked element
                 if (clickedElement) {
                     clickedElement.classList.add('active-artist');
                 }
 
-                // Clear the current song list
                 songListContainer.innerHTML = '';
                 
                 if (songs.length === 0) {
@@ -2245,11 +2064,9 @@
                     return;
                 }
 
-                // Create and animate new song list items
                 songs.forEach((song, index) => {
                     const songDiv = document.createElement('div');
-                    songDiv.className = 'song song-animated'; // Add animated class
-                    // Apply delay for cascading fade-in effect
+                    songDiv.className = 'song song-animated';
                     songDiv.style.animationDelay = `${index * 0.05}s`;
 
                     songDiv.innerHTML = `
@@ -2262,7 +2079,6 @@
                         </div>
                     `;
                     
-                    // Add play listener directly
                     songDiv.querySelector('.custom-play-btn').addEventListener('click', (e) => {
                         e.stopPropagation();
                         if(window.playSong) window.playSong(song.title, song.artist, song.url);
@@ -2273,11 +2089,11 @@
             }
         }
 
-        // --- ADMIN CONSOLE LOGIC ---
-        let githubToken = null;
-        let adminTargetUser = null; // Stores 'mica' or 'angel' based on selection
+        // --- ADMIN CONSOLE LOGIC (Modified to be persistent) ---
+        // Fetch the GH Token from sessionStorage to maintain connection after refresh
+        let githubToken = sessionStorage.getItem('ghToken') || null; 
+        let adminTargetUser = null; 
 
-        // Utility to toggle GitHub UI visibility
         function updateGitHubUI(isAuthorized) {
             const musicUI = document.getElementById('ghMusicAuthorizedUI');
             const galleryUI = document.getElementById('ghGalleryAuthorizedUI');
@@ -2295,13 +2111,10 @@
             }
         }
         
-        // --- GITHUB AUTH & REPO FETCH LOGIC (Shared) ---
-        // Moved OUTSIDE setupAdminConsole to be accessible globally
         async function fetchRepositories(type) {
             if (!githubToken) return;
             const repoSelect = document.getElementById(`ghRepoSelect${type === 'music' ? 'Music' : 'Gallery'}`);
             
-            // Only fetch if currently showing default placeholder
             if (repoSelect.options.length > 1 && repoSelect.options[1].textContent !== 'Loading repositories...') return;
             
             repoSelect.innerHTML = '<option value="">Loading repositories...</option>';
@@ -2326,12 +2139,8 @@
         }
 
 
-        function setupAdminConsole() {
-            const openBtn = document.getElementById('openAdminBtn');
-            const modal = document.getElementById('adminModal');
-            const closeBtn = document.getElementById('closeAdminModal');
-            
-            // UI elements
+        function initAdminConsole() {
+            // UI elements specific to Admin Dashboard
             const userSelectDiv = document.getElementById('adminUserSelection');
             const mainAdminDiv = document.getElementById('adminTabsAndContent');
             const backBtn = document.getElementById('backToUserSelect');
@@ -2341,26 +2150,15 @@
             const panels = document.querySelectorAll('.admin-panel');
             
             let galleryUnsubscribe = null;
-            let deleteTimer = null; // Store timer for cleanup
+            let deleteTimer = null; 
 
-            openBtn.onclick = () => {
-                const pass = prompt("Enter Admin Password:");
-                if (pass === "admin112003") { 
-                    modal.style.display = 'flex';
-                    setupDeviceMonitor();
-                    // Reset to selection screen
-                    userSelectDiv.style.display = 'flex';
-                    mainAdminDiv.style.display = 'none';
-                    adminTargetUser = null;
-                    // Update GitHub UI status on opening Admin Console
-                    updateGitHubUI(!!githubToken);
-                } else if (pass) {
-                    alert("Wrong password!");
-                }
-            };
-            closeBtn.onclick = () => modal.style.display = 'none';
+            // Initialize UI States on load
+            setupDeviceMonitor();
+            userSelectDiv.style.display = 'flex';
+            mainAdminDiv.style.display = 'none';
+            adminTargetUser = null;
+            updateGitHubUI(!!githubToken);
 
-            // User Selection Logic
             userSelectBtns.forEach(btn => {
                 btn.onclick = () => {
                     adminTargetUser = btn.getAttribute('data-target-user');
@@ -2375,11 +2173,9 @@
                 userSelectDiv.style.display = 'flex';
                 mainAdminDiv.style.display = 'none';
                 adminTargetUser = null;
-                // Clean up timer if going back
                 if(deleteTimer) clearInterval(deleteTimer);
             };
 
-            // Tabs Logic
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     tabBtns.forEach(b => b.classList.remove('active'));
@@ -2388,11 +2184,9 @@
                     const targetId = btn.dataset.target;
                     document.getElementById(targetId).classList.add('active');
                     
-                    // Handle Gallery Tab Special Logic (Timer)
                     if (targetId === 'admin-gallery') {
                         startDeleteCountdown();
                     } else {
-                        // Reset if leaving tab
                         if(deleteTimer) clearInterval(deleteTimer);
                         const delBtn = document.getElementById('deleteAllGalleryBtn');
                         delBtn.disabled = true;
@@ -2401,12 +2195,11 @@
                 });
             });
             
-            // --- TIMER FUNCTION FOR DELETE ALL ---
             function startDeleteCountdown() {
                 const delBtn = document.getElementById('deleteAllGalleryBtn');
                 let seconds = 15;
                 
-                if(deleteTimer) clearInterval(deleteTimer); // Reset any existing timer
+                if(deleteTimer) clearInterval(deleteTimer);
                 
                 delBtn.disabled = true;
                 delBtn.textContent = `Delete All Images (${seconds}s)`;
@@ -2422,12 +2215,10 @@
                 }, 1000);
             }
             
-            // --- DELETE ALL CLICK HANDLER (Updated for EmailJS) ---
             document.getElementById('deleteAllGalleryBtn').onclick = async () => {
                 if(!adminTargetUser) return alert("Please select a user to manage first.");
                 if(!githubToken) return alert("GitHub token required to delete files. Please login to GitHub in the Music tab.");
 
-                // 1. Generate Code
                 const randomCode = Math.floor(100000 + Math.random() * 900000);
                 
                 const btn = document.getElementById('deleteAllGalleryBtn');
@@ -2436,23 +2227,18 @@
                 btn.disabled = true;
 
                 try {
-                    // --- EMAILJS CONFIGURATION (PASTE YOUR KEYS HERE) ---
-                    // Go to https://dashboard.emailjs.com/ to get these
-                    const serviceID = "service_1z9ho2p"; // e.g., service_83j1ka
-                    const templateID = "template_3bchwj9"; // e.g., template_9d83n
-                    const publicKey = "fa315-qPA4h7IMyAJ"; // e.g., user_339jdK3
-                    // ----------------------------------------------------
+                    const serviceID = "service_1z9ho2p"; 
+                    const templateID = "template_3bchwj9"; 
+                    const publicKey = "fa315-qPA4h7IMyAJ"; 
 
                     let codeSent = false;
 
-                    // Initialize with public key if not already done globally
                     if (window.emailjs && serviceID !== "service_1z9ho2p") {
                         emailjs.init(publicKey);
                         
-                        // Parameters matching your EmailJS template variables
                         const templateParams = {
                             to_name: adminTargetUser, 
-                            to_email: "cjbalog18@gmail.com", // Replace with actual admin email
+                            to_email: "cjbalog18@gmail.com",
                             message: `Your deletion verification code is: ${randomCode}`
                         };
 
@@ -2460,17 +2246,14 @@
                         alert(`Verification code sent to email!`);
                         codeSent = true;
                     } else {
-                         // Fallback if keys are not set
                          alert(`[SIMULATION] Verification code sent to admin contact: ${randomCode}`);
                          codeSent = true;
                     }
 
                     if(codeSent) {
-                        // 3. Prompt for code
                         const userInput = prompt("Enter the 6-digit verification code:");
                         
                         if (userInput === String(randomCode)) {
-                            // 3. Proceed with batch deletion
                             const confirmFinal = confirm("WARNING: This will permanently delete ALL images for this user from GitHub and Database. Are you sure?");
                             if(!confirmFinal) return;
 
@@ -2478,7 +2261,6 @@
                             statusText.textContent = "Deleting all images... Please wait.";
                             
                             try {
-                                 // Get all docs
                                  const q = query(collection(db, `${adminTargetUser}_gallery`));
                                  const snapshot = await getDocs(q);
                                  
@@ -2491,7 +2273,6 @@
                                  let deletedCount = 0;
                                  for (const docSnap of snapshot.docs) {
                                      const data = docSnap.data();
-                                     // Delete from GitHub first if info exists
                                      if(data.githubRepo && data.githubPath) {
                                          try {
                                              const { sha } = await getShaAndPath(data.githubRepo, data.githubPath, githubToken);
@@ -2512,7 +2293,6 @@
                                          } catch(e) { console.error("Failed to delete from GitHub", e); }
                                      }
                                      
-                                     // Delete from Firestore
                                      await deleteDoc(docSnap.ref);
                                      deletedCount++;
                                  }
@@ -2538,9 +2318,6 @@
                 }
             };
 
-            // 1. Letters/Notes/Devices (Same logic as before)
-            // ... (All existing logic for admin-letters, admin-notes, setupAdminSongList remains here) ...
-            
             document.getElementById('scanLettersBtn').onclick = () => {
                 if(!adminTargetUser) return;
                 const list = document.getElementById('adminLettersList');
@@ -2566,12 +2343,10 @@
                          list.appendChild(item);
                     });
 
-                    // Add Delete Listeners
                     list.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.onclick = async () => {
                             if(confirm("Delete this letter?")) {
                                 await deleteDoc(doc(db, `${adminTargetUser}_love_letters`, btn.dataset.id));
-                                // Re-trigger scan to update list or remove item from DOM
                                 btn.closest('.admin-list-item').remove();
                             }
                         }
@@ -2589,8 +2364,11 @@
                     await addDoc(collection(db, `${adminTargetUser}_love_letters`), {
                         title, dateLabel, content, timestamp: serverTimestamp()
                     });
-                    alert(`Posted to ${adminTargetUser}'s Letters!`);
-                    modal.style.display = 'none';
+                    showToast("Success", `Posted to ${adminTargetUser}'s Letters!`, "✅");
+                    
+                    document.getElementById('adminLetterTitle').value = '';
+                    document.getElementById('adminLetterDate').value = '';
+                    document.getElementById('adminLetterContent').value = '';
                 } catch (e) { alert("Error"); }
             };
 
@@ -2623,30 +2401,26 @@
                     await setDoc(doc(db, 'content', `${adminTargetUser}_daily_notes`), {
                         items, lastUpdated: serverTimestamp()
                     });
-                    alert(`Updated ${adminTargetUser}'s Notes!`);
-                    modal.style.display = 'none';
+                    showToast("Success", `Updated ${adminTargetUser}'s Notes!`, "✅");
                 } catch (e) { alert("Error"); }
             };
             
-
             document.getElementById('ghLoginBtn').onclick = async () => {
                 const provider = new GithubAuthProvider();
-                provider.addScope('repo'); // Request 'repo' scope for write access
+                provider.addScope('repo'); 
                 try {
                     const result = await signInWithPopup(auth, provider);
                     const credential = GithubAuthProvider.credentialFromResult(result);
                     githubToken = credential.accessToken;
-                    updateGitHubUI(true); // Show both music and gallery UI
+                    sessionStorage.setItem('ghToken', githubToken); // Save to sessionStorage
+                    updateGitHubUI(true); 
                 } catch (e) { 
                     console.error("GitHub Login Failed:", e);
-                    // Show specific error to user
                     alert(`Login Failed: ${e.message} (Code: ${e.code})`);
                     updateGitHubUI(false);
                 }
             };
             
-            // --- GALLERY UPLOAD LOGIC (GitHub) ---
-
             document.getElementById('addImgBtn').onclick = async () => {
                 if(!adminTargetUser) return;
                 const repoFullName = document.getElementById('ghRepoSelectGallery').value;
@@ -2667,10 +2441,9 @@
                 const fileExtension = file.name.split('.').pop();
                 const baseFileName = `${Date.now()}_${caption || 'image'}`.replace(/[^a-zA-Z0-9-.\s]/g, '').replace(/\s+/g, '_');
                 const fileName = `${baseFileName}.${fileExtension}`;
-                const filePath = `gallery/${fileName}`; // Dedicated Gallery folder
+                const filePath = `gallery/${fileName}`; 
 
                 const [owner, repoName] = repoFullName.split('/');
-                // Use `master` if `main` fails for older repos, but standard is `main`
                 const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/${filePath}`;
                 
                 statusText.textContent = "1/3: Checking for duplicates and reading file...";
@@ -2678,7 +2451,6 @@
                 uploadBtn.disabled = true;
 
                 try {
-                    // Check for file existence (optional, but good practice)
                     const fileExists = await checkFileExists(repoFullName, filePath, githubToken);
                     if (fileExists) {
                         statusText.textContent = "❌ Upload Failed: File already exists on GitHub. Try again in a second.";
@@ -2715,11 +2487,10 @@
                     
                     statusText.textContent = "3/3: Syncing with Firestore...";
 
-                    // 3. Sync to Firestore (User-specific gallery collection)
                     await addDoc(collection(db, `${adminTargetUser}_gallery`), {
                         url: rawContentUrl,
                         caption: caption,
-                        githubRepo: repoFullName, // Store repo name for deletion
+                        githubRepo: repoFullName, 
                         githubPath: filePath,
                         timestamp: serverTimestamp()
                     });
@@ -2727,7 +2498,6 @@
                     statusText.textContent = "✅ Upload and Sync Successful!";
                     showToast("Image Uploaded! 🖼️", `Image synced for ${adminTargetUser}.`, "✅");
                     
-                    // Clear inputs
                     document.getElementById('adminImgCaption').value = '';
                     fileInput.value = '';
                     document.getElementById('galleryFileNameDisplay').textContent = 'No file selected';
@@ -2742,11 +2512,9 @@
                 }
             };
 
-
-            // Helper: Load Admin Gallery for specific user (UPDATED for GitHub deletion)
             function loadAdminGallery(user) {
                 const list = document.getElementById('adminGalleryList');
-                if(galleryUnsubscribe) galleryUnsubscribe(); // Unsub previous listener
+                if(galleryUnsubscribe) galleryUnsubscribe(); 
 
                 galleryUnsubscribe = onSnapshot(query(collection(db, `${user}_gallery`), orderBy('timestamp', 'desc')), (snapshot) => {
                     list.innerHTML = '';
@@ -2759,7 +2527,6 @@
                         list.appendChild(item);
                     });
                     
-                    // Add Delete Listeners (Updated to remove from GitHub too)
                     list.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.onclick = async () => {
                             const docId = btn.dataset.id;
@@ -2770,14 +2537,11 @@
                             
                             if(confirm(`Delete image: ${path}? This will remove the file from GitHub AND Firestore.`)) {
                                 try {
-                                    // 1. Get SHA for deletion (required by GitHub API)
                                     const { sha } = await getShaAndPath(repo, path, githubToken);
                                     
                                     if (!sha) {
-                                         // File not found on GitHub, just delete Firestore doc
                                          console.warn(`File not found on GitHub at ${path}. Deleting Firestore document only.`);
                                     } else {
-                                        // 2. Delete from GitHub
                                         const githubDeleteApi = `https://api.github.com/repos/${repo}/contents/${path}`;
                                         const deletePayload = {
                                             message: `Delete gallery image: ${path}`,
@@ -2800,10 +2564,8 @@
                                         }
                                     }
 
-                                    // 3. Delete from Firestore
                                     await deleteDoc(doc(db, `${user}_gallery`, docId));
                                     
-                                    // Remove from UI immediately (onSnapshot refresh handles it, but this is faster)
                                     btn.closest('.admin-list-item').remove();
                                     showToast("Deleted", "Image removed from Git and Firestore.", "🗑️");
 
@@ -2817,14 +2579,13 @@
                 });
             }
 
-            setupAdminSongList(); // Shared Music Management
+            setupAdminSongList(); 
             
-            // GitHub Music Logic (RESTORED FULL LOGIC HERE)
             const uploadBtnMusic = document.getElementById('startUploadBtn');
             const scanMusicBtn = document.getElementById('scanMusicBtn'); 
             
             uploadBtnMusic.onclick = async () => {
-                const repoFullName = document.getElementById('ghRepoSelectMusic').value; // Use Music selector
+                const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
                 const artistName = document.getElementById('uploadArtistName').value.trim();
                 const songTitle = document.getElementById('uploadSongTitle').value.trim();
                 const fileInput = document.getElementById('musicFileInput');
@@ -2893,7 +2654,7 @@
                         artist: artistName,
                         url: rawContentUrl,
                         githubPath: filePath,
-                        githubRepo: repoFullName, // Added repo name for consistency
+                        githubRepo: repoFullName, 
                         timestamp: serverTimestamp()
                     });
 
@@ -2977,7 +2738,7 @@
                                 artist: artist,
                                 url: rawContentUrl,
                                 githubPath: `music/${file.name}`,
-                                githubRepo: repoFullName, // Added repo name
+                                githubRepo: repoFullName, 
                                 timestamp: serverTimestamp()
                             });
                             newSongsAdded++;
@@ -2997,14 +2758,13 @@
             }
             
             scanMusicBtn.onclick = () => {
-                const repoFullName = document.getElementById('ghRepoSelectMusic').value; // Use Music selector
+                const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
                 if (!repoFullName) return alert("Please select a repository first.");
                 if (!githubToken) return alert("Please log in with GitHub first.");
                 scanRepositoryForMusic(repoFullName, githubToken);
             };
         }
 
-        // --- New Function: Manage Admin Song List (Shared) ---
         function setupAdminSongList() {
             const listContainer = document.getElementById('adminSongList');
             const searchInput = document.getElementById('adminSongSearch');
@@ -3029,7 +2789,6 @@
             });
         }
 
-        // --- Freedom Wall Logic (Dynamic Collection) ---
         function setupFreedomWall(user) {
             const collectionName = `${user}_messages`;
             const fwName = document.getElementById('fwName');
@@ -3047,12 +2806,10 @@
                 notifyBtn.addEventListener('click', requestNotificationPermission);
             }
             
-            // Use dynamic collection based on user
             const messagesCol = collection(db, collectionName);
             let isInitialLoad = true;
             let latestMessageTime = Date.now(); 
 
-            // Clean up old listeners if any (simple approach: clone node to remove listeners)
             const newBtn = fwPostBtn.cloneNode(true);
             fwPostBtn.parentNode.replaceChild(newBtn, fwPostBtn);
             
@@ -3124,22 +2881,28 @@
 
     <!-- Original UI Logic -->
     <script>
-    let audioContext; // Declare globally for reuse
+    let audioContext; 
     
     document.addEventListener('DOMContentLoaded', function() {
-        // --- UI Setup ---
         const passwordModal = document.getElementById('passwordModal');
         const welcomeScreen = document.getElementById('welcomeScreen');
         const mainContent = document.getElementById('mainContent');
+        const adminContainer = document.getElementById('adminContainer');
         const submitPassword = document.getElementById('submitPassword');
         const passwordInput = document.getElementById('passwordInput');
         const welcomeMsg = document.getElementById('welcomeMsg');
         const logoutMsg = document.getElementById('logoutMsg');
         const pageTitle = document.getElementById('dynamicPageTitle');
 
-        // Check existing session
+        // Check Session state on reload
         const savedUser = sessionStorage.getItem('loggedInUser');
-        if (savedUser) {
+        const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+
+        if (isAdmin) {
+            passwordModal.style.display = 'none';
+            welcomeScreen.style.display = 'none';
+            adminContainer.style.display = 'block';
+        } else if (savedUser) {
             setUserUI(savedUser);
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
@@ -3153,13 +2916,17 @@
                     user = 'kate';
                 } else if (pass === 'babycutie') {
                     user = 'baby';
+                } else if (pass === 'admin112003') {
+                    // Specific logic for admin routing via main password
+                    sessionStorage.setItem('isAdminLoggedIn', 'true');
+                    location.reload(); // Reload sets UI correctly via Firebase init above
+                    return;
                 }
 
                 if (user) {
                     sessionStorage.setItem('loggedInUser', user);
                     setUserUI(user);
                     
-                    // Call Global Loader
                     if(window.loadUserContent) window.loadUserContent(user);
                     if(window.logDeviceLogin) window.logDeviceLogin(user);
 
@@ -3188,13 +2955,7 @@
             passwordInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
         }
 
-        function setUserUI(user) {
-            const name = user.charAt(0).toUpperCase() + user.slice(1);
-            welcomeMsg.textContent = `Welcome ${name}, enjoy your stay!!`;
-            logoutMsg.textContent = `Thank you ${name}`;
-            pageTitle.textContent = `For You ${name}`;
-        }
-
+        // Standard User Logout
         document.getElementById('logoutButton').addEventListener('click', function() {
             sessionStorage.removeItem('loggedInUser');
             mainContent.style.display = 'none';
@@ -3205,11 +2966,23 @@
             }, 10);
         });
 
-        // Tabs
+        // Admin Session Logout
+        document.getElementById('adminLogoutBtn').addEventListener('click', function() {
+            sessionStorage.removeItem('isAdminLoggedIn');
+            sessionStorage.removeItem('ghToken'); // Clear the Github token as well
+            location.reload();
+        });
+
+        function setUserUI(user) {
+            const name = user.charAt(0).toUpperCase() + user.slice(1);
+            welcomeMsg.textContent = `Welcome ${name}, enjoy your stay!!`;
+            logoutMsg.textContent = `Thank you ${name}`;
+            pageTitle.textContent = `For You ${name}`;
+        }
+
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
         
-        // --- TULIP RAIN LOGIC ---
         let tulipInterval = null;
 
         function createTulip() {
@@ -3218,14 +2991,11 @@
             tulip.classList.add('tulip-drop');
             tulip.textContent = '🌷';
             
-            // Use percentage for left position to be safe relative to container
             tulip.style.left = Math.random() * 100 + '%';
-            // Randomize animation duration
             tulip.style.animationDuration = (Math.random() * 5 + 3) + 's'; 
             
             container.appendChild(tulip);
 
-            // Clean up immediately after animation ends to prevent piling up at bottom
             tulip.addEventListener('animationend', () => {
                 tulip.remove();
             });
@@ -3251,7 +3021,7 @@
 
         tabs.forEach(tab => {
             tab.addEventListener('click', function() {
-                if (this.id === 'logoutButton') return;
+                if (this.id === 'logoutButton' || this.id === 'adminLogoutBtn') return;
                 const targetTab = this.getAttribute('data-tab');
                 
                 tabs.forEach(t => t.classList.remove('active'));
@@ -3260,7 +3030,6 @@
                 tabContents.forEach(content => {
                     content.classList.remove('active');
                     
-                    // Remove specific ID-based active class if needed (though CSS handles it via #gallery.active)
                     if (content.id === 'gallery') content.classList.remove('active');
 
                     if (content.id === targetTab) {
@@ -3268,7 +3037,6 @@
                     }
                 });
 
-                // Trigger specific behaviors
                 if (targetTab === 'gallery') {
                     startTulipRain();
                 } else {
@@ -3277,7 +3045,6 @@
             });
         });
 
-        // --- FLOATING BACKGROUND EMOJIS (FIXED) ---
         function addFloatingElements() {
             const container = document.getElementById('floatingElementsContainer');
             const emojis = [
@@ -3288,9 +3055,6 @@
                 { char: '🧸', size: 32, delay: 4.0, bottom: '10%', right: '5%' }
             ];
 
-            // Removed previous emoji creation that used fixed positions outside the loop/container
-            // This ensures all emojis are generated within the container and use the correct animation styles.
-
             emojis.forEach(e => {
                 const el = document.createElement('div');
                 el.classList.add(e.char === '❤️' ? 'heart' : 'teddy-bear');
@@ -3298,7 +3062,6 @@
                 el.style.fontSize = e.size + 'px';
                 el.style.animationDelay = e.delay + 's';
                 
-                // Use positions directly from definitions
                 if (e.top) el.style.top = e.top;
                 if (e.bottom) el.style.bottom = e.bottom;
                 if (e.left) el.style.left = e.left;
@@ -3309,7 +3072,6 @@
         }
         addFloatingElements();
 
-        // Clock
         function updatePHClock() {
             const now = new Date();
             const options = { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', year: 'numeric', month: 'numeric', day: '2-digit', hour12: true };
@@ -3318,7 +3080,6 @@
         setInterval(updatePHClock, 1000);
         updatePHClock();
 
-        // Player logic (Standard)
         const nowPlayingAudio = document.getElementById('nowPlayingAudio');
         const playIcon = document.getElementById('playIcon');
         const pauseIcon = document.getElementById('pauseIcon');
@@ -3331,12 +3092,11 @@
         const liquidWave = document.getElementById('liquidWave');
         const liquidTimeText = document.getElementById('liquidTimeText');
 
-        let allSongs = []; // This will be flattened list of all songs
-        let allSongsMap = {}; // This will be the map grouped by artist
+        let allSongs = []; 
+        let allSongsMap = {}; 
         let isLooping = false;
         let currentSongIndex = -1;
 
-        // Expose function to update song data from module script
         window.updateAllSongs = function(songsMap) {
             allSongsMap = songsMap;
             allSongs = Object.values(songsMap).flat();
@@ -3346,18 +3106,13 @@
             }
         }
 
-        // --- AUDIO CONTEXT AND PLAY/PAUSE LOGIC ---
-
-        // Toggle Play/Pause
         mainPlayBtn.addEventListener('click', () => {
             if (!nowPlayingAudio.src || nowPlayingAudio.src === window.location.href) {
                 if(allSongs.length > 0) {
-                     // Start playing the first song in the list if nothing is loaded
                      window.playSong(allSongs[0].title, allSongs[0].artist, allSongs[0].src);
                 }
             } else {
                 if (nowPlayingAudio.paused) {
-                    // FIX: Ensure context is running before playing
                     if (audioContext && audioContext.state === 'suspended') {
                          audioContext.resume().then(() => nowPlayingAudio.play());
                     } else {
@@ -3385,7 +3140,6 @@
             }
         });
 
-        // Audio Events Sync
         nowPlayingAudio.addEventListener('play', () => {
             playIcon.style.display = 'none';
             pauseIcon.style.display = 'block';
@@ -3406,10 +3160,8 @@
                 const percent = (curr / dur) * 100;
                 progressFill.style.width = `${percent}%`;
                 
-                // Liquid Wave Animation
                 liquidWave.style.top = `${100 - percent}%`;
                 
-                // Format Time
                 const currentTimeStr = formatTime(curr);
                 document.getElementById('currTime').textContent = currentTimeStr;
                 document.getElementById('totalTime').textContent = formatTime(dur);
@@ -3449,7 +3201,7 @@
             
             let nextIndex = currentSongIndex + 1;
             if (nextIndex >= allSongs.length) {
-                nextIndex = 0; // Loop back to start
+                nextIndex = 0; 
             }
             
             const s = allSongs[nextIndex];
@@ -3458,12 +3210,8 @@
 
         if(nextBtn) nextBtn.addEventListener('click', playNextSong);
 
-        // Search Logic (REVISED in module script, only keeping UI events here)
-        document.getElementById('artistSearch').addEventListener('input', function() {
-            // Logic handled by module script
-        });
+        document.getElementById('artistSearch').addEventListener('input', function() {});
 
-        // --- AUDIO VISUALIZER LOGIC ---
         let analyser, source;
         let isVisualizerInit = false;
 
@@ -3471,12 +3219,10 @@
             if (isVisualizerInit) return;
 
             const AudioContext = window.AudioContext || window.webkitAudioContext;
-            // FIX: Initialize AudioContext only once
             if (!audioContext) { 
                  audioContext = new AudioContext();
             }
             
-            // Check if context is suspended and try to resume
             if (audioContext.state === 'suspended') {
                  audioContext.resume().catch(e => console.error("Failed to resume AudioContext:", e));
             }
@@ -3486,13 +3232,11 @@
             analyser = audioContext.createAnalyser();
             
             try {
-                // Check if source already exists (prevents error if called multiple times)
                 if (!source) {
                     source = audioContext.createMediaElementSource(nowPlayingAudio);
                     source.connect(analyser);
                     analyser.connect(audioContext.destination);
                 } else {
-                     // Ensure connection is maintained if context was resumed
                      source.connect(analyser); 
                      analyser.connect(audioContext.destination);
                 }
@@ -3534,20 +3278,15 @@
             }
         }
 
-        // FIX: Ensure AudioContext resumes on ANY user interaction (for iOS/Chrome policy)
-        // Check if context is defined before adding the listener
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) {
-            audioContext = new AudioContext(); // Initialize context early
+        const AudioContextWindow = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextWindow) {
+            audioContext = new AudioContextWindow(); 
             document.addEventListener('click', function() {
                 if (audioContext && audioContext.state === 'suspended') {
                     audioContext.resume().catch(e => console.error("Failed to resume context on click:", e));
                 }
-            }, { once: true }); // Use { once: true } for initial resume
-            
-            // For subsequent clicks, we handle context resume in mainPlayBtn.onclick
+            }, { once: true }); 
         }
-
 
     });
     </script>
