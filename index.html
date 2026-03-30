@@ -96,6 +96,34 @@
             75% { transform: translateX(10px); }
         }
 
+        /* SCHEDULED MAINTENANCE BANNER */
+        #scheduled-maint-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #ff4d4d;
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-size: 14px;
+            z-index: 99997; 
+            display: none;
+            font-family: 'Montserrat', sans-serif;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: slideInDown 0.5s ease-out forwards;
+        }
+
+        #scheduled-maint-banner span {
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 16px;
+            background: rgba(0,0,0,0.2);
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-left: 5px;
+        }
+
         /* MAINTENANCE OVERLAY */
         #maintenance-overlay {
             position: fixed;
@@ -1524,6 +1552,11 @@
         <div class="security-sub">Content is protected. Click anywhere here to resume viewing.</div>
     </div>
     
+    <!-- SCHEDULED MAINTENANCE BANNER (1 Day Warning) -->
+    <div id="scheduled-maint-banner">
+        ⚠️ Scheduled Maintenance starts in: <span id="scheduled-maint-countdown">00:00:00</span>
+    </div>
+
     <!-- MAINTENANCE OVERLAY -->
     <div id="maintenance-overlay">
         <div class="maintenance-content" id="maint-active-content">
@@ -1795,14 +1828,23 @@
                             <p style="font-size:12px; color:#666; margin-bottom:15px;">Enable maintenance to lock out regular users. Set an estimated completion date and time.</p>
                             
                             <div class="admin-form-group">
+                                <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Start Date & Time (Optional for Scheduled):</label>
+                                <input type="datetime-local" id="maintStartTime" class="fw-input" style="margin-top: 5px; margin-bottom: 10px;">
+
                                 <label style="font-size: 12px; font-weight: bold; color: #d81b60;">End Date & Time:</label>
                                 <input type="datetime-local" id="maintEndTime" class="fw-input" style="margin-top: 5px;">
                                 
                                 <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Maintenance Message:</label>
                                 <input type="text" id="maintMessage" class="fw-input" placeholder="e.g., Upgrading servers for better performance..." style="margin-top: 5px;">
+                                
+                                <!-- Live Countdown Preview -->
+                                <div id="adminMaintPreview" style="margin-top: 15px; padding: 15px; background: #fff0f5; border: 2px dashed #ffb7c5; border-radius: 12px; text-align: center; display: none;">
+                                    <span style="font-size: 12px; font-weight: bold; color: #d81b60;">Live Countdown Preview:</span><br>
+                                    <strong id="adminMaintCountdownText" style="color: #b71550; font-size: 24px; font-family: monospace; display: inline-block; margin-top: 5px;">00:00:00</strong>
+                                </div>
                             </div>
 
-                            <button id="btnToggleMaintenance" class="submit-btn" style="width: 100%; margin-bottom: 15px;">Enable Maintenance</button>
+                            <button id="btnToggleMaintenance" class="submit-btn" style="width: 100%; margin-bottom: 15px;">Enable / Schedule Maintenance</button>
                             
                             <div style="border-top: 1px dashed #ffb7c5; padding-top: 15px; margin-top: 10px;">
                                 <h4 class="admin-section-title" style="color:#ff4d4d; border-bottom: none; margin-bottom: 10px;">Emergency Action</h4>
@@ -2097,11 +2139,14 @@
         });
 
 
-        // --- MAINTENANCE MODE LOGIC ---
+        // --- MAINTENANCE MODE LOGIC (ADVANCED SCHEDULE) ---
         let maintInterval = null;
         let isMaintenanceActiveLocally = false;
 
         function triggerMaintenanceDone() {
+            if (!isMaintenanceActiveLocally) return;
+            isMaintenanceActiveLocally = false;
+            
             const maintOverlay = document.getElementById('maintenance-overlay');
             const activeContent = document.getElementById('maint-active-content');
             const doneContent = document.getElementById('maint-done-content');
@@ -2115,87 +2160,115 @@
                     maintOverlay.style.display = 'none';
                     activeContent.style.display = 'block'; // Reset internal states for future
                     doneContent.style.display = 'none';
-                    isMaintenanceActiveLocally = false;
                 }, 1000);
             }, 3000); // Display "We're Back!" for 3 seconds before fading out
         }
 
         onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
-            let maintData = { isActive: false, endTime: '', message: '' };
+            let maintData = { isActive: false, isScheduled: false, startTime: '', endTime: '', message: '' };
             if (docSnap.exists()) maintData = docSnap.data();
 
             // Update Admin UI
             const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
             if (btnToggleMaintenance) {
-                if (maintData.isActive) {
+                const isCurrentlyActiveOrScheduled = maintData.isActive || maintData.isScheduled;
+                if (isCurrentlyActiveOrScheduled) {
                     btnToggleMaintenance.textContent = "Disable Maintenance";
                     btnToggleMaintenance.style.background = "#28a745";
-                    document.getElementById('maintEndTime').value = maintData.endTime;
-                    document.getElementById('maintMessage').value = maintData.message;
+                    if(document.getElementById('maintStartTime')) document.getElementById('maintStartTime').value = maintData.startTime || '';
+                    if(document.getElementById('maintEndTime')) {
+                        document.getElementById('maintEndTime').value = maintData.endTime || '';
+                        // Trigger input event to update preview automatically on data load
+                        document.getElementById('maintEndTime').dispatchEvent(new Event('input'));
+                    }
+                    if(document.getElementById('maintMessage')) document.getElementById('maintMessage').value = maintData.message || '';
                 } else {
-                    btnToggleMaintenance.textContent = "Enable Maintenance";
+                    btnToggleMaintenance.textContent = "Enable / Schedule Maintenance";
                     btnToggleMaintenance.style.background = "#d81b60";
                 }
             }
 
-            // Client-Side Maintenance Execution
+            // Client-Side Execution (Bypass for Admins)
             const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
-            if (isAdmin) return; // Admins bypass the locking mechanism completely
+            if (isAdmin) return;
 
             const maintOverlay = document.getElementById('maintenance-overlay');
+            const banner = document.getElementById('scheduled-maint-banner');
 
-            if (maintData.isActive) {
-                const endMs = new Date(maintData.endTime).getTime();
+            if(maintInterval) clearInterval(maintInterval);
+
+            function checkMaintenanceStatus() {
                 const nowMs = new Date().getTime();
+                const endMs = maintData.endTime ? new Date(maintData.endTime).getTime() : 0;
+                const startMs = maintData.startTime ? new Date(maintData.startTime).getTime() : 0;
+                
+                let isCurrentlyMaintenance = maintData.isActive;
+                
+                // If it's scheduled and we've reached the start time
+                if (maintData.isScheduled && maintData.startTime && maintData.endTime) {
+                    if (nowMs >= startMs && nowMs < endMs) {
+                        isCurrentlyMaintenance = true;
+                    }
+                }
 
-                if (endMs > nowMs) {
-                    // Start overlay if not yet active locally
-                    maintOverlay.style.display = 'flex';
-                    maintOverlay.style.opacity = '1';
-                    document.getElementById('maint-active-content').style.display = 'block';
-                    document.getElementById('maint-done-content').style.display = 'none';
-                    isMaintenanceActiveLocally = true;
-
+                if (isCurrentlyMaintenance && endMs > nowMs) {
+                    // ACTIVATE LOCKDOWN (Maintenance Mode)
+                    banner.style.display = 'none';
+                    if (!isMaintenanceActiveLocally) {
+                        maintOverlay.style.display = 'flex';
+                        maintOverlay.style.opacity = '1';
+                        document.getElementById('maint-active-content').style.display = 'block';
+                        document.getElementById('maint-done-content').style.display = 'none';
+                        isMaintenanceActiveLocally = true;
+                    }
+                    
+                    // Constantly update text in case admin shifts the time/message while maintenance is active
                     document.getElementById('maint-msg-text').textContent = maintData.message || "We are currently upgrading the site.";
                     document.getElementById('maint-endtime-text').textContent = new Date(maintData.endTime).toLocaleString();
+                    
+                    const t = endMs - nowMs;
+                    const days = Math.floor(t / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((t % (1000 * 60)) / 1000);
 
-                    clearInterval(maintInterval);
-                    maintInterval = setInterval(() => {
-                        const t = endMs - new Date().getTime();
-                        if (t <= 0) {
-                            clearInterval(maintInterval);
-                            triggerMaintenanceDone();
-                        } else {
-                            const days = Math.floor(t / (1000 * 60 * 60 * 24));
-                            const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                            const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
-                            const seconds = Math.floor((t % (1000 * 60)) / 1000);
+                    let timeStr = "";
+                    if (days > 0) timeStr += `${days}d `;
+                    timeStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    document.getElementById('maint-countdown').textContent = timeStr;
 
-                            let timeStr = "";
-                            if (days > 0) timeStr += `${days}d `;
-                            timeStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                            
-                            document.getElementById('maint-countdown').textContent = timeStr;
-                        }
-                    }, 1000);
                 } else {
-                    // Time limit reached naturally while still enabled on server
+                    // NO ACTIVE MAINTENANCE
                     if (isMaintenanceActiveLocally) {
-                        clearInterval(maintInterval);
-                        triggerMaintenanceDone();
+                        triggerMaintenanceDone(); // Safely closes it out
                     } else {
                         maintOverlay.style.display = 'none';
                     }
-                }
-            } else {
-                // Manually turned off by Admin
-                clearInterval(maintInterval);
-                if (isMaintenanceActiveLocally) {
-                    triggerMaintenanceDone();
-                } else {
-                    maintOverlay.style.display = 'none';
+
+                    // CHECK FOR SCHEDULED NOTIFICATION (1 day before start)
+                    if (maintData.isScheduled && startMs > nowMs) {
+                        const timeUntilStart = startMs - nowMs;
+                        // 24 hours in ms = 86400000
+                        if (timeUntilStart <= 86400000) { 
+                            banner.style.display = 'block';
+                            const t = timeUntilStart;
+                            const hours = Math.floor(t / (1000 * 60 * 60)); // Total hours left for display
+                            const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
+                            const seconds = Math.floor((t % (1000 * 60)) / 1000);
+                            document.getElementById('scheduled-maint-countdown').textContent = 
+                                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        } else {
+                            banner.style.display = 'none';
+                        }
+                    } else {
+                        banner.style.display = 'none';
+                    }
                 }
             }
+
+            checkMaintenanceStatus(); // Run immediately to sync visually
+            maintInterval = setInterval(checkMaintenanceStatus, 1000); // Continuous loop check
         });
 
         // Secret Admin Bypass for Maintenance
@@ -3435,18 +3508,79 @@
             const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
             const btnEmergencyMaintenance = document.getElementById('btnEmergencyMaintenance');
             
+            // PREVIEW LOGIC (Live Countdown Update based on Admin inputs)
+            let adminPreviewInterval = null;
+            function updateAdminMaintPreview() {
+                const endInput = document.getElementById('maintEndTime').value;
+                const previewBox = document.getElementById('adminMaintPreview');
+                const previewText = document.getElementById('adminMaintCountdownText');
+                
+                if(adminPreviewInterval) clearInterval(adminPreviewInterval);
+                
+                if(!endInput) {
+                    previewBox.style.display = 'none';
+                    return;
+                }
+                
+                previewBox.style.display = 'block';
+                
+                const updateClock = () => {
+                    const nowMs = new Date().getTime();
+                    const endMs = new Date(endInput).getTime();
+                    const t = endMs - nowMs;
+                    
+                    if(t <= 0) {
+                        previewText.textContent = "00:00:00";
+                        clearInterval(adminPreviewInterval);
+                        return;
+                    }
+                    
+                    const days = Math.floor(t / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((t % (1000 * 60)) / 1000);
+
+                    let timeStr = "";
+                    if (days > 0) timeStr += `${days}d `;
+                    timeStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    previewText.textContent = timeStr;
+                };
+                updateClock();
+                adminPreviewInterval = setInterval(updateClock, 1000);
+            }
+            
+            const maintEndTimeEl = document.getElementById('maintEndTime');
+            if(maintEndTimeEl) {
+                maintEndTimeEl.addEventListener('input', updateAdminMaintPreview);
+            }
+            
             if(btnToggleMaintenance) {
                 btnToggleMaintenance.onclick = async () => {
-                    const isActive = btnToggleMaintenance.textContent === "Disable Maintenance";
-                    if (isActive) {
-                        await setDoc(doc(db, 'settings', 'maintenance'), { isActive: false }, { merge: true });
+                    const isCurrentlyActiveOrScheduled = btnToggleMaintenance.textContent === "Disable Maintenance";
+                    if (isCurrentlyActiveOrScheduled) {
+                        await setDoc(doc(db, 'settings', 'maintenance'), { isActive: false, isScheduled: false }, { merge: true });
                         showToast("Maintenance Disabled", "Site is now open to users.", "✅");
                     } else {
+                        const startTime = document.getElementById('maintStartTime').value;
                         const endTime = document.getElementById('maintEndTime').value;
                         const message = document.getElementById('maintMessage').value;
                         if (!endTime) return alert("Please set an end date and time for the maintenance.");
-                        await setDoc(doc(db, 'settings', 'maintenance'), { isActive: true, endTime, message }, { merge: true });
-                        showToast("Maintenance Enabled", "Site is now locked for users.", "🚧");
+                        
+                        const isScheduled = !!startTime;
+                        
+                        await setDoc(doc(db, 'settings', 'maintenance'), { 
+                            isActive: !isScheduled, // If scheduled, it's not active NOW
+                            isScheduled: isScheduled,
+                            startTime: startTime || '',
+                            endTime, 
+                            message 
+                        }, { merge: true });
+                        
+                        if(isScheduled) {
+                             showToast("Maintenance Scheduled", "Will start at the designated time.", "🗓️");
+                        } else {
+                             showToast("Maintenance Enabled", "Site is now locked for users.", "🚧");
+                        }
                     }
                 };
             }
@@ -3460,6 +3594,8 @@
 
                     await setDoc(doc(db, 'settings', 'maintenance'), {
                         isActive: true,
+                        isScheduled: false, // Clear schedule flags
+                        startTime: '',
                         endTime: localISOTime,
                         message: "Emergency maintenance in progress. We are working quickly to restore service."
                     }, { merge: true });
