@@ -59,14 +59,15 @@
             width: 100vw;
             height: 100vh;
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 9999;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            z-index: 99999;
             display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
+            cursor: pointer;
         }
 
         .security-icon {
@@ -86,6 +87,7 @@
         .security-sub {
             font-size: 14px;
             color: #888;
+            padding: 0 20px;
         }
 
         @keyframes shake {
@@ -254,7 +256,7 @@
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 2000; /* Extremely high to cover everything */
+            z-index: 2000;
             display: none;
             padding: 20px;
             overflow-y: auto;
@@ -1490,11 +1492,11 @@
     <!-- TOAST CONTAINER -->
     <div id="toast-container"></div>
 
-    <!-- SECURITY OVERLAY -->
+    <!-- SECURITY OVERLAY (Anti-Screenshot/Blur) -->
     <div id="security-overlay">
         <div class="security-icon">🙈</div>
-        <div class="security-text">Hidden Content</div>
-        <div class="security-sub">Screenshots & Recording are not allowed here</div>
+        <div class="security-text">No screenshot allowed</div>
+        <div class="security-sub">Content is protected. Click anywhere here to resume viewing.</div>
     </div>
     
     <!-- TULIP RAIN CONTAINER -->
@@ -1509,7 +1511,7 @@
         </div>
     </div>
 
-    <!-- NEW: Admin Entry Transition Screen -->
+    <!-- Admin Entry Transition Screen -->
     <div id="adminTransitionScreen">
         <div class="admin-transition-spinner"></div>
         <div class="admin-transition-text">ADMIN CONSOLE</div>
@@ -1518,7 +1520,6 @@
 
     <!-- ADMIN DASHBOARD CONTAINER (Fullscreen Replacement) -->
     <div id="adminContainer">
-        <!-- New Admin Layout -->
         <div class="admin-dashboard-wrapper">
             <!-- Left Sidebar -->
             <div class="admin-sidebar-left">
@@ -1550,6 +1551,7 @@
                         <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
                         <button class="admin-tab-btn" data-target="admin-devices">📱 Devices</button>
                         <button class="admin-tab-btn" data-target="admin-system">⚙️ System</button>
+                        <button class="admin-tab-btn" data-target="admin-security">🛡️ Security</button>
                     </div>
 
                     <!-- Tab: Add Letters -->
@@ -1680,7 +1682,7 @@
 
                     <!-- Tab: Device Monitor (Shared) -->
                     <div class="admin-panel" id="admin-devices">
-                        <h4 class="admin-section-title">Active & Recent</h4>
+                        <h4 class="admin-section-title">Active & Recent Logins</h4>
                         <div id="deviceListActive" class="admin-list-container">
                             <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
                         </div>
@@ -1691,7 +1693,7 @@
                         </div>
                     </div>
 
-                    <!-- NEW: System Manager (Code Upload & Verification) -->
+                    <!-- System Manager (Code Upload & Verification) -->
                     <div class="admin-panel" id="admin-system">
                         <div id="ghSystemAuthStatus">
                             <div class="gh-status-box" style="background: #fff5f7; border-color: #ffb7c5;">
@@ -1718,6 +1720,26 @@
 
                             <button id="uploadCodeBtn" class="submit-btn" style="width: 100%; margin-bottom: 10px;">Verify & Push Code</button>
                             <p id="systemStatusText" style="margin-top: 5px; margin-bottom:20px; font-size: 12px; color: #d81b60; text-align: center;"></p>
+                        </div>
+                    </div>
+
+                    <!-- NEW: Security Tab -->
+                    <div class="admin-panel" id="admin-security">
+                        <h4 class="admin-section-title">Global Security Settings</h4>
+                        
+                        <div class="admin-widget" style="margin-bottom: 20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <strong style="color:#333; font-size:15px;">Anti-Screenshot & Blur Overlay</strong>
+                                    <p style="font-size:12px; color:#888; margin-top:4px;">Instantly blurs the screen if PrintScreen is pressed, window loses focus, or task switcher is opened.</p>
+                                </div>
+                                <button id="toggleAntiScreenshot" class="submit-btn" style="background:#ccc;">Disabled</button>
+                            </div>
+                        </div>
+
+                        <h4 class="admin-section-title" style="color:#ff4d4d; border-bottom-color:#ff4d4d;">Blocked IP Addresses</h4>
+                        <div id="blockedIpList" class="admin-list-container" style="border-color:#ffcdd2;">
+                            <p style="text-align:center; color:#999; font-size:12px;">Loading blocked list...</p>
                         </div>
                     </div>
 
@@ -1929,6 +1951,83 @@
         
         let currentUser = sessionStorage.getItem('loggedInUser') || null; 
         
+        // --- GLOBAL SECURITY & BLOCKING LOGIC ---
+        let userIPAddress = 'Unknown IP';
+        let globalSecurityConfig = { antiScreenshot: false, blockedIPs: [] };
+
+        // Fetch IP instantly on load to enforce blocks
+        fetch('https://ipapi.co/json/')
+            .then(res => res.ok ? res.json() : {})
+            .then(data => {
+                if(data.ip) {
+                    userIPAddress = data.ip;
+                    applyBlockCheck();
+                }
+            }).catch(() => {});
+
+        function applyBlockCheck() {
+            const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+            if (!isAdmin && userIPAddress && globalSecurityConfig.blockedIPs?.includes(userIPAddress)) {
+                // If IP is blocked and NOT an admin, destroy the body and show a lock screen
+                document.body.innerHTML = `
+                    <div style="display:flex; flex-direction:column; height:100vh; width:100vw; justify-content:center; align-items:center; background:#1a1a2e; color:#ff4d4d; font-family:'Montserrat', sans-serif; text-align:center; padding:20px; box-sizing:border-box;">
+                        <span style="font-size:60px; margin-bottom:20px;">⛔</span>
+                        <h2 style="margin-bottom:10px;">Access Restricted</h2>
+                        <p style="font-size:14px; color:#888; line-height:1.6;">Your IP address <strong>(${userIPAddress})</strong> has been blocked by the administrator.<br>Please contact support if you believe this is an error.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Listen for global security changes (Block lists & Anti-Screenshot)
+        onSnapshot(doc(db, 'settings', 'security'), (docSnap) => {
+            if(docSnap.exists()) {
+                globalSecurityConfig = docSnap.data();
+                if(!globalSecurityConfig.blockedIPs) globalSecurityConfig.blockedIPs = [];
+                applyBlockCheck();
+                applyAntiScreenshotFeatures();
+            }
+        });
+
+        // Anti-screenshot handlers
+        function handleSecurityBlur() {
+            if(globalSecurityConfig.antiScreenshot) {
+                document.getElementById('security-overlay').style.display = 'flex';
+            }
+        }
+        function handleSecurityFocus() {
+            document.getElementById('security-overlay').style.display = 'none';
+        }
+        function handleSecurityKey(e) {
+            if(globalSecurityConfig.antiScreenshot && e.key === 'PrintScreen') {
+                document.getElementById('security-overlay').style.display = 'flex';
+                navigator.clipboard.writeText('Screenshots disabled.');
+                setTimeout(() => { if(document.hasFocus()) handleSecurityFocus(); }, 3000);
+            }
+        }
+
+        function applyAntiScreenshotFeatures() {
+            if(globalSecurityConfig.antiScreenshot) {
+                window.addEventListener('blur', handleSecurityBlur);
+                window.addEventListener('focus', handleSecurityFocus);
+                window.addEventListener('keyup', handleSecurityKey);
+                document.addEventListener('visibilitychange', () => {
+                    if(document.hidden) handleSecurityBlur();
+                    else handleSecurityFocus();
+                });
+            } else {
+                window.removeEventListener('blur', handleSecurityBlur);
+                window.removeEventListener('focus', handleSecurityFocus);
+                window.removeEventListener('keyup', handleSecurityKey);
+                document.getElementById('security-overlay').style.display = 'none';
+            }
+        }
+        
+        // Allow user to dismiss overlay by clicking if it gets stuck on mobile
+        document.getElementById('security-overlay').addEventListener('click', () => {
+            if(document.hasFocus()) handleSecurityFocus();
+        });
+
         const toBase64 = file => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -1936,7 +2035,6 @@
             reader.onerror = error => reject(error);
         });
 
-        // Specific function for UTF-8 code base64 encoding (btoa issues with emojis/unicode)
         function utf8ToBase64(str) {
             return window.btoa(unescape(encodeURIComponent(str)));
         }
@@ -1957,7 +2055,6 @@
         async function checkFileExists(repo, path, token) {
             const [owner, name] = repo.split('/');
             const apiUrl = `https://api.github.com/repos/${owner}/${name}/contents/${path}`;
-            
             try {
                 const response = await fetch(apiUrl, {
                     method: 'HEAD',
@@ -1984,9 +2081,7 @@
                 setupNotificationSystem();
                 
                 const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
-                // Handled in standard script for transition effect below
                 if (isAdmin) {
-                     // Just init, UI reveals automatically 
                      initAdminConsole();
                 } else if (currentUser) {
                     loadUserContent(currentUser);
@@ -2029,12 +2124,16 @@
                 else if (userAgent.match(/iPhone/i)) deviceType = "iPhone";
                 else if (userAgent.match(/iPad/i)) deviceType = "iPad";
                 else if (userAgent.match(/Windows/i)) deviceType = "Windows PC";
+                else if (userAgent.match(/Mac/i)) deviceType = "Mac OS";
                 
                 let location = "Unknown Location";
+                
+                // Fetch IP again here just to ensure it's logged during the session correctly
                 try {
                     const res = await fetch('https://ipapi.co/json/');
                     if(res.ok) {
                         const data = await res.json();
+                        if(data.ip) userIPAddress = data.ip; // Keep global ref updated
                         if(data.city && data.country_name) location = `${data.city}, ${data.country_name}`;
                     }
                 } catch (e) {}
@@ -2043,6 +2142,7 @@
                     user: user,
                     device: deviceType,
                     details: userAgent,
+                    ip: userIPAddress,
                     location: location,
                     timestamp: serverTimestamp()
                 });
@@ -2065,26 +2165,52 @@
                 const now = new Date();
                 const oneDayMs = 24 * 60 * 60 * 1000;
 
-                snapshot.forEach(doc => {
-                    const data = doc.data();
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
                     const time = data.timestamp ? data.timestamp.toDate() : new Date();
                     const isRecent = (now - time) < oneDayMs;
                     const dateStr = time.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                     const userName = data.user ? `(${data.user})` : '';
 
-                    const itemHtml = `
-                        <div class="device-card ${isRecent ? 'recent' : ''}">
-                            <div class="device-header">
-                                <span>${escapeHtml(data.device)} <small>${userName}</small></span>
-                                <span style="font-weight:normal; font-size:11px;">${dateStr}</span>
-                            </div>
-                            <div class="device-meta">
-                                <span class="device-location">📍 ${escapeHtml(data.location || 'Unknown')}</span>
-                            </div>
+                    const item = document.createElement('div');
+                    item.className = `device-card ${isRecent ? 'recent' : ''}`;
+                    
+                    // Includes IP and Block Button directly in the list
+                    item.innerHTML = `
+                        <div class="device-header">
+                            <span>${escapeHtml(data.device)} <small>${userName}</small></span>
+                            <span style="font-weight:normal; font-size:11px;">${dateStr}</span>
                         </div>
+                        <div class="device-meta">
+                            <span class="device-location">📍 ${escapeHtml(data.location || 'Unknown')}</span>
+                            <span style="color:#555; margin-top:3px;">🌐 IP: ${escapeHtml(data.ip || 'Unknown IP')}</span>
+                        </div>
+                        ${data.ip && data.ip !== 'Unknown IP' ? `
+                        <div style="margin-top: 8px; text-align:right;">
+                            <button class="submit-btn block-ip-btn" data-ip="${escapeHtml(data.ip)}" style="padding: 4px 10px; font-size:11px; background:#ff4d4d; border-radius:6px;">Block IP</button>
+                        </div>
+                        ` : ''}
                     `;
-                    if (isRecent) activeList.insertAdjacentHTML('beforeend', itemHtml);
-                    else historyList.insertAdjacentHTML('beforeend', itemHtml);
+
+                    // Add Block Action
+                    item.querySelectorAll('.block-ip-btn').forEach(btn => {
+                        btn.onclick = async () => {
+                            const ipToBlock = btn.dataset.ip;
+                            if(confirm(`Block IP ${ipToBlock}? They will be immediately locked out.`)) {
+                                const currentIPs = globalSecurityConfig.blockedIPs || [];
+                                if(!currentIPs.includes(ipToBlock)) {
+                                    currentIPs.push(ipToBlock);
+                                    await setDoc(doc(db, 'settings', 'security'), { blockedIPs: currentIPs }, {merge:true});
+                                    showToast("IP Blocked", `${ipToBlock} has been restricted.`, "⛔");
+                                } else {
+                                    alert("IP is already blocked.");
+                                }
+                            }
+                        };
+                    });
+
+                    if (isRecent) activeList.appendChild(item);
+                    else historyList.appendChild(item);
                 });
             });
         }
@@ -2371,6 +2497,56 @@
             setupDeviceMonitor();
             updateGitHubUI(!!githubToken);
             startLiveScanner();
+
+            // Setup Security Panel Sync
+            const toggleAntiScreenshot = document.getElementById('toggleAntiScreenshot');
+            const blockedIpListContainer = document.getElementById('blockedIpList');
+            
+            onSnapshot(doc(db, 'settings', 'security'), (docSnap) => {
+                let secData = { antiScreenshot: false, blockedIPs: [] };
+                if(docSnap.exists()) secData = docSnap.data();
+
+                // Update Toggle
+                if(secData.antiScreenshot) {
+                    toggleAntiScreenshot.textContent = "Enabled";
+                    toggleAntiScreenshot.style.background = "#28a745";
+                } else {
+                    toggleAntiScreenshot.textContent = "Disabled";
+                    toggleAntiScreenshot.style.background = "#ccc";
+                }
+
+                toggleAntiScreenshot.onclick = async () => {
+                    await setDoc(doc(db, 'settings', 'security'), {
+                        antiScreenshot: !secData.antiScreenshot
+                    }, {merge: true});
+                };
+
+                // Update Blocked List Display
+                blockedIpListContainer.innerHTML = '';
+                if(!secData.blockedIPs || secData.blockedIPs.length === 0) {
+                    blockedIpListContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">No blocked IPs.</p>';
+                } else {
+                    secData.blockedIPs.forEach(ip => {
+                        const el = document.createElement('div');
+                        el.className = 'admin-list-item';
+                        el.innerHTML = `
+                            <div class="admin-item-info"><span>🌐 ${escapeHtml(ip)}</span></div>
+                            <button class="submit-btn unblock-ip-btn" data-ip="${escapeHtml(ip)}" style="background:#28a745; padding:6px 12px; font-size:12px;">Unblock</button>
+                        `;
+                        blockedIpListContainer.appendChild(el);
+                    });
+
+                    // Handle Unblock
+                    blockedIpListContainer.querySelectorAll('.unblock-ip-btn').forEach(btn => {
+                        btn.onclick = async () => {
+                            const ipToRemove = btn.dataset.ip;
+                            const newArray = secData.blockedIPs.filter(i => i !== ipToRemove);
+                            await setDoc(doc(db, 'settings', 'security'), { blockedIPs: newArray }, {merge: true});
+                            showToast("IP Unblocked", `${ipToRemove} has been restored.`, "✅");
+                        };
+                    });
+                }
+            });
 
             // Initialize default active target (Kate)
             targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
@@ -3598,15 +3774,20 @@
             }
         }
 
+        // FIX: Ensure AudioContext resumes on ANY user interaction (for iOS/Chrome policy)
+        // Check if context is defined before adding the listener
         const AudioContextWindow = window.AudioContext || window.webkitAudioContext;
         if (AudioContextWindow) {
-            audioContext = new AudioContextWindow(); 
+            audioContext = new AudioContextWindow(); // Initialize context early
             document.addEventListener('click', function() {
                 if (audioContext && audioContext.state === 'suspended') {
                     audioContext.resume().catch(e => console.error("Failed to resume context on click:", e));
                 }
-            }, { once: true }); 
+            }, { once: true }); // Use { once: true } for initial resume
+            
+            // For subsequent clicks, we handle context resume in mainPlayBtn.onclick
         }
+
 
     });
     </script>
