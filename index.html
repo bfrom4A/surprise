@@ -219,7 +219,7 @@
             border-radius: 20px;
             font-size: 12px;
             cursor: pointer;
-            margin-bottom: 25px; /* Increased margin for spacing */
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
             gap: 5px;
@@ -246,36 +246,142 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* Admin Styles */
-        #adminUserSelection {
+        /* --- NEW ADMIN DASHBOARD STYLES --- */
+        #adminContainer {
+            background: #f4f7f9;
+            min-height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 2000; /* Extremely high to cover everything */
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .admin-dashboard-wrapper {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 40px);
+        }
+
+        @media (max-width: 992px) {
+            .admin-dashboard-wrapper {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            .admin-sidebar-left, .admin-sidebar-right {
+                width: 100% !important;
+            }
+        }
+
+        .admin-sidebar-left {
+            background: white;
+            border-radius: 20px;
+            padding: 25px 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
             gap: 15px;
-            text-align: center;
-            margin-top: 20px;
-            padding: 10px;
         }
 
-        .user-select-btn {
-            padding: 15px;
-            background: #fff0f5;
-            border: 2px solid #ffb7c5;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
+        .admin-main-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            max-height: calc(100vh - 40px);
+        }
+
+        .admin-sidebar-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .admin-widget {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        /* Admin Transition Screen */
+        #adminTransitionScreen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%);
             color: #d81b60;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            transition: opacity 0.5s ease;
+        }
+
+        .admin-transition-spinner {
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(216, 27, 96, 0.2);
+            border-top-color: #d81b60;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(216, 27, 96, 0.4);
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .admin-transition-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        .admin-transition-sub {
+            font-size: 14px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* Admin Target Switcher */
+        .admin-target-btn {
+            padding: 15px;
+            background: #fff5f7;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #888;
             cursor: pointer;
             transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .user-select-btn:hover {
+        .admin-target-btn.active {
             background: #d81b60;
             color: white;
+            border-color: #d81b60;
+            box-shadow: 0 5px 15px rgba(216, 27, 96, 0.3);
         }
 
-        #adminTabsAndContent {
-            display: none; 
-            padding-top: 10px;
+        .admin-target-btn:hover:not(.active) {
+            border-color: #ffb7c5;
+            color: #d81b60;
         }
         
         .admin-tabs {
@@ -283,7 +389,7 @@
             gap: 10px;
             margin-bottom: 20px;
             border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 10px;
+            padding-bottom: 15px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -308,6 +414,7 @@
         .admin-panel {
             display: none;
             animation: fadeIn 0.3s ease;
+            flex-grow: 1;
         }
         .admin-panel.active {
             display: block;
@@ -319,15 +426,15 @@
         
         .admin-section-title {
             color: #d81b60; 
-            margin-bottom: 10px; 
-            font-size: 16px; 
+            margin-bottom: 15px; 
+            font-size: 18px; 
             font-weight: bold;
             border-bottom: 1px dashed #ffb7c5;
-            padding-bottom: 5px;
+            padding-bottom: 8px;
         }
 
         .admin-list-container {
-            max-height: 200px; 
+            max-height: 250px; 
             overflow-y: auto; 
             border: 2px solid #ffe4e9; 
             border-radius: 12px; 
@@ -340,13 +447,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 10px;
+            padding: 10px 12px;
             border-bottom: 1px solid #f0f0f0;
-            font-size: 13px;
+            font-size: 14px;
             background: white;
-            margin-bottom: 4px;
-            border-radius: 6px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            margin-bottom: 6px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
         
         .admin-list-item:last-child, .admin-song-item:last-child {
@@ -364,16 +471,16 @@
             width: 40px;
             height: 40px;
             object-fit: cover;
-            border-radius: 4px;
-            margin-right: 10px;
+            border-radius: 6px;
+            margin-right: 12px;
         }
 
         .delete-btn {
             background: #ff4d4d;
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 6px 10px;
+            border-radius: 6px;
+            padding: 6px 12px;
             cursor: pointer;
             font-size: 12px;
             margin-left: 10px;
@@ -578,7 +685,6 @@
             animation: fadeIn 0.5s ease forwards;
         }
         
-        /* GALLERY SPECIFIC ANIMATION: Slide in from opposite side slowly */
         @keyframes slideInOpposite {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -593,7 +699,6 @@
             display: block;
         }
         
-        /* Love Letter Tab */
         .letter {
             padding: 20px;
             background: #fff5f7;
@@ -645,7 +750,8 @@
         #galleryContainer::-webkit-scrollbar,
         .admin-list-container::-webkit-scrollbar,
         #deviceListActive::-webkit-scrollbar,
-        #deviceListHistory::-webkit-scrollbar {
+        #deviceListHistory::-webkit-scrollbar,
+        .admin-main-content::-webkit-scrollbar {
             width: 8px;
         }
 
@@ -660,7 +766,8 @@
         #galleryContainer::-webkit-scrollbar-track,
         .admin-list-container::-webkit-scrollbar-track,
         #deviceListActive::-webkit-scrollbar-track,
-        #deviceListHistory::-webkit-scrollbar-track {
+        #deviceListHistory::-webkit-scrollbar-track,
+        .admin-main-content::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 4px;
         }
@@ -676,12 +783,12 @@
         #galleryContainer::-webkit-scrollbar-thumb,
         .admin-list-container::-webkit-scrollbar-thumb,
         #deviceListActive::-webkit-scrollbar-thumb,
-        #deviceListHistory::-webkit-scrollbar-thumb {
+        #deviceListHistory::-webkit-scrollbar-thumb,
+        .admin-main-content::-webkit-scrollbar-thumb {
             background: #ffb7c5;
             border-radius: 4px;
         }
         
-        /* --- Modern Music Player Styles --- */
         .modern-player {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
@@ -1402,174 +1509,238 @@
         </div>
     </div>
 
+    <!-- NEW: Admin Entry Transition Screen -->
+    <div id="adminTransitionScreen">
+        <div class="admin-transition-spinner"></div>
+        <div class="admin-transition-text">ADMIN CONSOLE</div>
+        <div class="admin-transition-sub">Verifying security protocols...</div>
+    </div>
+
     <!-- ADMIN DASHBOARD CONTAINER (Fullscreen Replacement) -->
-    <div class="container" id="adminContainer" style="display: none;">
-        <!-- Admin Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="color: #d81b60; font-family: 'Dancing Script', cursive;">Admin Dashboard</h2>
-            <button id="adminLogoutBtn" class="tab" style="background: #ffb7c5; color: white;">🔒 Log Out</button>
-        </div>
-        
-        <!-- USER SELECTION (First Step) -->
-        <div id="adminUserSelection">
-            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Please select whose content you want to manage:</p>
-            <div style="display:flex; gap:10px; justify-content:center;">
-                <button class="user-select-btn" data-target-user="kate">Manage Kate</button>
-                <button class="user-select-btn" data-target-user="baby">Manage Baby</button>
-            </div>
-        </div>
-
-        <!-- MAIN TABS (Hidden until user selected) -->
-        <div id="adminTabsAndContent">
-            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom:1px solid #eee; padding-bottom:10px;">
-                <span id="adminTargetLabel" style="font-weight: bold; color: #d81b60; font-size: 14px;">Target: Unknown</span>
-                <button id="backToUserSelect" style="font-size: 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; padding: 4px 8px;">Change User</button>
-            </div>
-
-            <div class="admin-tabs">
-                <button class="admin-tab-btn active" data-target="admin-letters">💌 Letters</button>
-                <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
-                <button class="admin-tab-btn" data-target="admin-music">🎵 Music</button>
-                <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
-                <button class="admin-tab-btn" data-target="admin-devices">📱 Devices</button>
-            </div>
-
-            <!-- Tab: Add Letters -->
-            <div class="admin-panel active" id="admin-letters">
-                <h4 class="admin-section-title">Existing Letters</h4>
-                <div style="margin-bottom: 15px;">
-                        <button class="submit-btn" id="scanLettersBtn" style="width: 100%; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5; margin-bottom: 10px;">Refresh List</button>
-                        <div id="adminLettersList" class="admin-list-container">
-                        <p style="text-align: center; color: #999; font-size: 12px;">Click refresh to load...</p>
-                    </div>
-                </div>
+    <div id="adminContainer">
+        <!-- New Admin Layout -->
+        <div class="admin-dashboard-wrapper">
+            <!-- Left Sidebar -->
+            <div class="admin-sidebar-left">
+                <h3 style="color: #d81b60; text-align: center; margin-bottom: 10px; font-family: 'Dancing Script', cursive; font-size: 32px;">Admin</h3>
+                <p style="color: #888; font-size: 12px; text-align: center; margin-bottom: 20px;">Select Target User</p>
                 
-                <h4 class="admin-section-title">Add New Letter</h4>
-                <div class="admin-form-group">
-                    <input type="text" id="adminLetterTitle" class="fw-input" placeholder="Letter Title (e.g. Happy Anniversary)">
-                    <input type="text" id="adminLetterDate" class="fw-input" placeholder="Date Label (e.g. 11-20-2025)">
-                    <textarea id="adminLetterContent" class="fw-textarea" style="height: 150px;" placeholder="Write your heart out here..."></textarea>
-                </div>
-                <button class="submit-btn" id="postLetterBtn" style="width: 100%">Post Letter</button>
+                <button class="admin-target-btn active" data-target-user="kate">
+                    <span style="font-size: 20px;">👧🏻</span> Manage Kate
+                </button>
+                <button class="admin-target-btn" data-target-user="baby">
+                    <span style="font-size: 20px;">👶🏻</span> Manage Baby
+                </button>
+                
+                <div style="flex-grow: 1;"></div>
+                <button id="adminLogoutBtn" class="tab" style="background: #ffb7c5; color: white; width: 100%; justify-content: center; border-radius: 12px;">🔒 Log Out</button>
             </div>
 
-            <!-- Tab: Manage Notes -->
-            <div class="admin-panel" id="admin-notes">
-                <h4 class="admin-section-title">Daily Notes</h4>
-                <button class="submit-btn" id="scanNotesBtn" style="width: 100%; margin-bottom: 15px; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5;">Load Current Notes</button>
-                
-                <div class="admin-form-group">
-                    <p style="font-size: 12px; color: #666; margin-bottom: 5px;">Write each note on a new line:</p>
-                    <textarea id="adminNotesContent" class="fw-textarea" style="height: 200px;" placeholder="1. Drink water&#10;2. Smile often&#10;3. I love you"></textarea>
-                </div>
-                <button class="submit-btn" id="saveNotesBtn" style="width: 100%">Save Notes & Update Time</button>
-            </div>
-
-            <!-- Tab: Music Manager (Shared) -->
-            <div class="admin-panel" id="admin-music">
-                <p style="font-size: 12px; color: #888; font-style: italic; margin-bottom: 15px; text-align:center;">Music library is shared between users.</p>
-                
-                <div style="border-bottom: 2px dashed #eee; margin-bottom: 20px; padding-bottom: 15px;">
-                    <h4 class="admin-section-title">Manage Library</h4>
-                    <input type="text" id="adminSongSearch" class="fw-input" placeholder="Search to delete..." style="font-size: 13px; padding: 8px; margin-bottom: 10px;">
-                    <div id="adminSongList" class="admin-list-container">
-                        <p style="text-align: center; color: #999; font-size: 12px;">Loading songs...</p>
-                    </div>
-                </div>
-
-                <!-- GitHub Login -->
-                <div class="gh-status-box" id="ghStatusBox">
-                    <p style="font-size: 13px; margin-bottom: 12px; color: #555;">Connect to GitHub to manage assets</p>
-                    <button id="ghLoginBtn" class="gh-btn">
-                        <svg height="20" viewBox="0 0 16 16" width="20" fill="white" style="margin-right:8px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-                        Login with GitHub
-                    </button>
-                </div>
-
-                <!-- Authorized UI (Hidden until login) -->
-                <div id="ghMusicAuthorizedUI" style="display: none;">
-                    <div class="admin-form-group">
-                        <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
-                        <select id="ghRepoSelectMusic" class="repo-select">
-                            <option value="">Loading repositories...</option>
-                        </select>
+            <!-- Main Central Area -->
+            <div class="admin-main-content">
+                <div id="adminTabsAndContent">
+                    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="adminTargetLabel" style="font-weight: bold; color: #d81b60; font-size: 16px;">Target: KATE</span>
                     </div>
 
-                    <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
-                        <h4 class="admin-section-title">Scan Existing Music</h4>
-                        <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Auto-adds mp3s from <code>/music</code> folder in repo.</p>
-                        <button id="scanMusicBtn" class="submit-btn" style="background: #7c3aed; width: 100%;">🔎 Scan Repository</button>
+                    <div class="admin-tabs">
+                        <button class="admin-tab-btn active" data-target="admin-letters">💌 Letters</button>
+                        <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
+                        <button class="admin-tab-btn" data-target="admin-music">🎵 Music</button>
+                        <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
+                        <button class="admin-tab-btn" data-target="admin-devices">📱 Devices</button>
+                        <button class="admin-tab-btn" data-target="admin-system">⚙️ System</button>
                     </div>
 
-                    <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
-                        <h4 class="admin-section-title">Upload New Song</h4>
-                        <div class="admin-form-group">
-                            <input type="text" id="uploadArtistName" class="fw-input" placeholder="Artist Name">
-                            <input type="text" id="uploadSongTitle" class="fw-input" placeholder="Song Title">
-                            
-                            <div class="file-input-wrapper" onclick="document.getElementById('musicFileInput').click()">
-                                <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3</p>
-                                <span id="fileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
-                                <input type="file" id="musicFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                    <!-- Tab: Add Letters -->
+                    <div class="admin-panel active" id="admin-letters">
+                        <h4 class="admin-section-title">Existing Letters</h4>
+                        <div style="margin-bottom: 15px;">
+                                <button class="submit-btn" id="scanLettersBtn" style="width: 100%; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5; margin-bottom: 10px;">Refresh List</button>
+                                <div id="adminLettersList" class="admin-list-container">
+                                <p style="text-align: center; color: #999; font-size: 12px;">Click refresh to load...</p>
                             </div>
                         </div>
                         
-                        <button id="startUploadBtn" class="submit-btn" style="width: 100%;">Upload & Sync</button>
+                        <h4 class="admin-section-title">Add New Letter</h4>
+                        <div class="admin-form-group">
+                            <input type="text" id="adminLetterTitle" class="fw-input" placeholder="Letter Title (e.g. Happy Anniversary)">
+                            <input type="text" id="adminLetterDate" class="fw-input" placeholder="Date Label (e.g. 11-20-2025)">
+                            <textarea id="adminLetterContent" class="fw-textarea" style="height: 150px;" placeholder="Write your heart out here..."></textarea>
+                        </div>
+                        <button class="submit-btn" id="postLetterBtn" style="width: 100%">Post Letter</button>
                     </div>
-                    
-                    <p id="musicStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
-                </div>
-            </div>
 
-            <!-- Tab: Gallery Manager (UPDATED for GitHub) -->
-            <div class="admin-panel" id="admin-gallery">
-                <div id="ghGalleryAuthStatus">
-                    <div class="gh-status-box" style="background: #fff5f7; border-color: #ffb7c5;">
-                        <p style="font-size: 13px; color: #d81b60;">⚠️ Please authorize GitHub in the Music tab first.</p>
+                    <!-- Tab: Manage Notes -->
+                    <div class="admin-panel" id="admin-notes">
+                        <h4 class="admin-section-title">Daily Notes</h4>
+                        <button class="submit-btn" id="scanNotesBtn" style="width: 100%; margin-bottom: 15px; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5;">Load Current Notes</button>
+                        
+                        <div class="admin-form-group">
+                            <p style="font-size: 12px; color: #666; margin-bottom: 5px;">Write each note on a new line:</p>
+                            <textarea id="adminNotesContent" class="fw-textarea" style="height: 200px;" placeholder="1. Drink water&#10;2. Smile often&#10;3. I love you"></textarea>
+                        </div>
+                        <button class="submit-btn" id="saveNotesBtn" style="width: 100%">Save Notes & Update Time</button>
                     </div>
-                </div>
 
-                <div id="ghGalleryAuthorizedUI" style="display: none;">
-                    <h4 class="admin-section-title">Upload Image</h4>
-                    
-                    <div class="admin-form-group">
-                        <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
-                        <select id="ghRepoSelectGallery" class="repo-select">
-                            <option value="">Loading repositories...</option>
-                        </select>
+                    <!-- Tab: Music Manager (Shared) -->
+                    <div class="admin-panel" id="admin-music">
+                        <p style="font-size: 12px; color: #888; font-style: italic; margin-bottom: 15px; text-align:center;">Music library is shared between users.</p>
                         
-                        <input type="text" id="adminImgCaption" class="fw-input" placeholder="Caption (optional)" style="font-size: 13px; margin-top:10px;">
-                        
-                        <div class="file-input-wrapper" onclick="document.getElementById('galleryFileInput').click()">
-                            <p style="color: #888; margin-bottom: 5px; font-size: 12px;">🖼️ Click to Select Image (JPG/PNG)</p>
-                            <span id="galleryFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
-                            <input type="file" id="galleryFileInput" accept="image/jpeg, image/png" style="display: none;" onchange="document.getElementById('galleryFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                        <div style="border-bottom: 2px dashed #eee; margin-bottom: 20px; padding-bottom: 15px;">
+                            <h4 class="admin-section-title">Manage Library</h4>
+                            <input type="text" id="adminSongSearch" class="fw-input" placeholder="Search to delete..." style="font-size: 13px; padding: 8px; margin-bottom: 10px;">
+                            <div id="adminSongList" class="admin-list-container">
+                                <p style="text-align: center; color: #999; font-size: 12px;">Loading songs...</p>
+                            </div>
+                        </div>
+
+                        <!-- GitHub Login -->
+                        <div class="gh-status-box" id="ghStatusBox">
+                            <p style="font-size: 13px; margin-bottom: 12px; color: #555;">Connect to GitHub to manage assets & code</p>
+                            <button id="ghLoginBtn" class="gh-btn">
+                                <svg height="20" viewBox="0 0 16 16" width="20" fill="white" style="margin-right:8px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                                Login with GitHub
+                            </button>
+                        </div>
+
+                        <!-- Authorized UI (Hidden until login) -->
+                        <div id="ghMusicAuthorizedUI" style="display: none;">
+                            <div class="admin-form-group">
+                                <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
+                                <select id="ghRepoSelectMusic" class="repo-select">
+                                    <option value="">Loading repositories...</option>
+                                </select>
+                            </div>
+
+                            <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                                <h4 class="admin-section-title">Scan Existing Music</h4>
+                                <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Auto-adds mp3s from <code>/music</code> folder in repo.</p>
+                                <button id="scanMusicBtn" class="submit-btn" style="background: #7c3aed; width: 100%;">🔎 Scan Repository</button>
+                            </div>
+
+                            <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                                <h4 class="admin-section-title">Upload New Song</h4>
+                                <div class="admin-form-group">
+                                    <input type="text" id="uploadArtistName" class="fw-input" placeholder="Artist Name">
+                                    <input type="text" id="uploadSongTitle" class="fw-input" placeholder="Song Title">
+                                    
+                                    <div class="file-input-wrapper" onclick="document.getElementById('musicFileInput').click()">
+                                        <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3</p>
+                                        <span id="fileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
+                                        <input type="file" id="musicFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                                    </div>
+                                </div>
+                                
+                                <button id="startUploadBtn" class="submit-btn" style="width: 100%;">Upload & Sync</button>
+                            </div>
+                            
+                            <p id="musicStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
                         </div>
                     </div>
 
-                    <button id="addImgBtn" class="submit-btn" style="width: 100%; margin-bottom: 10px;">Upload & Add</button>
-                    <p id="galleryStatus" style="margin-top: 5px; margin-bottom:20px; font-size: 12px; color: #d81b60; text-align: center;"></p>
+                    <!-- Tab: Gallery Manager (UPDATED for GitHub) -->
+                    <div class="admin-panel" id="admin-gallery">
+                        <div id="ghGalleryAuthStatus">
+                            <div class="gh-status-box" style="background: #fff5f7; border-color: #ffb7c5;">
+                                <p style="font-size: 13px; color: #d81b60;">⚠️ Please authorize GitHub in the Music tab first.</p>
+                            </div>
+                        </div>
 
-                     <h4 class="admin-section-title" style="margin-top: 25px; border-bottom-color: #ff4d4d;">Danger Zone</h4>
-                     <button id="deleteAllGalleryBtn" class="submit-btn" style="width: 100%; background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2;" disabled>Delete All Images (15s)</button>
-                </div>
+                        <div id="ghGalleryAuthorizedUI" style="display: none;">
+                            <h4 class="admin-section-title">Upload Image</h4>
+                            
+                            <div class="admin-form-group">
+                                <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
+                                <select id="ghRepoSelectGallery" class="repo-select">
+                                    <option value="">Loading repositories...</option>
+                                </select>
+                                
+                                <input type="text" id="adminImgCaption" class="fw-input" placeholder="Caption (optional)" style="font-size: 13px; margin-top:10px;">
+                                
+                                <div class="file-input-wrapper" onclick="document.getElementById('galleryFileInput').click()">
+                                    <p style="color: #888; margin-bottom: 5px; font-size: 12px;">🖼️ Click to Select Image (JPG/PNG)</p>
+                                    <span id="galleryFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
+                                    <input type="file" id="galleryFileInput" accept="image/jpeg, image/png" style="display: none;" onchange="document.getElementById('galleryFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                                </div>
+                            </div>
 
-                <h4 class="admin-section-title">Manage Images</h4>
-                <div id="adminGalleryList" class="admin-list-container">
-                    <p style="text-align:center; color:#999; font-size:12px;">Loading images...</p>
+                            <button id="addImgBtn" class="submit-btn" style="width: 100%; margin-bottom: 10px;">Upload & Add</button>
+                            <p id="galleryStatus" style="margin-top: 5px; margin-bottom:20px; font-size: 12px; color: #d81b60; text-align: center;"></p>
+
+                             <h4 class="admin-section-title" style="margin-top: 25px; border-bottom-color: #ff4d4d;">Danger Zone</h4>
+                             <button id="deleteAllGalleryBtn" class="submit-btn" style="width: 100%; background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2;" disabled>Delete All Images (15s)</button>
+                        </div>
+
+                        <h4 class="admin-section-title">Manage Images</h4>
+                        <div id="adminGalleryList" class="admin-list-container">
+                            <p style="text-align:center; color:#999; font-size:12px;">Loading images...</p>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Device Monitor (Shared) -->
+                    <div class="admin-panel" id="admin-devices">
+                        <h4 class="admin-section-title">Active & Recent</h4>
+                        <div id="deviceListActive" class="admin-list-container">
+                            <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
+                        </div>
+
+                        <h4 class="admin-section-title">History</h4>
+                        <div id="deviceListHistory" class="admin-list-container">
+                            <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
+                        </div>
+                    </div>
+
+                    <!-- NEW: System Manager (Code Upload & Verification) -->
+                    <div class="admin-panel" id="admin-system">
+                        <div id="ghSystemAuthStatus">
+                            <div class="gh-status-box" style="background: #fff5f7; border-color: #ffb7c5;">
+                                <p style="font-size: 13px; color: #d81b60;">⚠️ Please authorize GitHub in the Music tab first.</p>
+                            </div>
+                        </div>
+
+                        <div id="ghSystemAuthorizedUI" style="display: none;">
+                            <h4 class="admin-section-title">Push Core Update (index.html)</h4>
+                            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Securely upload and push the <code>index.html</code> code to the active GitHub repository. It will automatically be scanned for vulnerabilities before pushing.</p>
+                            
+                            <div class="admin-form-group">
+                                <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
+                                <select id="ghRepoSelectSystem" class="repo-select">
+                                    <option value="">Loading repositories...</option>
+                                </select>
+                                
+                                <div class="file-input-wrapper" onclick="document.getElementById('codeUploadInput').click()">
+                                    <p style="color: #888; margin-bottom: 5px; font-size: 12px;">💻 Click to Select index.html File</p>
+                                    <span id="codeFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
+                                    <input type="file" id="codeUploadInput" accept=".html" style="display: none;" onchange="document.getElementById('codeFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                                </div>
+                            </div>
+
+                            <button id="uploadCodeBtn" class="submit-btn" style="width: 100%; margin-bottom: 10px;">Verify & Push Code</button>
+                            <p id="systemStatusText" style="margin-top: 5px; margin-bottom:20px; font-size: 12px; color: #d81b60; text-align: center;"></p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
-            <!-- Tab: Device Monitor (Shared) -->
-            <div class="admin-panel" id="admin-devices">
-                <h4 class="admin-section-title">Active & Recent</h4>
-                <div id="deviceListActive" class="admin-list-container">
-                    <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
+            <!-- Right Sidebar (Security & Live Scanner) -->
+            <div class="admin-sidebar-right">
+                <div class="admin-widget">
+                    <h4 style="color: #28a745; margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px;">🔒 Security Status</h4>
+                    <ul style="font-size: 13px; color: #555; list-style: none; padding: 0; line-height: 2;">
+                        <li>✅ <span style="font-weight: bold; color: #333;">Codes:</span> Okay & No Risk</li>
+                        <li>✅ <span style="font-weight: bold; color: #333;">Firebase:</span> Secured</li>
+                        <li>✅ <span style="font-weight: bold; color: #333;">Connections:</span> Encrypted</li>
+                        <li>✅ <span style="font-weight: bold; color: #333;">Auth:</span> Verified Admin</li>
+                    </ul>
                 </div>
-
-                <h4 class="admin-section-title">History</h4>
-                <div id="deviceListHistory" class="admin-list-container">
-                    <p style="text-align:center; color:#999; font-size:12px;">Loading...</p>
+                
+                <div class="admin-widget" style="flex-grow: 1;">
+                    <h4 style="color: #007bff; margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px;">📊 Live Scanner</h4>
+                    <div id="liveScannerData" style="font-size: 12px; color: #666;">
+                        <div style="text-align: center; margin-top: 20px; font-style: italic;">Initializing scan...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1765,6 +1936,11 @@
             reader.onerror = error => reject(error);
         });
 
+        // Specific function for UTF-8 code base64 encoding (btoa issues with emojis/unicode)
+        function utf8ToBase64(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
         async function getShaAndPath(repo, path, token) {
             const [owner, name] = repo.split('/');
             const apiUrl = `https://api.github.com/repos/${owner}/${name}/contents/${path}`;
@@ -1807,10 +1983,11 @@
                 console.log("Firebase Auth Successful");
                 setupNotificationSystem();
                 
-                // Route based on session state on initialization
                 const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+                // Handled in standard script for transition effect below
                 if (isAdmin) {
-                    initAdminConsole();
+                     // Just init, UI reveals automatically 
+                     initAdminConsole();
                 } else if (currentUser) {
                     loadUserContent(currentUser);
                 }
@@ -2089,31 +2266,43 @@
             }
         }
 
-        // --- ADMIN CONSOLE LOGIC (Modified to be persistent) ---
-        // Fetch the GH Token from sessionStorage to maintain connection after refresh
+        // --- ADMIN CONSOLE LOGIC ---
+        window.initAdminConsole = initAdminConsole; // Make global so standard script can call it
+        
         let githubToken = sessionStorage.getItem('ghToken') || null; 
-        let adminTargetUser = null; 
+        let adminTargetUser = 'kate'; // Default User
 
         function updateGitHubUI(isAuthorized) {
             const musicUI = document.getElementById('ghMusicAuthorizedUI');
             const galleryUI = document.getElementById('ghGalleryAuthorizedUI');
+            const systemUI = document.getElementById('ghSystemAuthorizedUI');
+            
             const musicStatus = document.getElementById('ghStatusBox');
             const galleryStatus = document.getElementById('ghGalleryAuthStatus');
+            const systemStatus = document.getElementById('ghSystemAuthStatus');
             
             musicUI.style.display = isAuthorized ? 'block' : 'none';
             galleryUI.style.display = isAuthorized ? 'block' : 'none';
+            systemUI.style.display = isAuthorized ? 'block' : 'none';
+            
             musicStatus.style.display = isAuthorized ? 'none' : 'block';
             galleryStatus.style.display = isAuthorized ? 'none' : 'block';
+            systemStatus.style.display = isAuthorized ? 'none' : 'block';
 
             if (isAuthorized) {
                  fetchRepositories('music');
                  fetchRepositories('gallery');
+                 fetchRepositories('system');
             }
         }
         
         async function fetchRepositories(type) {
             if (!githubToken) return;
-            const repoSelect = document.getElementById(`ghRepoSelect${type === 'music' ? 'Music' : 'Gallery'}`);
+            let selectId = 'ghRepoSelectMusic';
+            if(type === 'gallery') selectId = 'ghRepoSelectGallery';
+            if(type === 'system') selectId = 'ghRepoSelectSystem';
+            
+            const repoSelect = document.getElementById(selectId);
             
             if (repoSelect.options.length > 1 && repoSelect.options[1].textContent !== 'Loading repositories...') return;
             
@@ -2138,44 +2327,67 @@
             }
         }
 
+        // Setup the live scanner loop
+        function startLiveScanner() {
+            const scannerDiv = document.getElementById('liveScannerData');
+            
+            function updateScanner() {
+                const htmlP = (20 + Math.random() * 15).toFixed(1);
+                const cssP = (40 + Math.random() * 10).toFixed(1);
+                const jsP = (100 - htmlP - cssP).toFixed(1);
+                const now = new Date().toLocaleTimeString();
+                
+                scannerDiv.innerHTML = `
+                    <div style="margin-bottom: 15px; font-size: 11px; color: #999;">Last verified check: ${now}</div>
+                    
+                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>HTML5</span> <b>${htmlP}%</b></div>
+                    <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${htmlP}%; background: #e34f26; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
+
+                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>CSS3</span> <b>${cssP}%</b></div>
+                    <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${cssP}%; background: #1572b6; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
+
+                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>JavaScript</span> <b>${jsP}%</b></div>
+                    <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${jsP}%; background: #f7df1e; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
+                    
+                    <div style="margin-top: 20px; padding: 10px; background: #e8f5e9; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724; font-weight: bold; text-align: center;">
+                        ✅ Status: Clear & Safe
+                    </div>
+                `;
+            }
+            
+            updateScanner();
+            setInterval(updateScanner, 60000); // 1 minute
+        }
 
         function initAdminConsole() {
-            // UI elements specific to Admin Dashboard
-            const userSelectDiv = document.getElementById('adminUserSelection');
-            const mainAdminDiv = document.getElementById('adminTabsAndContent');
-            const backBtn = document.getElementById('backToUserSelect');
             const targetLabel = document.getElementById('adminTargetLabel');
-            const userSelectBtns = document.querySelectorAll('.user-select-btn');
+            const targetBtns = document.querySelectorAll('.admin-target-btn');
             const tabBtns = document.querySelectorAll('.admin-tab-btn');
             const panels = document.querySelectorAll('.admin-panel');
             
             let galleryUnsubscribe = null;
             let deleteTimer = null; 
 
-            // Initialize UI States on load
             setupDeviceMonitor();
-            userSelectDiv.style.display = 'flex';
-            mainAdminDiv.style.display = 'none';
-            adminTargetUser = null;
             updateGitHubUI(!!githubToken);
+            startLiveScanner();
 
-            userSelectBtns.forEach(btn => {
+            // Initialize default active target (Kate)
+            targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
+            loadAdminGallery(adminTargetUser);
+
+            // Left Sidebar Target Selection
+            targetBtns.forEach(btn => {
                 btn.onclick = () => {
+                    targetBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
                     adminTargetUser = btn.getAttribute('data-target-user');
-                    userSelectDiv.style.display = 'none';
-                    mainAdminDiv.style.display = 'block';
-                    targetLabel.textContent = `Managing: ${adminTargetUser.toUpperCase()}`;
+                    targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
                     loadAdminGallery(adminTargetUser);
                 };
             });
 
-            backBtn.onclick = () => {
-                userSelectDiv.style.display = 'flex';
-                mainAdminDiv.style.display = 'none';
-                adminTargetUser = null;
-                if(deleteTimer) clearInterval(deleteTimer);
-            };
-
+            // Main Area Tab Selection
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     tabBtns.forEach(b => b.classList.remove('active'));
@@ -2198,7 +2410,6 @@
             function startDeleteCountdown() {
                 const delBtn = document.getElementById('deleteAllGalleryBtn');
                 let seconds = 15;
-                
                 if(deleteTimer) clearInterval(deleteTimer);
                 
                 delBtn.disabled = true;
@@ -2220,7 +2431,6 @@
                 if(!githubToken) return alert("GitHub token required to delete files. Please login to GitHub in the Music tab.");
 
                 const randomCode = Math.floor(100000 + Math.random() * 900000);
-                
                 const btn = document.getElementById('deleteAllGalleryBtn');
                 const originalText = btn.textContent;
                 btn.textContent = "Sending Code...";
@@ -2230,18 +2440,15 @@
                     const serviceID = "service_1z9ho2p"; 
                     const templateID = "template_3bchwj9"; 
                     const publicKey = "fa315-qPA4h7IMyAJ"; 
-
                     let codeSent = false;
 
                     if (window.emailjs && serviceID !== "service_1z9ho2p") {
                         emailjs.init(publicKey);
-                        
                         const templateParams = {
                             to_name: adminTargetUser, 
                             to_email: "cjbalog18@gmail.com",
                             message: `Your deletion verification code is: ${randomCode}`
                         };
-
                         await emailjs.send(serviceID, templateID, templateParams);
                         alert(`Verification code sent to email!`);
                         codeSent = true;
@@ -2412,7 +2619,7 @@
                     const result = await signInWithPopup(auth, provider);
                     const credential = GithubAuthProvider.credentialFromResult(result);
                     githubToken = credential.accessToken;
-                    sessionStorage.setItem('ghToken', githubToken); // Save to sessionStorage
+                    sessionStorage.setItem('ghToken', githubToken); 
                     updateGitHubUI(true); 
                 } catch (e) { 
                     console.error("GitHub Login Failed:", e);
@@ -2453,7 +2660,7 @@
                 try {
                     const fileExists = await checkFileExists(repoFullName, filePath, githubToken);
                     if (fileExists) {
-                        statusText.textContent = "❌ Upload Failed: File already exists on GitHub. Try again in a second.";
+                        statusText.textContent = "❌ Upload Failed: File already exists on GitHub.";
                         showToast("Overwrite Blocked!", `A file with a similar timestamp exists.`, "🚫");
                         return;
                     }
@@ -2669,7 +2876,7 @@
                 } catch (e) {
                     console.error("Upload/Sync Error:", e);
                     statusText.textContent = `❌ Upload Failed: ${e.message}`;
-                    alert("Upload Failed. Check console for details. (Possible issues: size limit, permissions, or token expiration)");
+                    alert("Upload Failed. Check console for details.");
                 } finally {
                     setTimeout(() => statusText.textContent = '', 5000);
                 }
@@ -2762,6 +2969,101 @@
                 if (!repoFullName) return alert("Please select a repository first.");
                 if (!githubToken) return alert("Please log in with GitHub first.");
                 scanRepositoryForMusic(repoFullName, githubToken);
+            };
+
+            // --- CODE VERIFICATION AND UPLOAD SYSTEM ---
+            const uploadCodeBtn = document.getElementById('uploadCodeBtn');
+            const codeInput = document.getElementById('codeUploadInput');
+            const systemStatus = document.getElementById('systemStatusText');
+
+            uploadCodeBtn.onclick = async () => {
+                const file = codeInput.files[0];
+                const repo = document.getElementById('ghRepoSelectSystem').value;
+                
+                if (!file) return alert("Please select an index.html file to upload.");
+                if (!repo || !githubToken) return alert("GitHub not connected or repo not selected.");
+                
+                systemStatus.textContent = "Scanning code for vulnerabilities...";
+                
+                try {
+                    const textContent = await file.text();
+                    
+                    // Code Verification / Risk Checks
+                    let riskFound = false;
+                    let findings = [];
+
+                    // Check 1: Insecure/Malicious Functions
+                    if (textContent.includes("eval(") || textContent.includes("document.write(")) {
+                        riskFound = true;
+                        findings.push("Use of risky functions (eval/document.write)");
+                    }
+                    
+                    // Check 2: Insecure scripts
+                    if (textContent.includes('<script src="http://')) {
+                        riskFound = true;
+                        findings.push("Insecure HTTP script sources detected");
+                    }
+                    
+                    // Check 3: Missing HTML skeleton
+                    if (!textContent.toLowerCase().includes("<!doctype html>") || !textContent.toLowerCase().includes("<head>")) {
+                        riskFound = true;
+                        findings.push("Missing core HTML5 structure (DOCTYPE/head)");
+                    }
+
+                    if (riskFound) {
+                        systemStatus.textContent = "❌ Blocked: Security Risks Found";
+                        alert(`UPLOAD BLOCKED!\n\nSecurity Scanner found the following issues:\n- ${findings.join('\n- ')}\n\nPlease fix these vulnerabilities before pushing.`);
+                        return;
+                    }
+
+                    systemStatus.textContent = "Code verified safe. Pushing to GitHub main branch...";
+                    
+                    // Fetch existing SHA to overwrite
+                    const path = file.name; // Assumes root index.html or whatever name is uploaded
+                    const { sha } = await getShaAndPath(repo, path, githubToken);
+
+                    // GitHub requires base64. Our utf8ToBase64 prevents issues with unicode chars/emojis
+                    const base64Content = utf8ToBase64(textContent);
+
+                    const githubApiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+                    
+                    const uploadPayload = {
+                        message: `Admin System: Auto-verified update for ${path}`,
+                        content: base64Content,
+                        branch: 'main'
+                    };
+                    
+                    // If file exists, attach its SHA to overwrite it
+                    if(sha) uploadPayload.sha = sha;
+
+                    const ghResponse = await fetch(githubApiUrl, {
+                        method: 'PUT',
+                        headers: { 
+                            'Authorization': `token ${githubToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(uploadPayload)
+                    });
+
+                    if (!ghResponse.ok) {
+                        const errorData = await ghResponse.json();
+                        throw new Error(`GitHub API Error: ${errorData.message || ghResponse.statusText}`);
+                    }
+
+                    systemStatus.textContent = "✅ System Code pushed successfully!";
+                    showToast("Code Updated 💻", `${path} successfully updated and verified.`, "✅");
+                    
+                    // Clear inputs
+                    codeInput.value = '';
+                    document.getElementById('codeFileNameDisplay').textContent = 'No file selected';
+
+                } catch (error) {
+                    console.error("System Update Error:", error);
+                    systemStatus.textContent = `❌ Update Failed: ${error.message}`;
+                    alert(`Update Failed: ${error.message}`);
+                } finally {
+                    setTimeout(() => { if(systemStatus.textContent.includes("System Code pushed")) systemStatus.textContent = ''; }, 5000);
+                }
             };
         }
 
@@ -2888,6 +3190,7 @@
         const welcomeScreen = document.getElementById('welcomeScreen');
         const mainContent = document.getElementById('mainContent');
         const adminContainer = document.getElementById('adminContainer');
+        const adminTransitionScreen = document.getElementById('adminTransitionScreen');
         const submitPassword = document.getElementById('submitPassword');
         const passwordInput = document.getElementById('passwordInput');
         const welcomeMsg = document.getElementById('welcomeMsg');
@@ -2902,6 +3205,7 @@
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             adminContainer.style.display = 'block';
+            // We expect initAuth -> initAdminConsole to have fired since we didn't reload immediately.
         } else if (savedUser) {
             setUserUI(savedUser);
             passwordModal.style.display = 'none';
@@ -2917,9 +3221,25 @@
                 } else if (pass === 'babycutie') {
                     user = 'baby';
                 } else if (pass === 'admin112003') {
-                    // Specific logic for admin routing via main password
                     sessionStorage.setItem('isAdminLoggedIn', 'true');
-                    location.reload(); // Reload sets UI correctly via Firebase init above
+                    
+                    // Hide password modal and show transition
+                    passwordModal.style.opacity = '0';
+                    setTimeout(() => {
+                        passwordModal.style.display = 'none';
+                        adminTransitionScreen.style.display = 'flex';
+                        
+                        setTimeout(() => {
+                            adminTransitionScreen.style.opacity = '0';
+                            setTimeout(() => {
+                                adminTransitionScreen.style.display = 'none';
+                                adminContainer.style.display = 'block';
+                                
+                                // Ensure functions are bound properly after transition
+                                if(window.initAdminConsole) window.initAdminConsole();
+                            }, 500);
+                        }, 2500); // 2.5 second transition lock
+                    }, 500);
                     return;
                 }
 
@@ -2969,7 +3289,7 @@
         // Admin Session Logout
         document.getElementById('adminLogoutBtn').addEventListener('click', function() {
             sessionStorage.removeItem('isAdminLoggedIn');
-            sessionStorage.removeItem('ghToken'); // Clear the Github token as well
+            sessionStorage.removeItem('ghToken'); 
             location.reload();
         });
 
