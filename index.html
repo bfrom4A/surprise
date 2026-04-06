@@ -2994,13 +2994,17 @@
 
         window.updateUserStatus = async (id, newStatus) => {
             try {
-                await updateDoc(doc(db, 'app_users', id), {
-                    status: newStatus,
-                    reactivationMessage: newStatus === 'approved' ? '' : undefined
-                });
+                const updatePayload = { status: newStatus };
+                if (newStatus === 'approved') {
+                    updatePayload.reactivationMessage = '';
+                }
+                
+                await updateDoc(doc(db, 'app_users', id), updatePayload);
+                
                 if (window.notifyUser && newStatus === 'approved') showToast("User Approved", "Account is now active.", "✅");
             } catch (e) {
-                alert("Error updating user status.");
+                console.error("Status Update Error:", e);
+                alert("Error updating user status: " + e.message);
             }
         };
 
