@@ -1594,12 +1594,40 @@
     <!-- TULIP RAIN CONTAINER -->
     <div id="tulipRainContainer"></div>
 
-    <!-- Password Modal -->
+    <!-- Password Modal with Dynamic Flow -->
     <div class="password-modal" id="passwordModal">
-        <div class="password-content">
-            <h2>Enter the secret code</h2>
+        <!-- Main Login Screen -->
+        <div class="password-content" id="loginContent">
+            <h2>Welcome</h2>
+            <input type="text" class="password-input" id="loginUsername" placeholder="Username (Leave blank for secret word)" style="margin-bottom: 10px;">
             <input type="password" class="password-input" id="passwordInput" placeholder="The special word...">
-            <button class="submit-btn" id="submitPassword">Enter</button>
+            <button class="submit-btn" id="submitPassword" style="width: 100%; margin-bottom: 10px;">Enter</button>
+            <p id="showRegisterBtn" style="margin-top: 10px; font-size: 13px; color: #d81b60; cursor: pointer; text-decoration: underline;">Or register an account</p>
+        </div>
+
+        <!-- Registration Screen -->
+        <div class="password-content" id="registerContent" style="display: none;">
+            <h2>Create Account</h2>
+            <input type="text" class="password-input" id="regUsername" placeholder="Choose a Username" style="margin-bottom: 10px;">
+            <input type="password" class="password-input" id="regPassword" placeholder="Choose a Password" style="margin-bottom: 10px;">
+            <button class="submit-btn" id="submitRegister" style="width: 100%; margin-bottom: 10px;">Register</button>
+            <p id="showLoginBtn" style="margin-top: 10px; font-size: 13px; color: #888; cursor: pointer;">Back to Login</p>
+        </div>
+
+        <!-- Account Pending Screen -->
+        <div class="password-content" id="pendingContent" style="display: none;">
+            <h2 style="color: #ff9800;">Pending Approval</h2>
+            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Your account has been created successfully. Please wait for Superadmin approval before you can log in.</p>
+            <button class="submit-btn" id="pendingBackBtn" style="width: 100%; margin-bottom: 10px;">Back to Login</button>
+        </div>
+
+        <!-- Account Deactivated Screen -->
+        <div class="password-content" id="deactivatedContent" style="display: none;">
+            <h2 style="color: #ff4d4d;">Account Deactivated</h2>
+            <p style="font-size: 14px; color: #555; margin-bottom: 15px;">Your account has been deactivated by the administrator.</p>
+            <textarea id="reactivationMsg" class="fw-textarea" placeholder="Write a message to request reactivation..." style="height: 80px;"></textarea>
+            <button class="submit-btn" id="sendReactivationBtn" style="width: 100%; margin-bottom: 10px;">Send Request</button>
+            <p id="deactivatedBackBtn" style="margin-top: 10px; font-size: 13px; color: #888; cursor: pointer;">Back to Login</p>
         </div>
     </div>
 
@@ -1625,6 +1653,9 @@
                     <span style="font-size: 20px;">👶🏻</span> Manage Baby
                 </button>
                 
+                <!-- Dynamic Target Users Container -->
+                <div id="dynamicAdminTargets" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
+                
                 <div style="flex-grow: 1;"></div>
                 <button id="adminLogoutBtn" class="tab" style="background: #ffb7c5; color: white; width: 100%; justify-content: center; border-radius: 12px;">🔒 Log Out</button>
             </div>
@@ -1645,6 +1676,7 @@
                         <button class="admin-tab-btn" data-target="admin-system">⚙️ System</button>
                         <button class="admin-tab-btn" data-target="admin-security">🛡️ Security</button>
                         <button class="admin-tab-btn" data-target="admin-maintenance">🚧 Maintenance</button>
+                        <button class="admin-tab-btn" data-target="admin-users">👥 Users</button>
                     </div>
 
                     <!-- Tab: Add Letters -->
@@ -1816,7 +1848,7 @@
                         </div>
                     </div>
 
-                    <!-- NEW: Security Tab -->
+                    <!-- Security Tab -->
                     <div class="admin-panel" id="admin-security">
                         <h4 class="admin-section-title">Global Security Settings</h4>
                         
@@ -1836,7 +1868,7 @@
                         </div>
                     </div>
 
-                    <!-- NEW: Maintenance Tab -->
+                    <!-- Maintenance Tab -->
                     <div class="admin-panel" id="admin-maintenance">
                         <h4 class="admin-section-title">Schedule Maintenance</h4>
                         <div class="admin-widget" style="margin-bottom: 20px;">
@@ -1865,6 +1897,27 @@
                                 <h4 class="admin-section-title" style="color:#ff4d4d; border-bottom: none; margin-bottom: 10px;">Emergency Action</h4>
                                 <button id="btnEmergencyMaintenance" class="submit-btn" style="width: 100%; background: #ff4d4d; border: 1px solid #ffcdd2;">🚨 Emergency Maintenance (+1 Hour)</button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- NEW: Users Management Tab -->
+                    <div class="admin-panel" id="admin-users">
+                        <h4 class="admin-section-title">User Accounts Management</h4>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Review user registrations and handle account status.</p>
+                        
+                        <h5 style="color: #d81b60; margin-top: 10px;">Pending Accounts</h5>
+                        <div id="adminPendingUsers" class="admin-list-container">
+                            <p style="text-align:center; font-size:12px; color:#999;">Loading pending users...</p>
+                        </div>
+                        
+                        <h5 style="color: #28a745; margin-top: 20px;">Approved Accounts</h5>
+                        <div id="adminApprovedUsers" class="admin-list-container">
+                            <p style="text-align:center; font-size:12px; color:#999;">Loading approved users...</p>
+                        </div>
+
+                        <h5 style="color: #ff4d4d; margin-top: 20px;">Deactivated Accounts (Requests)</h5>
+                        <div id="adminDeactivatedUsers" class="admin-list-container">
+                            <p style="text-align:center; font-size:12px; color:#999;">Loading deactivated users...</p>
                         </div>
                     </div>
 
@@ -2056,7 +2109,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithPopup, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         
         const firebaseConfig = {
@@ -2075,6 +2128,7 @@
         const db = getFirestore(app);
         
         let currentUser = sessionStorage.getItem('loggedInUser') || null; 
+        let currentDeactivatedUserId = null; // Store ID for reactivation request
         
         // --- GLOBAL SECURITY & BLOCKING LOGIC ---
         let userIPAddress = 'Unknown IP';
@@ -2465,15 +2519,6 @@
             };
         }
 
-        function showToast(title, body, icon) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `<div class="toast-icon">${icon || '🔔'}</div><div class="toast-content"><div class="toast-title">${escapeHtml(title)}</div><div class="toast-msg">${escapeHtml(body)}</div></div>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 500); }, 4000);
-        }
-
         window.logDeviceLogin = async function(user) {
             try {
                 const userAgent = navigator.userAgent;
@@ -2843,6 +2888,122 @@
             setInterval(updateScanner, 60000); // 1 minute
         }
 
+        // --- ADMIN USER MANAGEMENT SUB-ROUTINE ---
+        function setupAdminUserManagement() {
+            const pendingContainer = document.getElementById('adminPendingUsers');
+            const approvedContainer = document.getElementById('adminApprovedUsers');
+            const deactivatedContainer = document.getElementById('adminDeactivatedUsers');
+            const dynamicTargets = document.getElementById('dynamicAdminTargets');
+
+            let isInitialLoad = true;
+
+            onSnapshot(collection(db, 'app_users'), (snap) => {
+                
+                // Real-time notifications for superadmin regarding updates
+                if (!isInitialLoad) {
+                    snap.docChanges().forEach(change => {
+                        const data = change.doc.data();
+                        if (change.type === 'modified' && data.status === 'deactivated' && data.reactivationMessage) {
+                            if (window.notifyUser) window.notifyUser("New Reactivation Request", `${data.username} sent a message.`, "🔔");
+                        }
+                        if (change.type === 'added' && data.status === 'pending') {
+                            if (window.notifyUser) window.notifyUser("New User Registration", `${data.username} is waiting for approval.`, "👥");
+                        }
+                    });
+                }
+                isInitialLoad = false;
+
+                pendingContainer.innerHTML = '';
+                approvedContainer.innerHTML = '';
+                deactivatedContainer.innerHTML = '';
+                
+                if (dynamicTargets) dynamicTargets.innerHTML = ''; // Rebuild dynamic targets
+                
+                if (snap.empty) {
+                    pendingContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No pending users.</p>';
+                    approvedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No approved users.</p>';
+                    deactivatedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No deactivated users.</p>';
+                    return;
+                }
+
+                snap.forEach(userDoc => {
+                    const data = userDoc.data();
+                    const id = userDoc.id;
+                    
+                    const item = document.createElement('div');
+                    item.className = 'admin-list-item';
+                    
+                    if (data.status === 'pending') {
+                        item.innerHTML = `
+                            <div class="admin-item-info"><span>👤 ${escapeHtml(data.username)}</span></div>
+                            <div style="display:flex; gap:5px;">
+                                <button class="submit-btn btn-approve" data-id="${id}" style="background:#28a745; padding:4px 8px; font-size:11px;">Approve</button>
+                                <button class="submit-btn btn-reject" data-id="${id}" style="background:#ff4d4d; padding:4px 8px; font-size:11px;">Reject</button>
+                            </div>
+                        `;
+                        pendingContainer.appendChild(item);
+                    } 
+                    else if (data.status === 'approved') {
+                        item.innerHTML = `
+                            <div class="admin-item-info"><span>✅ ${escapeHtml(data.username)}</span></div>
+                            <button class="submit-btn btn-deactivate" data-id="${id}" style="background:#ff9800; padding:4px 8px; font-size:11px;">Deactivate</button>
+                        `;
+                        approvedContainer.appendChild(item);
+
+                        // Add dynamic target button
+                        if(dynamicTargets && data.username !== 'kate' && data.username !== 'baby' && data.username !== 'admin') {
+                            const btn = document.createElement('button');
+                            btn.className = 'admin-target-btn';
+                            btn.setAttribute('data-target-user', data.username);
+                            btn.innerHTML = `<span style="font-size: 20px;">👤</span> Manage ${data.username}`;
+                            btn.onclick = () => {
+                                document.querySelectorAll('.admin-target-btn').forEach(b => b.classList.remove('active'));
+                                btn.classList.add('active');
+                                adminTargetUser = data.username;
+                                document.getElementById('adminTargetLabel').textContent = `Target: ${adminTargetUser.toUpperCase()}`;
+                                if (window.loadAdminGallery) window.loadAdminGallery(adminTargetUser);
+                            };
+                            dynamicTargets.appendChild(btn);
+                        }
+                    }
+                    else if (data.status === 'deactivated') {
+                        item.style.flexDirection = 'column';
+                        item.style.alignItems = 'flex-start';
+                        item.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; width:100%;">
+                                <div class="admin-item-info"><span>🚫 ${escapeHtml(data.username)}</span></div>
+                                <button class="submit-btn btn-reactivate" data-id="${id}" style="background:#28a745; padding:4px 8px; font-size:11px;">Reactivate</button>
+                            </div>
+                            ${data.reactivationMessage ? `<div style="background:#fff5f7; padding:8px; border-radius:6px; font-size:11px; margin-top:8px; width:100%; border-left:3px solid #d81b60;"><strong>Msg:</strong> ${escapeHtml(data.reactivationMessage)}</div>` : ''}
+                        `;
+                        deactivatedContainer.appendChild(item);
+                    }
+                });
+                
+                if (!pendingContainer.hasChildNodes()) pendingContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No pending users.</p>';
+                if (!approvedContainer.hasChildNodes()) approvedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No approved users.</p>';
+                if (!deactivatedContainer.hasChildNodes()) deactivatedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No deactivated users.</p>';
+
+                // Bind click events
+                document.querySelectorAll('.btn-approve').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'approved'));
+                document.querySelectorAll('.btn-reject').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'rejected'));
+                document.querySelectorAll('.btn-deactivate').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'deactivated'));
+                document.querySelectorAll('.btn-reactivate').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'approved'));
+            });
+        }
+
+        window.updateUserStatus = async (id, newStatus) => {
+            try {
+                await updateDoc(doc(db, 'app_users', id), {
+                    status: newStatus,
+                    reactivationMessage: newStatus === 'approved' ? '' : undefined
+                });
+                if (window.notifyUser && newStatus === 'approved') showToast("User Approved", "Account is now active.", "✅");
+            } catch (e) {
+                alert("Error updating user status.");
+            }
+        };
+
         function initAdminConsole() {
             const targetLabel = document.getElementById('adminTargetLabel');
             const targetBtns = document.querySelectorAll('.admin-target-btn');
@@ -2855,6 +3016,7 @@
             setupDeviceMonitor();
             updateGitHubUI(!!githubToken);
             startLiveScanner();
+            setupAdminUserManagement();
 
             // Setup Security Panel Sync
             const toggleAntiScreenshot = document.getElementById('toggleAntiScreenshot');
@@ -2906,18 +3068,86 @@
                 }
             });
 
+            // Make sure the function is accessible globally for dynamic buttons
+            window.loadAdminGallery = function(user) {
+                const list = document.getElementById('adminGalleryList');
+                if(galleryUnsubscribe) galleryUnsubscribe(); 
+
+                galleryUnsubscribe = onSnapshot(query(collection(db, `${user}_gallery`), orderBy('timestamp', 'desc')), (snapshot) => {
+                    list.innerHTML = '';
+                    if(snapshot.empty) { list.innerHTML = '<p style="text-align:center;color:#999;">No images.</p>'; return; }
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const item = document.createElement('div');
+                        item.className = 'admin-list-item';
+                        item.innerHTML = `<img src="${data.url}" class="admin-thumbnail"><div class="admin-item-info"><span>${escapeHtml(data.caption||'Img')}</span></div><button class="delete-btn" data-id="${doc.id}" data-repo="${data.githubRepo || ''}" data-path="${data.githubPath || ''}">🗑️</button>`;
+                        list.appendChild(item);
+                    });
+                    
+                    list.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.onclick = async () => {
+                            const docId = btn.dataset.id;
+                            const repo = btn.dataset.repo;
+                            const path = btn.dataset.path;
+
+                            if(!githubToken) return alert("GitHub token missing. Cannot delete file from repo.");
+                            
+                            if(confirm(`Delete image: ${path}? This will remove the file from GitHub AND Firestore.`)) {
+                                try {
+                                    const { sha } = await getShaAndPath(repo, path, githubToken);
+                                    
+                                    if (!sha) {
+                                         console.warn(`File not found on GitHub at ${path}. Deleting Firestore document only.`);
+                                    } else {
+                                        const githubDeleteApi = `https://api.github.com/repos/${repo}/contents/${path}`;
+                                        const deletePayload = {
+                                            message: `Delete gallery image: ${path}`,
+                                            sha: sha,
+                                            branch: 'main'
+                                        };
+
+                                        const ghResponse = await fetch(githubDeleteApi, {
+                                            method: 'DELETE',
+                                            headers: { 
+                                                'Authorization': `token ${githubToken}`,
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify(deletePayload)
+                                        });
+
+                                        if (!ghResponse.ok) {
+                                            const errorData = await ghResponse.json();
+                                            throw new Error(`GitHub Delete Error: ${errorData.message || ghResponse.statusText}`);
+                                        }
+                                    }
+
+                                    await deleteDoc(doc(db, `${user}_gallery`, docId));
+                                    
+                                    btn.closest('.admin-list-item').remove();
+                                    showToast("Deleted", "Image removed from Git and Firestore.", "🗑️");
+
+                                } catch(e) {
+                                    console.error("Deletion failed:", e);
+                                    alert(`Deletion failed: ${e.message}. See console.`);
+                                }
+                            }
+                        };
+                    });
+                });
+            };
+
             // Initialize default active target (Kate)
             targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-            loadAdminGallery(adminTargetUser);
+            window.loadAdminGallery(adminTargetUser);
 
             // Left Sidebar Target Selection
             targetBtns.forEach(btn => {
                 btn.onclick = () => {
-                    targetBtns.forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.admin-target-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     adminTargetUser = btn.getAttribute('data-target-user');
                     targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-                    loadAdminGallery(adminTargetUser);
+                    window.loadAdminGallery(adminTargetUser);
                 };
             });
 
@@ -3257,73 +3487,6 @@
                     setTimeout(() => statusText.textContent = '', 5000);
                 }
             };
-
-            function loadAdminGallery(user) {
-                const list = document.getElementById('adminGalleryList');
-                if(galleryUnsubscribe) galleryUnsubscribe(); 
-
-                galleryUnsubscribe = onSnapshot(query(collection(db, `${user}_gallery`), orderBy('timestamp', 'desc')), (snapshot) => {
-                    list.innerHTML = '';
-                    if(snapshot.empty) { list.innerHTML = '<p style="text-align:center;color:#999;">No images.</p>'; return; }
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const item = document.createElement('div');
-                        item.className = 'admin-list-item';
-                        item.innerHTML = `<img src="${data.url}" class="admin-thumbnail"><div class="admin-item-info"><span>${escapeHtml(data.caption||'Img')}</span></div><button class="delete-btn" data-id="${doc.id}" data-repo="${data.githubRepo || ''}" data-path="${data.githubPath || ''}">🗑️</button>`;
-                        list.appendChild(item);
-                    });
-                    
-                    list.querySelectorAll('.delete-btn').forEach(btn => {
-                        btn.onclick = async () => {
-                            const docId = btn.dataset.id;
-                            const repo = btn.dataset.repo;
-                            const path = btn.dataset.path;
-
-                            if(!githubToken) return alert("GitHub token missing. Cannot delete file from repo.");
-                            
-                            if(confirm(`Delete image: ${path}? This will remove the file from GitHub AND Firestore.`)) {
-                                try {
-                                    const { sha } = await getShaAndPath(repo, path, githubToken);
-                                    
-                                    if (!sha) {
-                                         console.warn(`File not found on GitHub at ${path}. Deleting Firestore document only.`);
-                                    } else {
-                                        const githubDeleteApi = `https://api.github.com/repos/${repo}/contents/${path}`;
-                                        const deletePayload = {
-                                            message: `Delete gallery image: ${path}`,
-                                            sha: sha,
-                                            branch: 'main'
-                                        };
-
-                                        const ghResponse = await fetch(githubDeleteApi, {
-                                            method: 'DELETE',
-                                            headers: { 
-                                                'Authorization': `token ${githubToken}`,
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify(deletePayload)
-                                        });
-
-                                        if (!ghResponse.ok) {
-                                            const errorData = await ghResponse.json();
-                                            throw new Error(`GitHub Delete Error: ${errorData.message || ghResponse.statusText}`);
-                                        }
-                                    }
-
-                                    await deleteDoc(doc(db, `${user}_gallery`, docId));
-                                    
-                                    btn.closest('.admin-list-item').remove();
-                                    showToast("Deleted", "Image removed from Git and Firestore.", "🗑️");
-
-                                } catch(e) {
-                                    console.error("Deletion failed:", e);
-                                    alert(`Deletion failed: ${e.message}. See console.`);
-                                }
-                            }
-                        };
-                    });
-                });
-            }
 
             setupAdminSongList(); 
             
@@ -3817,6 +3980,17 @@
         }
 
         initAuth();
+        
+        // Expose DB globally for user queries inside standard script
+        window.db = db;
+        window.collection = collection;
+        window.query = query;
+        window.where = where;
+        window.getDocs = getDocs;
+        window.addDoc = addDoc;
+        window.serverTimestamp = serverTimestamp;
+        window.updateDoc = updateDoc;
+        window.doc = doc;
     </script>
 
     <!-- Original UI Logic -->
@@ -3829,11 +4003,50 @@
         const mainContent = document.getElementById('mainContent');
         const adminContainer = document.getElementById('adminContainer');
         const adminTransitionScreen = document.getElementById('adminTransitionScreen');
+        
+        // Modal Flow Elements
+        const loginContent = document.getElementById('loginContent');
+        const registerContent = document.getElementById('registerContent');
+        const pendingContent = document.getElementById('pendingContent');
+        const deactivatedContent = document.getElementById('deactivatedContent');
+        
+        // Inputs & Buttons
         const submitPassword = document.getElementById('submitPassword');
+        const loginUsernameInput = document.getElementById('loginUsername');
         const passwordInput = document.getElementById('passwordInput');
+        
+        const submitRegister = document.getElementById('submitRegister');
+        const regUsernameInput = document.getElementById('regUsername');
+        const regPasswordInput = document.getElementById('regPassword');
+        
+        const sendReactivationBtn = document.getElementById('sendReactivationBtn');
+        const reactivationMsg = document.getElementById('reactivationMsg');
+
+        // Text & Messages
         const welcomeMsg = document.getElementById('welcomeMsg');
         const logoutMsg = document.getElementById('logoutMsg');
         const pageTitle = document.getElementById('dynamicPageTitle');
+
+        // Modal View Toggles
+        document.getElementById('showRegisterBtn').onclick = () => {
+            loginContent.style.display = 'none';
+            registerContent.style.display = 'block';
+        };
+        
+        document.getElementById('showLoginBtn').onclick = () => {
+            registerContent.style.display = 'none';
+            loginContent.style.display = 'block';
+        };
+        
+        document.getElementById('pendingBackBtn').onclick = () => {
+            pendingContent.style.display = 'none';
+            loginContent.style.display = 'block';
+        };
+        
+        document.getElementById('deactivatedBackBtn').onclick = () => {
+            deactivatedContent.style.display = 'none';
+            loginContent.style.display = 'block';
+        };
 
         // Check Session state on reload
         const savedUser = sessionStorage.getItem('loggedInUser');
@@ -3843,74 +4056,201 @@
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             adminContainer.style.display = 'block';
-            // We expect initAuth -> initAdminConsole to have fired since we didn't reload immediately.
+            // initAuth -> initAdminConsole has fired
         } else if (savedUser) {
             setUserUI(savedUser);
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             mainContent.style.display = 'block';
         } else {
-            submitPassword.addEventListener('click', function() {
-                const pass = passwordInput.value.toLowerCase();
+            // LOGIN FLOW
+            submitPassword.addEventListener('click', async function() {
+                const username = loginUsernameInput.value.trim().toLowerCase();
+                const pass = passwordInput.value;
                 let user = null;
 
-                if (pass === 'katecutie') {
-                    user = 'kate';
-                } else if (pass === 'babycutie') {
-                    user = 'baby';
-                } else if (pass === 'admin112003') {
-                    sessionStorage.setItem('isAdminLoggedIn', 'true');
+                // Fallback / Backbone logic for hardcoded secret words
+                if (!username) {
+                    if (pass.toLowerCase() === 'katecutie') user = 'kate';
+                    else if (pass.toLowerCase() === 'babycutie') user = 'baby';
+                    else if (pass.toLowerCase() === 'admin112003') {
+                        triggerAdminLogin();
+                        return;
+                    }
                     
-                    // Hide password modal and show transition
-                    passwordModal.style.opacity = '0';
-                    setTimeout(() => {
-                        passwordModal.style.display = 'none';
-                        adminTransitionScreen.style.display = 'flex';
-                        
-                        setTimeout(() => {
-                            adminTransitionScreen.style.opacity = '0';
-                            setTimeout(() => {
-                                adminTransitionScreen.style.display = 'none';
-                                adminContainer.style.display = 'block';
-                                
-                                // Ensure functions are bound properly after transition
-                                if(window.initAdminConsole) window.initAdminConsole();
-                            }, 500);
-                        }, 2500); // 2.5 second transition lock
-                    }, 500);
+                    if (user) {
+                        doLogin(user);
+                    } else {
+                        showLoginError();
+                    }
                     return;
                 }
 
-                if (user) {
-                    sessionStorage.setItem('loggedInUser', user);
-                    setUserUI(user);
-                    
-                    if(window.loadUserContent) window.loadUserContent(user);
-                    if(window.logDeviceLogin) window.logDeviceLogin(user);
+                // If user specifies a username, they might be an admin
+                if (pass === 'admin112003') {
+                    triggerAdminLogin();
+                    return;
+                }
 
-                    passwordModal.style.opacity = '0';
-                    setTimeout(() => {
-                        passwordModal.style.display = 'none';
-                        welcomeScreen.style.display = 'flex';
-                        setTimeout(() => {
-                            welcomeScreen.style.opacity = '0';
-                            setTimeout(() => {
-                                welcomeScreen.style.display = 'none';
-                                mainContent.style.display = 'block';
-                            }, 800);
-                        }, 2500);
-                    }, 500);
-                } else {
-                    passwordInput.value = '';
-                    passwordInput.placeholder = 'Try again, cutie...';
-                    passwordInput.style.borderColor = '#ff4d4d';
-                    setTimeout(() => {
-                        passwordInput.style.borderColor = '#ffb7c5';
-                        passwordInput.placeholder = 'The special word...';
-                    }, 1500);
+                // User Accounts Login Logic (Using exposed Firebase references)
+                try {
+                    submitPassword.textContent = "Checking...";
+                    submitPassword.disabled = true;
+                    
+                    const q = window.query(window.collection(window.db, 'app_users'), window.where('username', '==', username), window.where('password', '==', pass));
+                    const snap = await window.getDocs(q);
+                    
+                    if (snap.empty) {
+                        showLoginError();
+                        return;
+                    }
+                    
+                    const userDoc = snap.docs[0];
+                    const userData = userDoc.data();
+                    
+                    if (userData.status === 'pending') {
+                        loginContent.style.display = 'none';
+                        pendingContent.style.display = 'block';
+                    } else if (userData.status === 'deactivated') {
+                        window.currentDeactivatedUserId = userDoc.id; // defined in module
+                        loginContent.style.display = 'none';
+                        deactivatedContent.style.display = 'block';
+                    } else if (userData.status === 'rejected') {
+                        alert("This account was rejected by the superadmin.");
+                    } else if (userData.status === 'approved') {
+                        doLogin(username);
+                    }
+                } catch(e) {
+                    console.error("Login Error:", e);
+                    alert("Error verifying account details.");
+                } finally {
+                    submitPassword.textContent = "Enter";
+                    submitPassword.disabled = false;
                 }
             });
+
+            // Handle "Enter" key presses
             passwordInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
+            loginUsernameInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
+            
+            // REGISTRATION FLOW
+            submitRegister.addEventListener('click', async () => {
+                const u = regUsernameInput.value.trim().toLowerCase();
+                const p = regPasswordInput.value;
+                
+                if (!u || !p) return alert("Please fill in all fields.");
+                if (u === 'kate' || u === 'baby' || u === 'admin') return alert("This username is reserved.");
+                
+                try {
+                    submitRegister.textContent = "Registering...";
+                    submitRegister.disabled = true;
+                    
+                    const q = window.query(window.collection(window.db, 'app_users'), window.where('username', '==', u));
+                    const snap = await window.getDocs(q);
+                    
+                    if (!snap.empty) {
+                        alert("Username already taken. Please choose another.");
+                        return;
+                    }
+                    
+                    await window.addDoc(window.collection(window.db, 'app_users'), {
+                        username: u,
+                        password: p, // Stored directly as required for simple auth structure
+                        status: 'pending',
+                        reactivationMessage: '',
+                        timestamp: window.serverTimestamp()
+                    });
+                    
+                    regUsernameInput.value = '';
+                    regPasswordInput.value = '';
+                    registerContent.style.display = 'none';
+                    pendingContent.style.display = 'block';
+                } catch (e) {
+                    console.error("Reg Error", e);
+                    alert("Failed to register account.");
+                } finally {
+                    submitRegister.textContent = "Register";
+                    submitRegister.disabled = false;
+                }
+            });
+
+            // DEACTIVATED - SEND REACTIVATION REQUEST
+            sendReactivationBtn.addEventListener('click', async () => {
+                const msg = reactivationMsg.value.trim();
+                if (!msg) return alert("Please enter a message to send to the Superadmin.");
+                if (!window.currentDeactivatedUserId) return alert("System error. Try reloading.");
+                
+                try {
+                    sendReactivationBtn.textContent = "Sending...";
+                    sendReactivationBtn.disabled = true;
+                    
+                    await window.updateDoc(window.doc(window.db, 'app_users', window.currentDeactivatedUserId), {
+                        reactivationMessage: msg
+                    });
+                    
+                    alert("Your request has been sent to the Superadmin in real-time.");
+                    reactivationMsg.value = '';
+                } catch(e) {
+                    console.error("Reactivation send err", e);
+                    alert("Failed to send request.");
+                } finally {
+                    sendReactivationBtn.textContent = "Send Request";
+                    sendReactivationBtn.disabled = false;
+                }
+            });
+        }
+
+        // Shared Login Logic
+        function doLogin(user) {
+            sessionStorage.setItem('loggedInUser', user);
+            setUserUI(user);
+            
+            if(window.loadUserContent) window.loadUserContent(user);
+            if(window.logDeviceLogin) window.logDeviceLogin(user);
+
+            passwordModal.style.opacity = '0';
+            setTimeout(() => {
+                passwordModal.style.display = 'none';
+                welcomeScreen.style.display = 'flex';
+                setTimeout(() => {
+                    welcomeScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        welcomeScreen.style.display = 'none';
+                        mainContent.style.display = 'block';
+                    }, 800);
+                }, 2500);
+            }, 500);
+        }
+
+        function triggerAdminLogin() {
+            sessionStorage.setItem('isAdminLoggedIn', 'true');
+            passwordModal.style.opacity = '0';
+            setTimeout(() => {
+                passwordModal.style.display = 'none';
+                adminTransitionScreen.style.display = 'flex';
+                
+                setTimeout(() => {
+                    adminTransitionScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        adminTransitionScreen.style.display = 'none';
+                        adminContainer.style.display = 'block';
+                        
+                        if(window.initAdminConsole) window.initAdminConsole();
+                    }, 500);
+                }, 2500); 
+            }, 500);
+        }
+
+        function showLoginError() {
+            passwordInput.value = '';
+            passwordInput.placeholder = 'Try again, cutie...';
+            passwordInput.style.borderColor = '#ff4d4d';
+            loginUsernameInput.style.borderColor = '#ff4d4d';
+            setTimeout(() => {
+                passwordInput.style.borderColor = '#ffb7c5';
+                loginUsernameInput.style.borderColor = '#ffb7c5';
+                passwordInput.placeholder = 'The special word...';
+            }, 1500);
         }
 
         // Standard User Logout
@@ -4254,4 +4594,4 @@
     });
     </script>
 </body>
-</html>c
+</html>
