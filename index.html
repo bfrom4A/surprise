@@ -127,12 +127,32 @@
             margin-left: 5px;
         }
 
+        /* DELETION BANNER */
+        #deletion-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #b71550;
+            color: white;
+            text-align: center;
+            padding: 12px 20px;
+            font-size: 14px;
+            z-index: 99998; 
+            display: none;
+            font-family: 'Montserrat', sans-serif;
+            box-shadow: 0 4px 20px rgba(183,21,80,0.5);
+            animation: slideInDown 0.5s ease-out forwards;
+            border-bottom: 2px solid #fff;
+        }
+        #deletion-banner strong { font-family: monospace; font-size: 18px; margin: 0 8px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 5px;}
+
         /* MAINTENANCE OVERLAY */
         #maintenance-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(255, 255, 255, 0.98);
-            z-index: 99998; /* Just below security overlay */
+            z-index: 99998; 
             display: none;
             flex-direction: column;
             justify-content: center;
@@ -158,7 +178,7 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 10000;
+            z-index: 100000;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -809,7 +829,8 @@
         .admin-list-container::-webkit-scrollbar,
         #deviceListActive::-webkit-scrollbar,
         #deviceListHistory::-webkit-scrollbar,
-        .admin-main-content::-webkit-scrollbar {
+        .admin-main-content::-webkit-scrollbar,
+        .chat-body::-webkit-scrollbar {
             width: 8px;
         }
 
@@ -825,7 +846,8 @@
         .admin-list-container::-webkit-scrollbar-track,
         #deviceListActive::-webkit-scrollbar-track,
         #deviceListHistory::-webkit-scrollbar-track,
-        .admin-main-content::-webkit-scrollbar-track {
+        .admin-main-content::-webkit-scrollbar-track,
+        .chat-body::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 4px;
         }
@@ -842,7 +864,8 @@
         .admin-list-container::-webkit-scrollbar-thumb,
         #deviceListActive::-webkit-scrollbar-thumb,
         #deviceListHistory::-webkit-scrollbar-thumb,
-        .admin-main-content::-webkit-scrollbar-thumb {
+        .admin-main-content::-webkit-scrollbar-thumb,
+        .chat-body::-webkit-scrollbar-thumb {
             background: #ffb7c5;
             border-radius: 4px;
         }
@@ -1546,11 +1569,56 @@
             width: 100%;
         }
 
+        /* --- ADMIN CHAT WIDGET STYLES --- */
+        #chat-fab {
+            position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 30px;
+            background: linear-gradient(135deg, #d81b60, #b71550); color: white; display: none; justify-content: center; align-items: center;
+            font-size: 28px; box-shadow: 0 4px 15px rgba(216,27,96,0.4); cursor: pointer; z-index: 99990; transition: transform 0.2s;
+        }
+        #chat-fab:hover { transform: scale(1.1); }
+        #chat-unread-badge {
+            position: absolute; top: -5px; right: -5px; background: #ff4d4d; color: white; font-size: 12px; font-weight: bold; width: 22px; height: 22px; border-radius: 11px; display: flex; justify-content: center; align-items: center; border: 2px solid white;
+        }
+        #chat-window {
+            position: fixed; bottom: 90px; right: 20px; width: 320px; height: 450px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 99990; display: none; flex-direction: column; overflow: hidden; border: 1px solid #ffb7c5; transform-origin: bottom right; transition: transform 0.3s, opacity 0.3s;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #ffd1dc, #ffb7c5); padding: 15px; color: #d81b60; font-weight: bold; display: flex; justify-content: space-between; align-items: center; font-family: 'Montserrat', sans-serif;
+        }
+        .chat-body { flex-grow: 1; overflow-y: auto; padding: 15px; background: #fffafc; display: flex; flex-direction: column; gap: 10px; }
+        .chat-input-area { display: flex; padding: 10px; border-top: 1px solid #ffe4e9; background: white; }
+        .chat-input { flex-grow: 1; border: 1px solid #ffb7c5; border-radius: 20px; padding: 8px 15px; outline: none; font-family: 'Montserrat', sans-serif; font-size: 13px; }
+        .chat-send { background: #d81b60; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; margin-left: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+
+        .chat-user-item {
+            padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; background: white; border-radius: 8px; margin-bottom: 5px; border: 1px solid #ffe4e9;
+        }
+        .chat-user-item:hover { background: #fff0f5; border-color: #ffb7c5; }
+        .chat-badge {
+            background: #d81b60; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px;
+        }
+        .chat-msg-sent {
+            align-self: flex-end; background: #d81b60; color: white; padding: 8px 12px; border-radius: 15px 15px 0 15px; max-width: 80%; font-size: 13px; margin-bottom: 2px; box-shadow: 0 2px 5px rgba(216,27,96,0.2); word-wrap: break-word;
+        }
+        .chat-msg-recv {
+            align-self: flex-start; background: white; color: #333; padding: 8px 12px; border-radius: 15px 15px 15px 0; border: 1px solid #ffb7c5; max-width: 80%; font-size: 13px; margin-bottom: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); word-wrap: break-word;
+        }
+        .chat-status {
+            font-size: 10px; color: #888; align-self: flex-end; margin-bottom: 8px; margin-top: -2px;
+        }
+        .chat-back-btn { background:none; border:none; cursor:pointer; font-size:16px; color:#d81b60; margin-right:10px; display:none; }
+
     </style>
 </head>
 <body>
     <!-- TOAST CONTAINER -->
     <div id="toast-container"></div>
+
+    <!-- DELETION BANNER (User & Admin Warning) -->
+    <div id="deletion-banner">
+        ⚠️ Account Deletion in: <strong id="deletion-timer">00:00:00</strong> <br>
+        <span id="deletion-message" style="font-style:italic; font-size: 12px;"></span>
+    </div>
 
     <!-- SECURITY OVERLAY (Anti-Screenshot/Blur) -->
     <div id="security-overlay">
@@ -1601,6 +1669,26 @@
             <div style="font-size: 60px;">✨</div>
             <h2 style="color: #28a745; font-family: 'Dancing Script', cursive; font-size: 40px;">We're Back!</h2>
             <p style="color: #555;">Maintenance is complete. Reopening...</p>
+        </div>
+    </div>
+
+    <!-- ADMIN FLOATING CHAT WIDGET -->
+    <div id="chat-fab">💬<span id="chat-unread-badge" style="display:none">0</span></div>
+    <div id="chat-window">
+        <div class="chat-header">
+            <div style="display:flex; align-items:center;">
+                <button id="chat-back-btn" class="chat-back-btn">⬅</button>
+                <span id="chat-title">Support Inbox</span>
+            </div>
+            <span style="cursor:pointer;" onclick="document.getElementById('chat-window').style.display='none'">✖</span>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <!-- Inbox User List OR Chat Messages go here -->
+            <p style="text-align:center; color:#999; font-size:12px; margin-top:20px;">Loading...</p>
+        </div>
+        <div class="chat-input-area" id="chat-input-area" style="display:none;">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Type a message...">
+            <button id="chatSendBtn" class="chat-send">➤</button>
         </div>
     </div>
 
@@ -1688,8 +1776,10 @@
                         <button class="admin-tab-btn active" data-target="admin-letters">💌 Letters</button>
                         <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
                         <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
-                        <button class="admin-tab-btn" data-target="admin-customization">🎨 Customize</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-customization">🎨 Customize</button>
+                        
                         <!-- Superadmin exclusive tabs -->
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-deletion">🧨 Deletion</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-music">🎵 Music</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-devices">📱 Devices</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-system">⚙️ System</button>
@@ -1727,6 +1817,22 @@
                             <textarea id="adminNotesContent" class="fw-textarea" style="height: 200px;" placeholder="1. Drink water&#10;2. Smile often&#10;3. I love you"></textarea>
                         </div>
                         <button class="submit-btn" id="saveNotesBtn" style="width: 100%">Save Notes & Update Time</button>
+                    </div>
+
+                    <!-- Tab: Schedule Deletion (Superadmin Only) -->
+                    <div class="admin-panel" id="admin-deletion">
+                        <h4 class="admin-section-title" style="color: #ff4d4d; border-bottom-color: #ff4d4d;">🧨 Schedule Account Deletion</h4>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Schedule a permanent account deletion for the target user. Both the User and their Admin will see a countdown warning at the top of their screen.</p>
+                        
+                        <div class="admin-form-group" style="background: #fff5f5; padding: 15px; border-radius: 12px; border: 1px solid #ffcdd2;">
+                            <label style="font-size: 12px; font-weight: bold; color: #d32f2f;">Target: <span id="deletionTargetLabel" style="font-family: monospace;">KATE</span></label>
+                            <input type="datetime-local" id="deletionTime" class="fw-input" style="margin-top: 10px; margin-bottom: 10px; border-color: #ffcdd2;">
+                            <label style="font-size: 12px; font-weight: bold; color: #d32f2f;">Deletion Message / Reason:</label>
+                            <textarea id="deletionMessage" class="fw-textarea" style="height: 80px; border-color: #ffcdd2;" placeholder="Reason for deletion..."></textarea>
+                            
+                            <button id="btnScheduleDeletion" class="submit-btn" style="width: 100%; background: #d32f2f; margin-bottom: 10px;">Set Deletion Timer</button>
+                            <button id="btnCancelDeletion" class="submit-btn" style="width: 100%; background: #ccc; color: #333;">Cancel Existing Deletion Schedule</button>
+                        </div>
                     </div>
 
                     <!-- Tab: Customization (Theme & Fonts) -->
@@ -1880,7 +1986,11 @@
                         <div class="admin-form-group" style="background: #fff8e1; padding: 15px; border-radius: 12px; border: 1px solid #ffe0b2;">
                             <input type="text" id="systemBroadcastTitle" class="fw-input" placeholder="Broadcast Title (e.g. Important Update)" style="background:white; border-color:#ffcc80;">
                             <textarea id="systemBroadcastMessage" class="fw-textarea" style="height: 80px; background:white; border-color:#ffcc80;" placeholder="Write your global announcement here..."></textarea>
-                            <button id="sendSystemBroadcastBtn" class="submit-btn" style="width: 100%; background: #ff9800; border: none; box-shadow: 0 4px 10px rgba(255,152,0,0.3);">🚀 Send Broadcast</button>
+                            
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; margin-top:5px; display:block;">Schedule Broadcast Time (Optional):</label>
+                            <input type="datetime-local" id="systemBroadcastTime" class="fw-input" style="background:white; border-color:#ffcc80; margin-top:5px;">
+
+                            <button id="sendSystemBroadcastBtn" class="submit-btn" style="width: 100%; background: #ff9800; border: none; box-shadow: 0 4px 10px rgba(255,152,0,0.3); margin-top:10px;">🚀 Send / Schedule Broadcast</button>
                         </div>
 
                         <div id="ghSystemAuthStatus" style="margin-top: 30px;">
@@ -2228,13 +2338,12 @@
         const db = getFirestore(app);
         
         let currentUser = sessionStorage.getItem('loggedInUser') || null; 
-        let currentDeactivatedUserId = null; // Store ID for reactivation request
+        let currentDeactivatedUserId = null; 
         
         // --- GLOBAL SECURITY & BLOCKING LOGIC ---
         let userIPAddress = 'Unknown IP';
         let globalSecurityConfig = { antiScreenshot: false, blockedIPs: [] };
 
-        // Fetch IP instantly on load to enforce blocks
         fetch('https://ipapi.co/json/')
             .then(res => res.ok ? res.json() : {})
             .then(data => {
@@ -2248,7 +2357,6 @@
             const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
             const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
             if (!isAdmin && !isSubAdmin && userIPAddress && globalSecurityConfig.blockedIPs?.includes(userIPAddress)) {
-                // If IP is blocked and NOT an admin, destroy the body and show a lock screen
                 document.body.innerHTML = `
                     <div style="display:flex; flex-direction:column; height:100vh; width:100vw; justify-content:center; align-items:center; background:#1a1a2e; color:#ff4d4d; font-family:'Montserrat', sans-serif; text-align:center; padding:20px; box-sizing:border-box;">
                         <span style="font-size:60px; margin-bottom:20px;">⛔</span>
@@ -2259,7 +2367,6 @@
             }
         }
 
-        // Listen for global security changes (Block lists & Anti-Screenshot)
         onSnapshot(doc(db, 'settings', 'security'), (docSnap) => {
             if(docSnap.exists()) {
                 globalSecurityConfig = docSnap.data();
@@ -2271,14 +2378,36 @@
 
         // Listen for Global Broadcasts
         let isBroadcastInit = true;
+        let broadcastCheckInterval = null;
+        
         onSnapshot(doc(db, 'settings', 'broadcast'), (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                if (!isBroadcastInit && data.timestamp) {
-                    document.getElementById('broadcastModalTitle').textContent = data.title || 'Announcement';
-                    document.getElementById('broadcastModalMessage').textContent = data.message || '';
-                    document.getElementById('globalBroadcastModal').style.display = 'flex';
-                    if(navigator.vibrate) navigator.vibrate([200, 100, 200]); // Try to vibrate device
+                if (!isBroadcastInit) {
+                    if(broadcastCheckInterval) clearInterval(broadcastCheckInterval);
+
+                    const triggerBroadcastUI = () => {
+                        document.getElementById('broadcastModalTitle').textContent = data.title || 'Announcement';
+                        document.getElementById('broadcastModalMessage').textContent = data.message || '';
+                        document.getElementById('globalBroadcastModal').style.display = 'flex';
+                        if(navigator.vibrate) navigator.vibrate([200, 100, 200]); 
+                    };
+
+                    if (data.scheduledTime) {
+                        const targetTime = new Date(data.scheduledTime).getTime();
+                        if (targetTime > Date.now()) {
+                            broadcastCheckInterval = setInterval(() => {
+                                if (Date.now() >= targetTime) {
+                                    clearInterval(broadcastCheckInterval);
+                                    triggerBroadcastUI();
+                                }
+                            }, 1000);
+                        } else {
+                            triggerBroadcastUI(); 
+                        }
+                    } else if (data.timestamp) {
+                        triggerBroadcastUI();
+                    }
                 }
             }
             isBroadcastInit = false;
@@ -2318,7 +2447,6 @@
             }
         }
         
-        // Allow user to dismiss overlay by clicking if it gets stuck on mobile
         document.getElementById('security-overlay').addEventListener('click', () => {
             if(document.hasFocus()) handleSecurityFocus();
         });
@@ -2426,17 +2554,16 @@
                 maintOverlay.style.opacity = '0';
                 setTimeout(() => {
                     maintOverlay.style.display = 'none';
-                    activeContent.style.display = 'block'; // Reset internal states for future
+                    activeContent.style.display = 'block'; 
                     doneContent.style.display = 'none';
                 }, 1000);
-            }, 3000); // Display "We're Back!" for 3 seconds before fading out
+            }, 3000); 
         }
 
         onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
             let maintData = { isActive: false, isScheduled: false, startTime: '', endTime: '', message: '' };
             if (docSnap.exists()) maintData = docSnap.data();
 
-            // Update Admin UI
             const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
             if (btnToggleMaintenance) {
                 const isCurrentlyActiveOrScheduled = maintData.isActive || maintData.isScheduled;
@@ -2446,7 +2573,6 @@
                     if(document.getElementById('maintStartTime')) document.getElementById('maintStartTime').value = maintData.startTime || '';
                     if(document.getElementById('maintEndTime')) {
                         document.getElementById('maintEndTime').value = maintData.endTime || '';
-                        // Trigger input event to update preview automatically on data load
                         document.getElementById('maintEndTime').dispatchEvent(new Event('input'));
                     }
                     if(document.getElementById('maintMessage')) document.getElementById('maintMessage').value = maintData.message || '';
@@ -2456,7 +2582,6 @@
                 }
             }
 
-            // Client-Side Execution (Bypass for Admins)
             const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
             if (isAdmin) return;
 
@@ -2472,7 +2597,6 @@
                 
                 let isCurrentlyMaintenance = maintData.isActive;
                 
-                // If it's scheduled and we've reached the start time
                 if (maintData.isScheduled && maintData.startTime && maintData.endTime) {
                     if (nowMs >= startMs && nowMs < endMs) {
                         isCurrentlyMaintenance = true;
@@ -2480,7 +2604,6 @@
                 }
 
                 if (isCurrentlyMaintenance && endMs > nowMs) {
-                    // ACTIVATE LOCKDOWN (Maintenance Mode)
                     banner.style.display = 'none';
                     if (!isMaintenanceActiveLocally) {
                         maintOverlay.style.display = 'flex';
@@ -2493,7 +2616,6 @@
                         initMaintMusic();
                     }
                     
-                    // Constantly update text in case admin shifts the time/message while maintenance is active
                     document.getElementById('maint-msg-text').textContent = maintData.message || "We are currently upgrading the site.";
                     document.getElementById('maint-endtime-text').textContent = new Date(maintData.endTime).toLocaleString();
                     
@@ -2510,21 +2632,18 @@
                     document.getElementById('maint-countdown').textContent = timeStr;
 
                 } else {
-                    // NO ACTIVE MAINTENANCE
                     if (isMaintenanceActiveLocally) {
-                        triggerMaintenanceDone(); // Safely closes it out
+                        triggerMaintenanceDone(); 
                     } else {
                         maintOverlay.style.display = 'none';
                     }
 
-                    // CHECK FOR SCHEDULED NOTIFICATION (1 day before start)
                     if (maintData.isScheduled && startMs > nowMs) {
                         const timeUntilStart = startMs - nowMs;
-                        // 24 hours in ms = 86400000
                         if (timeUntilStart <= 86400000) { 
                             banner.style.display = 'block';
                             const t = timeUntilStart;
-                            const hours = Math.floor(t / (1000 * 60 * 60)); // Total hours left for display
+                            const hours = Math.floor(t / (1000 * 60 * 60)); 
                             const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
                             const seconds = Math.floor((t % (1000 * 60)) / 1000);
                             document.getElementById('scheduled-maint-countdown').textContent = 
@@ -2538,11 +2657,10 @@
                 }
             }
 
-            checkMaintenanceStatus(); // Run immediately to sync visually
-            maintInterval = setInterval(checkMaintenanceStatus, 1000); // Continuous loop check
+            checkMaintenanceStatus(); 
+            maintInterval = setInterval(checkMaintenanceStatus, 1000); 
         });
 
-        // Secret Admin Bypass for Maintenance
         let maintSecretClicks = 0;
         document.getElementById('maint-secret-icon')?.addEventListener('click', () => {
             maintSecretClicks++;
@@ -2649,6 +2767,257 @@
             `;
         };
 
+        // --- ACCOUNT DELETION MONITOR ---
+        let deletionMonitorInterval = null;
+        let activeDeletionDocId = null;
+
+        function setupDeletionMonitor(targetUsername) {
+            if(deletionMonitorInterval) clearInterval(deletionMonitorInterval);
+            
+            getDocs(query(collection(db, 'app_users'), where('username', '==', targetUsername))).then(snap => {
+                if(!snap.empty) {
+                    const docId = snap.docs[0].id;
+                    activeDeletionDocId = docId;
+
+                    onSnapshot(doc(db, 'app_users', docId), (docSnap) => {
+                        const data = docSnap.data();
+                        const banner = document.getElementById('deletion-banner');
+                        
+                        if (data && data.deletionSchedule && data.deletionSchedule.active) {
+                            banner.style.display = 'block';
+                            document.getElementById('deletion-message').textContent = data.deletionSchedule.message || 'Action required.';
+                            
+                            const targetTime = new Date(data.deletionSchedule.time).getTime();
+                            
+                            if(deletionMonitorInterval) clearInterval(deletionMonitorInterval);
+                            deletionMonitorInterval = setInterval(() => {
+                                const now = Date.now();
+                                const t = targetTime - now;
+                                
+                                if (t <= 0) {
+                                    clearInterval(deletionMonitorInterval);
+                                    document.getElementById('deletion-timer').textContent = "00:00:00";
+                                    
+                                    // Trigger Auto-Deletion / Deactivation
+                                    updateDoc(doc(db, 'app_users', activeDeletionDocId), {
+                                        status: 'deactivated',
+                                        reactivationMessage: 'Account deactivated automatically via schedule.',
+                                        'deletionSchedule.active': false
+                                    }).then(() => {
+                                        alert("This account has been deleted/deactivated automatically based on the schedule.");
+                                        sessionStorage.clear();
+                                        location.reload();
+                                    });
+                                    
+                                } else {
+                                    const days = Math.floor(t / (1000 * 60 * 60 * 24));
+                                    const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                    const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
+                                    const seconds = Math.floor((t % (1000 * 60)) / 1000);
+                                    
+                                    let timeStr = "";
+                                    if (days > 0) timeStr += `${days}d `;
+                                    timeStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                                    document.getElementById('deletion-timer').textContent = timeStr;
+                                }
+                            }, 1000);
+                        } else {
+                            banner.style.display = 'none';
+                            if(deletionMonitorInterval) clearInterval(deletionMonitorInterval);
+                        }
+                    });
+                }
+            });
+        }
+
+        // --- REAL-TIME SUPPORT CHAT WIDGET ---
+        let chatUnsubscribe = null;
+        let activeChatUser = null; // Used by Superadmin to track who they are chatting with
+
+        function setupChatSystem(role, subAdminTargetName = null) {
+            const fab = document.getElementById('chat-fab');
+            const windowEl = document.getElementById('chat-window');
+            const bodyEl = document.getElementById('chat-body');
+            const inputArea = document.getElementById('chat-input-area');
+            const badge = document.getElementById('chat-unread-badge');
+            const backBtn = document.getElementById('chat-back-btn');
+            const titleEl = document.getElementById('chat-title');
+            
+            fab.style.display = 'flex';
+
+            fab.onclick = () => {
+                windowEl.style.display = windowEl.style.display === 'none' ? 'flex' : 'none';
+            };
+
+            const renderMessages = (messages) => {
+                bodyEl.innerHTML = '';
+                messages.forEach(m => {
+                    const isMine = m.sender === role;
+                    const div = document.createElement('div');
+                    div.className = isMine ? 'chat-msg-sent' : 'chat-msg-recv';
+                    div.textContent = m.text;
+                    bodyEl.appendChild(div);
+                    
+                    if (isMine && m.seen) {
+                        const status = document.createElement('div');
+                        status.className = 'chat-status';
+                        status.textContent = '✓ Seen';
+                        bodyEl.appendChild(status);
+                    }
+                });
+                bodyEl.scrollTop = bodyEl.scrollHeight;
+            };
+
+            const loadDirectChat = (targetUser) => {
+                if(chatUnsubscribe) chatUnsubscribe();
+                activeChatUser = targetUser;
+                titleEl.textContent = `Chat: ${targetUser.toUpperCase()}`;
+                inputArea.style.display = 'flex';
+                
+                if (role === 'SuperAdmin') backBtn.style.display = 'block';
+
+                const messagesRef = collection(db, 'admin_chats', targetUser, 'messages');
+                const q = query(messagesRef, orderBy('timestamp', 'asc'));
+                
+                chatUnsubscribe = onSnapshot(q, (snap) => {
+                    let hasUnseen = false;
+                    const msgs = [];
+                    snap.forEach(d => {
+                        const m = d.data();
+                        msgs.push({ id: d.id, ...m });
+                        if (m.sender !== role && !m.seen) hasUnseen = true;
+                    });
+                    
+                    renderMessages(msgs);
+
+                    // Mark as seen
+                    if (hasUnseen && windowEl.style.display === 'flex') {
+                        snap.forEach(d => {
+                            if (d.data().sender !== role && !d.data().seen) {
+                                updateDoc(doc(db, 'admin_chats', targetUser, 'messages', d.id), { seen: true });
+                            }
+                        });
+                        // Clear my unread count in parent
+                        const fieldToClear = role === 'SuperAdmin' ? 'superAdminUnread' : 'subAdminUnread';
+                        updateDoc(doc(db, 'admin_chats', targetUser), { [fieldToClear]: 0 }).catch(e => {
+                            // If doc doesn't exist yet, it'll fail, safely ignore.
+                        });
+                    }
+                });
+            };
+
+            const loadInbox = () => {
+                if(chatUnsubscribe) chatUnsubscribe();
+                activeChatUser = null;
+                titleEl.textContent = "Support Inbox";
+                inputArea.style.display = 'none';
+                backBtn.style.display = 'none';
+                
+                chatUnsubscribe = onSnapshot(collection(db, 'admin_chats'), (snap) => {
+                    bodyEl.innerHTML = '';
+                    let totalUnread = 0;
+                    
+                    if (snap.empty) {
+                        bodyEl.innerHTML = '<p style="text-align:center; color:#999; font-size:12px; margin-top:20px;">No active chats.</p>';
+                        badge.style.display = 'none';
+                        return;
+                    }
+                    
+                    snap.forEach(d => {
+                        const data = d.data();
+                        const unreadCount = data.superAdminUnread || 0;
+                        totalUnread += unreadCount;
+                        
+                        const item = document.createElement('div');
+                        item.className = 'chat-user-item';
+                        item.innerHTML = `
+                            <div style="display:flex; flex-direction:column;">
+                                <strong>👤 ${d.id.toUpperCase()}</strong>
+                                <span style="font-size:11px; color:#888;">${escapeHtml(data.lastMessage || 'No messages')}</span>
+                            </div>
+                            ${unreadCount > 0 ? `<div class="chat-badge">${unreadCount}</div>` : ''}
+                        `;
+                        item.onclick = () => loadDirectChat(d.id);
+                        bodyEl.appendChild(item);
+                    });
+                    
+                    if (totalUnread > 0) {
+                        badge.textContent = totalUnread;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+            };
+
+            if (role === 'SuperAdmin') {
+                loadInbox();
+                backBtn.onclick = () => loadInbox();
+            } else {
+                // SubAdmin only sees direct chat
+                loadDirectChat(subAdminTargetName);
+                
+                // Monitor unread badge for SubAdmin
+                onSnapshot(doc(db, 'admin_chats', subAdminTargetName), (d) => {
+                    if (d.exists()) {
+                        const unread = d.data().subAdminUnread || 0;
+                        if (unread > 0 && windowEl.style.display === 'none') {
+                            badge.textContent = unread;
+                            badge.style.display = 'flex';
+                        } else {
+                            badge.style.display = 'none';
+                            // If window is open, auto-clear unreads
+                            if (unread > 0 && windowEl.style.display === 'flex') {
+                                updateDoc(doc(db, 'admin_chats', subAdminTargetName), { subAdminUnread: 0 });
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Sending logic
+            const sendBtn = document.getElementById('chatSendBtn');
+            const inputEl = document.getElementById('chatInput');
+            
+            const sendMessage = async () => {
+                const text = inputEl.value.trim();
+                const target = role === 'SuperAdmin' ? activeChatUser : subAdminTargetName;
+                if (!text || !target) return;
+                
+                inputEl.value = '';
+                
+                const roomRef = doc(db, 'admin_chats', target);
+                
+                // Ensure room exists
+                try {
+                    const r = await getDoc(roomRef);
+                    const updateData = { 
+                        lastMessage: text, 
+                        lastMessageTime: serverTimestamp() 
+                    };
+                    
+                    if (role === 'SuperAdmin') {
+                        updateData.subAdminUnread = (r.exists() ? (r.data().subAdminUnread || 0) : 0) + 1;
+                    } else {
+                        updateData.superAdminUnread = (r.exists() ? (r.data().superAdminUnread || 0) : 0) + 1;
+                    }
+                    
+                    await setDoc(roomRef, updateData, { merge: true });
+                    
+                    await addDoc(collection(db, 'admin_chats', target, 'messages'), {
+                        sender: role,
+                        text: text,
+                        seen: false,
+                        timestamp: serverTimestamp()
+                    });
+                } catch(e) { console.error("Chat Send Err:", e); }
+            };
+
+            sendBtn.onclick = sendMessage;
+            inputEl.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+        }
+
+
         async function initAuth() {
             try {
                 if(!auth.currentUser) {
@@ -2675,6 +3044,7 @@
             setupFreedomWall(user);
             setupDynamicContent(user); 
             setupGallery(user); 
+            setupDeletionMonitor(user); // Start account deletion monitor
             
             // Listen for user customization updates
             onSnapshot(doc(db, 'preferences', user), (docSnap) => {
@@ -2707,12 +3077,11 @@
                 
                 let location = "Unknown Location";
                 
-                // Fetch IP again here just to ensure it's logged during the session correctly
                 try {
                     const res = await fetch('https://ipapi.co/json/');
                     if(res.ok) {
                         const data = await res.json();
-                        if(data.ip) userIPAddress = data.ip; // Keep global ref updated
+                        if(data.ip) userIPAddress = data.ip; 
                         if(data.city && data.country_name) location = `${data.city}, ${data.country_name}`;
                     }
                 } catch (e) {}
@@ -2754,7 +3123,6 @@
                     const item = document.createElement('div');
                     item.className = `device-card ${isRecent ? 'recent' : ''}`;
                     
-                    // Includes IP and Block Button directly in the list
                     item.innerHTML = `
                         <div class="device-header">
                             <span>${escapeHtml(data.device)} <small>${userName}</small></span>
@@ -2771,7 +3139,6 @@
                         ` : ''}
                     `;
 
-                    // Add Block Action
                     item.querySelectorAll('.block-ip-btn').forEach(btn => {
                         btn.onclick = async () => {
                             const ipToBlock = btn.dataset.ip;
@@ -2972,10 +3339,10 @@
         }
 
         // --- ADMIN CONSOLE LOGIC ---
-        window.initAdminConsole = initAdminConsole; // Make global so standard script can call it
+        window.initAdminConsole = initAdminConsole; 
         
         let githubToken = sessionStorage.getItem('ghToken') || null; 
-        let adminTargetUser = 'kate'; // Default User
+        let adminTargetUser = 'kate'; 
 
         function updateGitHubUI(isAuthorized) {
             const musicUI = document.getElementById('ghMusicAuthorizedUI');
@@ -3032,7 +3399,6 @@
             }
         }
 
-        // Setup the live scanner loop
         function startLiveScanner() {
             const scannerDiv = document.getElementById('liveScannerData');
             
@@ -3061,12 +3427,12 @@
             }
             
             updateScanner();
-            setInterval(updateScanner, 60000); // 1 minute
+            setInterval(updateScanner, 60000); 
         }
 
         // --- ADMIN USER MANAGEMENT SUB-ROUTINE ---
         function setupAdminUserManagement() {
-            if(sessionStorage.getItem('isSubAdminLoggedIn') === 'true') return; // Skip entirely for sub-admin
+            if(sessionStorage.getItem('isSubAdminLoggedIn') === 'true') return; 
             
             const pendingContainer = document.getElementById('adminPendingUsers');
             const approvedContainer = document.getElementById('adminApprovedUsers');
@@ -3077,7 +3443,6 @@
 
             onSnapshot(collection(db, 'app_users'), (snap) => {
                 
-                // Real-time notifications for superadmin regarding updates
                 if (!isInitialLoad) {
                     snap.docChanges().forEach(change => {
                         const data = change.doc.data();
@@ -3095,7 +3460,7 @@
                 approvedContainer.innerHTML = '';
                 deactivatedContainer.innerHTML = '';
                 
-                if (dynamicTargets) dynamicTargets.innerHTML = ''; // Rebuild dynamic targets
+                if (dynamicTargets) dynamicTargets.innerHTML = ''; 
                 
                 if (snap.empty) {
                     pendingContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No pending users.</p>';
@@ -3128,7 +3493,6 @@
                         `;
                         approvedContainer.appendChild(item);
 
-                        // Add dynamic target button
                         if(dynamicTargets && data.username !== 'kate' && data.username !== 'baby' && data.username !== 'admin') {
                             const btn = document.createElement('button');
                             btn.className = 'admin-target-btn';
@@ -3162,7 +3526,6 @@
                 if (!approvedContainer.hasChildNodes()) approvedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No approved users.</p>';
                 if (!deactivatedContainer.hasChildNodes()) deactivatedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No deactivated users.</p>';
 
-                // Bind click events
                 document.querySelectorAll('.btn-approve').forEach(b => {
                     b.onclick = () => {
                         const id = b.dataset.id;
@@ -3177,7 +3540,6 @@
                             const aPass = document.getElementById('setupAdminPassword').value.trim();
                             if(!aUser || !aPass) return alert("Please provide admin username and password.");
                             
-                            // Check uniqueness of Admin username
                             getDocs(query(collection(db, 'app_users'), where('adminUsername', '==', aUser)))
                             .then(snap => {
                                 if(!snap.empty && snap.docs[0].id !== id) {
@@ -3235,27 +3597,25 @@
                 adminTargetUser = target;
                 targetLabel.textContent = `Target: ${target.toUpperCase()}`;
 
-                // Hide superadmin exclusive tabs
                 document.querySelectorAll('.superadmin-only').forEach(btn => btn.style.display = 'none');
-                
-                // Hide target selection helper and static buttons
                 document.getElementById('targetSelectionHelperText').style.display = 'none';
                 document.querySelectorAll('.static-target').forEach(btn => btn.style.display = 'none');
                 
-                // Show change password
                 document.getElementById('subAdminChangePassTrigger').style.display = 'flex';
 
-                // Restrict layout structure
                 document.querySelector('.admin-sidebar-right').style.display = 'none';
                 document.querySelector('.admin-dashboard-wrapper').style.gridTemplateColumns = '250px 1fr';
 
-                document.querySelector('[data-target="admin-letters"]').click(); // Reset to allowed tab
+                document.querySelector('[data-target="admin-letters"]').click(); 
+                
+                setupChatSystem('SubAdmin', target);
+                setupDeletionMonitor(target);
             } else {
-                // Initialize Superadmin Features
                 setupDeviceMonitor();
                 updateGitHubUI(!!githubToken);
                 startLiveScanner();
                 setupAdminUserManagement();
+                setupChatSystem('SuperAdmin');
                 
                 targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
             }
@@ -3269,7 +3629,6 @@
                     let secData = { antiScreenshot: false, blockedIPs: [] };
                     if(docSnap.exists()) secData = docSnap.data();
 
-                    // Update Toggle
                     if(secData.antiScreenshot) {
                         toggleAntiScreenshot.textContent = "Enabled";
                         toggleAntiScreenshot.style.background = "#28a745";
@@ -3284,7 +3643,6 @@
                         }, {merge: true});
                     };
 
-                    // Update Blocked List Display
                     blockedIpListContainer.innerHTML = '';
                     if(!secData.blockedIPs || secData.blockedIPs.length === 0) {
                         blockedIpListContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">No blocked IPs.</p>';
@@ -3299,7 +3657,6 @@
                             blockedIpListContainer.appendChild(el);
                         });
 
-                        // Handle Unblock
                         blockedIpListContainer.querySelectorAll('.unblock-ip-btn').forEach(btn => {
                             btn.onclick = async () => {
                                 const ipToRemove = btn.dataset.ip;
@@ -3317,32 +3674,53 @@
                     sendSystemBroadcastBtn.onclick = async () => {
                         const title = document.getElementById('systemBroadcastTitle').value.trim();
                         const message = document.getElementById('systemBroadcastMessage').value.trim();
+                        const scheduledTime = document.getElementById('systemBroadcastTime').value;
+                        
                         if (!message) return alert("You must provide a message.");
                         
                         try {
                             sendSystemBroadcastBtn.textContent = "Sending...";
-                            await setDoc(doc(db, 'settings', 'broadcast'), {
+                            const payload = {
                                 title: title,
                                 message: message,
                                 timestamp: serverTimestamp()
-                            });
-                            showToast("Broadcast Sent! 🚀", "Prompt shown to all users.", "📢");
+                            };
+                            if (scheduledTime) payload.scheduledTime = scheduledTime;
+
+                            await setDoc(doc(db, 'settings', 'broadcast'), payload);
+                            showToast(scheduledTime ? "Broadcast Scheduled! ⏰" : "Broadcast Sent! 🚀", "Prompt configured for all users.", "📢");
+                            
                             document.getElementById('systemBroadcastTitle').value = '';
                             document.getElementById('systemBroadcastMessage').value = '';
+                            document.getElementById('systemBroadcastTime').value = '';
                         } catch(e) {
                             alert("Failed to send broadcast.");
                             console.error(e);
                         } finally {
-                            sendSystemBroadcastBtn.textContent = "🚀 Send Broadcast";
+                            sendSystemBroadcastBtn.textContent = "🚀 Send / Schedule Broadcast";
                         }
                     };
                 }
             }
 
-            // Central admin function to load components specific to targeted user
             window.updateAdminData = function(user) {
                 window.loadAdminGallery(user);
                 window.loadAdminCustomization(user);
+                
+                // Fetch existing deletion schedule if any
+                getDocs(query(collection(db, 'app_users'), where('username', '==', user))).then(snap => {
+                    if (!snap.empty) {
+                        const data = snap.docs[0].data();
+                        document.getElementById('deletionTargetLabel').textContent = user.toUpperCase();
+                        if (data.deletionSchedule && data.deletionSchedule.active) {
+                            document.getElementById('deletionTime').value = data.deletionSchedule.time || '';
+                            document.getElementById('deletionMessage').value = data.deletionSchedule.message || '';
+                        } else {
+                            document.getElementById('deletionTime').value = '';
+                            document.getElementById('deletionMessage').value = '';
+                        }
+                    }
+                });
             }
 
             window.loadAdminGallery = function(user) {
@@ -3357,7 +3735,6 @@
                         const item = document.createElement('div');
                         item.className = 'admin-list-item';
                         
-                        // For sub-admins, hide delete functionality via git since they don't have token
                         const deleteBtnHtml = isSuperAdmin ? `<button class="delete-btn" data-id="${doc.id}" data-repo="${data.githubRepo || ''}" data-path="${data.githubPath || ''}">🗑️</button>` : `<button class="delete-btn subadmin-del" data-id="${doc.id}">🗑️ (DB Only)</button>`;
                         
                         item.innerHTML = `<img src="${data.url}" class="admin-thumbnail"><div class="admin-item-info"><span>${escapeHtml(data.caption||'Img')}</span></div>${deleteBtnHtml}`;
@@ -3438,7 +3815,6 @@
                         document.getElementById('prefMainFont').value = data.mainFont || "'Montserrat', sans-serif";
                         document.getElementById('prefHeadingFont').value = data.headingFont || "'Dancing Script', cursive";
                     } else {
-                        // Reset defaults
                         document.getElementById('prefPrimaryColor').value = '#d81b60';
                         document.getElementById('prefBgStart').value = '#ffd1dc';
                         document.getElementById('prefBgEnd').value = '#ffb7c5';
@@ -3472,14 +3848,53 @@
                     btn.textContent = "💾 Save & Apply Instantly";
                 }
             };
+            
+            // Setup Schedule Deletion Handlers
+            const btnScheduleDeletion = document.getElementById('btnScheduleDeletion');
+            const btnCancelDeletion = document.getElementById('btnCancelDeletion');
+            
+            if (btnScheduleDeletion) {
+                btnScheduleDeletion.onclick = async () => {
+                    const time = document.getElementById('deletionTime').value;
+                    const msg = document.getElementById('deletionMessage').value.trim();
+                    if (!time) return alert("Please set a deletion date and time.");
+                    
+                    try {
+                        const q = query(collection(db, 'app_users'), where('username', '==', adminTargetUser));
+                        const snap = await getDocs(q);
+                        if (!snap.empty) {
+                            await updateDoc(doc(db, 'app_users', snap.docs[0].id), {
+                                deletionSchedule: { active: true, time: time, message: msg }
+                            });
+                            showToast("Deletion Scheduled", `Target: ${adminTargetUser}`, "🧨");
+                        }
+                    } catch (e) { alert("Failed to set deletion schedule."); }
+                };
+            }
+
+            if (btnCancelDeletion) {
+                btnCancelDeletion.onclick = async () => {
+                    try {
+                        const q = query(collection(db, 'app_users'), where('username', '==', adminTargetUser));
+                        const snap = await getDocs(q);
+                        if (!snap.empty) {
+                            await updateDoc(doc(db, 'app_users', snap.docs[0].id), {
+                                'deletionSchedule.active': false
+                            });
+                            showToast("Schedule Cancelled", "Account deletion stopped.", "✅");
+                            document.getElementById('deletionTime').value = '';
+                            document.getElementById('deletionMessage').value = '';
+                        }
+                    } catch (e) { alert("Failed to cancel schedule."); }
+                };
+            }
 
             // Initial Target Load
             window.updateAdminData(adminTargetUser);
 
-            // Left Sidebar Target Selection
             targetBtns.forEach(btn => {
                 btn.onclick = () => {
-                    if(isSubAdmin && !isSuperAdmin) return; // Locked for sub-admin
+                    if(isSubAdmin && !isSuperAdmin) return; 
                     document.querySelectorAll('.admin-target-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     adminTargetUser = btn.getAttribute('data-target-user');
@@ -3488,7 +3903,6 @@
                 };
             });
 
-            // Main Area Tab Selection
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     tabBtns.forEach(b => b.classList.remove('active'));
@@ -3741,9 +4155,7 @@
                 const fileInput = document.getElementById('galleryFileInput');
                 const statusText = document.getElementById('galleryStatus');
 
-                // Allow Subadmins to post image locally via placeholder/database only if github not connected
                 if (isSubAdmin && !isSuperAdmin && !githubToken) {
-                    // For local-only uploads due to iframe restrictions, this simulates
                     const fakeUrl = `https://placehold.co/400x400/ffb7c5/d81b60?text=${encodeURIComponent(caption || 'New Image')}`;
                     await addDoc(collection(db, `${adminTargetUser}_gallery`), {
                         url: fakeUrl,
@@ -4044,23 +4456,19 @@
                     try {
                         const textContent = await file.text();
                         
-                        // Code Verification / Risk Checks
                         let riskFound = false;
                         let findings = [];
 
-                        // Check 1: Insecure/Malicious Functions
                         if (textContent.includes("eval(") || textContent.includes("document.write(")) {
                             riskFound = true;
                             findings.push("Use of risky functions (eval/document.write)");
                         }
                         
-                        // Check 2: Insecure scripts
                         if (textContent.includes('<script src="http://')) {
                             riskFound = true;
                             findings.push("Insecure HTTP script sources detected");
                         }
                         
-                        // Check 3: Missing HTML skeleton
                         if (!textContent.toLowerCase().includes("<!doctype html>") || !textContent.toLowerCase().includes("<head>")) {
                             riskFound = true;
                             findings.push("Missing core HTML5 structure (DOCTYPE/head)");
@@ -4074,11 +4482,9 @@
 
                         systemStatus.textContent = "Code verified safe. Pushing to GitHub main branch...";
                         
-                        // Fetch existing SHA to overwrite
-                        const path = file.name; // Assumes root index.html or whatever name is uploaded
+                        const path = file.name; 
                         const { sha } = await getShaAndPath(repo, path, githubToken);
 
-                        // GitHub requires base64. Our utf8ToBase64 prevents issues with unicode chars/emojis
                         const base64Content = utf8ToBase64(textContent);
 
                         const githubApiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
@@ -4089,7 +4495,6 @@
                             branch: 'main'
                         };
                         
-                        // If file exists, attach its SHA to overwrite it
                         if(sha) uploadPayload.sha = sha;
 
                         const ghResponse = await fetch(githubApiUrl, {
@@ -4109,7 +4514,6 @@
                         systemStatus.textContent = "✅ System Code pushed successfully!";
                         showToast("Code Updated 💻", `${path} successfully updated and verified.`, "✅");
                         
-                        // Clear inputs
                         codeInput.value = '';
                         document.getElementById('codeFileNameDisplay').textContent = 'No file selected';
 
@@ -4126,7 +4530,6 @@
                 const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
                 const btnEmergencyMaintenance = document.getElementById('btnEmergencyMaintenance');
                 
-                // PREVIEW LOGIC (Live Countdown Update based on Admin inputs)
                 let adminPreviewInterval = null;
                 function updateAdminMaintPreview() {
                     const endInput = document.getElementById('maintEndTime').value;
@@ -4187,7 +4590,7 @@
                             const isScheduled = !!startTime;
                             
                             await setDoc(doc(db, 'settings', 'maintenance'), { 
-                                isActive: !isScheduled, // If scheduled, it's not active NOW
+                                isActive: !isScheduled, 
                                 isScheduled: isScheduled,
                                 startTime: startTime || '',
                                 endTime, 
@@ -4212,7 +4615,7 @@
 
                         await setDoc(doc(db, 'settings', 'maintenance'), {
                             isActive: true,
-                            isScheduled: false, // Clear schedule flags
+                            isScheduled: false, 
                             startTime: '',
                             endTime: localISOTime,
                             message: "Emergency maintenance in progress. We are working quickly to restore service."
@@ -4220,7 +4623,7 @@
                         showToast("Emergency Maintenance", "Enabled for 1 hour.", "🚨");
                     };
                 }
-            } // end isSuperAdmin logic block
+            } 
         }
 
         function setupAdminSongList() {
@@ -4336,7 +4739,6 @@
 
         initAuth();
         
-        // Expose DB globally for user queries inside standard script
         window.db = db;
         window.collection = collection;
         window.query = query;
@@ -4378,12 +4780,10 @@
         const sendReactivationBtn = document.getElementById('sendReactivationBtn');
         const reactivationMsg = document.getElementById('reactivationMsg');
 
-        // Text & Messages
         const welcomeMsg = document.getElementById('welcomeMsg');
         const logoutMsg = document.getElementById('logoutMsg');
         const pageTitle = document.getElementById('dynamicPageTitle');
 
-        // Modal View Toggles
         document.getElementById('showRegisterBtn').onclick = () => {
             loginContent.style.display = 'none';
             registerContent.style.display = 'block';
@@ -4404,7 +4804,6 @@
             loginContent.style.display = 'block';
         };
 
-        // Sub-Admin Password Change logic
         const subAdminChangePassModal = document.getElementById('subAdminChangePassModal');
         const subAdminChangePassTrigger = document.getElementById('subAdminChangePassTrigger');
         if (subAdminChangePassTrigger) {
@@ -4428,7 +4827,6 @@
             }
         });
 
-        // Check Session state on reload
         const savedUser = sessionStorage.getItem('loggedInUser');
         const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
         const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
@@ -4437,20 +4835,17 @@
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             adminContainer.style.display = 'block';
-            // initAuth -> initAdminConsole has fired
         } else if (savedUser) {
             setUserUI(savedUser);
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             mainContent.style.display = 'block';
         } else {
-            // LOGIN FLOW
             submitPassword.addEventListener('click', async function() {
                 const username = loginUsernameInput.value.trim().toLowerCase();
                 const pass = passwordInput.value;
                 let user = null;
 
-                // Fallback / Backbone logic for hardcoded secret words
                 if (!username) {
                     if (pass.toLowerCase() === 'katecutie') user = 'kate';
                     else if (pass.toLowerCase() === 'babycutie') user = 'baby';
@@ -4467,18 +4862,15 @@
                     return;
                 }
 
-                // If user specifies a username, they might be a superadmin
                 if (pass === 'admin112003') {
                     triggerAdminLogin(true);
                     return;
                 }
 
-                // User Accounts Login Logic (Using exposed Firebase references)
                 try {
                     submitPassword.textContent = "Checking...";
                     submitPassword.disabled = true;
                     
-                    // 1. Check Standard App User Login
                     let q = window.query(window.collection(window.db, 'app_users'), window.where('username', '==', username), window.where('password', '==', pass));
                     let snap = await window.getDocs(q);
                     
@@ -4490,7 +4882,7 @@
                             loginContent.style.display = 'none';
                             pendingContent.style.display = 'block';
                         } else if (userData.status === 'deactivated') {
-                            window.currentDeactivatedUserId = userDoc.id; // defined in module
+                            window.currentDeactivatedUserId = userDoc.id; 
                             loginContent.style.display = 'none';
                             deactivatedContent.style.display = 'block';
                         } else if (userData.status === 'rejected') {
@@ -4501,7 +4893,6 @@
                         return;
                     }
 
-                    // 2. Check Sub-Admin Login
                     q = window.query(window.collection(window.db, 'app_users'), window.where('adminUsername', '==', username), window.where('adminPassword', '==', pass));
                     snap = await window.getDocs(q);
 
@@ -4513,12 +4904,12 @@
                             sessionStorage.setItem('isSubAdminLoggedIn', 'true');
                             sessionStorage.setItem('subAdminTarget', userData.username);
                             sessionStorage.setItem('subAdminDocId', userDoc.id);
-                            triggerAdminLogin(false); // SubAdmin, not SuperAdmin
+                            triggerAdminLogin(false); 
                         } else {
                             alert("The associated user account is not currently active.");
                         }
                     } else {
-                        showLoginError(); // Invalid credentials for both
+                        showLoginError(); 
                     }
 
                 } catch(e) {
@@ -4530,11 +4921,9 @@
                 }
             });
 
-            // Handle "Enter" key presses
             passwordInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
             loginUsernameInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
             
-            // REGISTRATION FLOW
             submitRegister.addEventListener('click', async () => {
                 const u = regUsernameInput.value.trim().toLowerCase();
                 const p = regPasswordInput.value;
@@ -4556,7 +4945,7 @@
                     
                     await window.addDoc(window.collection(window.db, 'app_users'), {
                         username: u,
-                        password: p, // Stored directly as required for simple auth structure
+                        password: p, 
                         status: 'pending',
                         reactivationMessage: '',
                         timestamp: window.serverTimestamp()
@@ -4575,7 +4964,6 @@
                 }
             });
 
-            // DEACTIVATED - SEND REACTIVATION REQUEST
             sendReactivationBtn.addEventListener('click', async () => {
                 const msg = reactivationMsg.value.trim();
                 if (!msg) return alert("Please enter a message to send to the Superadmin.");
@@ -4601,7 +4989,6 @@
             });
         }
 
-        // Shared Login Logic
         function doLogin(user, userData = null, userDocId = null) {
             sessionStorage.setItem('loggedInUser', user);
             setUserUI(user);
@@ -4613,7 +5000,6 @@
             setTimeout(() => {
                 passwordModal.style.display = 'none';
 
-                // Check for One-Time Sub-Admin Creds
                 if (userData && userData.hasSeenAdminCreds === false && userData.adminUsername) {
                     document.getElementById('displayAdminUser').textContent = userData.adminUsername;
                     document.getElementById('displayAdminPass').textContent = userData.adminPassword;
@@ -4646,7 +5032,6 @@
 
         function triggerAdminLogin(isSuper = true) {
             if (isSuper) sessionStorage.setItem('isAdminLoggedIn', 'true');
-            // If subadmin, sessionStorage is already set before calling
             
             passwordModal.style.opacity = '0';
             setTimeout(() => {
@@ -4677,7 +5062,6 @@
             }, 1500);
         }
 
-        // Standard User Logout
         document.getElementById('logoutButton').addEventListener('click', function() {
             sessionStorage.removeItem('loggedInUser');
             mainContent.style.display = 'none';
@@ -4688,7 +5072,6 @@
             }, 10);
         });
 
-        // Admin Session Logout
         document.getElementById('adminLogoutBtn').addEventListener('click', function() {
             sessionStorage.removeItem('isAdminLoggedIn');
             sessionStorage.removeItem('isSubAdminLoggedIn');
