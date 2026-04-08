@@ -17,7 +17,10 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <title id="dynamicPageTitle">For You</title>
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Expanded Google Fonts for Customization -->
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;500;600&family=Pacifico&family=Caveat:wght@700&family=Lobster&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
@@ -1561,6 +1564,16 @@
         ⚠️ Scheduled Maintenance starts in: <span id="scheduled-maint-countdown">00:00:00</span>
     </div>
 
+    <!-- GLOBAL BROADCAST MODAL -->
+    <div id="globalBroadcastModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:999999; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="background:white; text-align:center; animation: bounceIn 0.5s forwards;">
+            <div style="font-size: 50px; animation: pulse 2s infinite;">📢</div>
+            <h2 id="broadcastModalTitle" style="color:#d81b60; font-family:'Dancing Script', cursive; font-size:32px; margin-top: 10px;">Announcement</h2>
+            <p id="broadcastModalMessage" style="font-size:16px; color:#555; margin:20px 0; line-height: 1.5; white-space: pre-wrap;"></p>
+            <button class="submit-btn" onclick="document.getElementById('globalBroadcastModal').style.display='none'" style="width:100%;">Got it!</button>
+        </div>
+    </div>
+
     <!-- MAINTENANCE OVERLAY -->
     <div id="maintenance-overlay">
         <div class="maintenance-content" id="maint-active-content">
@@ -1675,6 +1688,7 @@
                         <button class="admin-tab-btn active" data-target="admin-letters">💌 Letters</button>
                         <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
                         <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
+                        <button class="admin-tab-btn" data-target="admin-customization">🎨 Customize</button>
                         <!-- Superadmin exclusive tabs -->
                         <button class="admin-tab-btn superadmin-only" data-target="admin-music">🎵 Music</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-devices">📱 Devices</button>
@@ -1713,6 +1727,41 @@
                             <textarea id="adminNotesContent" class="fw-textarea" style="height: 200px;" placeholder="1. Drink water&#10;2. Smile often&#10;3. I love you"></textarea>
                         </div>
                         <button class="submit-btn" id="saveNotesBtn" style="width: 100%">Save Notes & Update Time</button>
+                    </div>
+
+                    <!-- Tab: Customization (Theme & Fonts) -->
+                    <div class="admin-panel" id="admin-customization">
+                        <h4 class="admin-section-title">Theme & Fonts Settings</h4>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Customize how the application looks specifically for the selected target user.</p>
+                        
+                        <div class="admin-form-group">
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:5px;">Primary Base Color:</label>
+                            <input type="color" id="prefPrimaryColor" class="fw-input" style="height: 45px; padding: 2px; cursor: pointer;">
+
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:10px; margin-bottom:5px;">Background Gradient Start:</label>
+                            <input type="color" id="prefBgStart" class="fw-input" style="height: 45px; padding: 2px; cursor: pointer;">
+
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:10px; margin-bottom:5px;">Background Gradient End:</label>
+                            <input type="color" id="prefBgEnd" class="fw-input" style="height: 45px; padding: 2px; cursor: pointer;">
+
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:15px; margin-bottom:5px;">Main Text Font:</label>
+                            <select id="prefMainFont" class="repo-select">
+                                <option value="'Montserrat', sans-serif">Montserrat (Default)</option>
+                                <option value="'Roboto', sans-serif">Roboto</option>
+                                <option value="'Open Sans', sans-serif">Open Sans</option>
+                                <option value="'Lato', sans-serif">Lato</option>
+                                <option value="'Poppins', sans-serif">Poppins</option>
+                            </select>
+
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:10px; margin-bottom:5px;">Heading Font:</label>
+                            <select id="prefHeadingFont" class="repo-select">
+                                <option value="'Dancing Script', cursive">Dancing Script (Default)</option>
+                                <option value="'Pacifico', cursive">Pacifico</option>
+                                <option value="'Caveat', cursive">Caveat</option>
+                                <option value="'Lobster', cursive">Lobster</option>
+                            </select>
+                        </div>
+                        <button id="saveCustomizationBtn" class="submit-btn" style="width: 100%; margin-top: 10px;">💾 Save & Apply Instantly</button>
                     </div>
 
                     <!-- Tab: Music Manager (Shared) -->
@@ -1825,13 +1874,22 @@
 
                     <!-- System Manager (Code Upload & Verification) -->
                     <div class="admin-panel" id="admin-system">
-                        <div id="ghSystemAuthStatus">
+                        
+                        <h4 class="admin-section-title" style="color: #ff9800; border-bottom-color: #ffe0b2;">📢 Global Broadcast Message</h4>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Send an instant popup message to ALL active users simultaneously.</p>
+                        <div class="admin-form-group" style="background: #fff8e1; padding: 15px; border-radius: 12px; border: 1px solid #ffe0b2;">
+                            <input type="text" id="systemBroadcastTitle" class="fw-input" placeholder="Broadcast Title (e.g. Important Update)" style="background:white; border-color:#ffcc80;">
+                            <textarea id="systemBroadcastMessage" class="fw-textarea" style="height: 80px; background:white; border-color:#ffcc80;" placeholder="Write your global announcement here..."></textarea>
+                            <button id="sendSystemBroadcastBtn" class="submit-btn" style="width: 100%; background: #ff9800; border: none; box-shadow: 0 4px 10px rgba(255,152,0,0.3);">🚀 Send Broadcast</button>
+                        </div>
+
+                        <div id="ghSystemAuthStatus" style="margin-top: 30px;">
                             <div class="gh-status-box" style="background: #fff5f7; border-color: #ffb7c5;">
-                                <p style="font-size: 13px; color: #d81b60;">⚠️ Please authorize GitHub in the Music tab first.</p>
+                                <p style="font-size: 13px; color: #d81b60;">⚠️ Please authorize GitHub in the Music tab to use System Updates.</p>
                             </div>
                         </div>
 
-                        <div id="ghSystemAuthorizedUI" style="display: none;">
+                        <div id="ghSystemAuthorizedUI" style="display: none; margin-top: 30px;">
                             <h4 class="admin-section-title">Push Core Update (index.html)</h4>
                             <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Securely upload and push the <code>index.html</code> code to the active GitHub repository. It will automatically be scanned for vulnerabilities before pushing.</p>
                             
@@ -2211,6 +2269,21 @@
             }
         });
 
+        // Listen for Global Broadcasts
+        let isBroadcastInit = true;
+        onSnapshot(doc(db, 'settings', 'broadcast'), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (!isBroadcastInit && data.timestamp) {
+                    document.getElementById('broadcastModalTitle').textContent = data.title || 'Announcement';
+                    document.getElementById('broadcastModalMessage').textContent = data.message || '';
+                    document.getElementById('globalBroadcastModal').style.display = 'flex';
+                    if(navigator.vibrate) navigator.vibrate([200, 100, 200]); // Try to vibrate device
+                }
+            }
+            isBroadcastInit = false;
+        });
+
         // Anti-screenshot handlers
         function handleSecurityBlur() {
             if(globalSecurityConfig.antiScreenshot) {
@@ -2527,6 +2600,55 @@
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
+        // --- THEME & FONT CUSTOMIZATION SYSTEM ---
+        window.applyUserTheme = function(prefs) {
+            const styleId = 'user-custom-theme';
+            let styleEl = document.getElementById(styleId);
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = styleId;
+                document.head.appendChild(styleEl);
+            }
+            if (!prefs || Object.keys(prefs).length === 0) {
+                styleEl.innerHTML = '';
+                return;
+            }
+            
+            const main = prefs.mainFont || "'Montserrat', sans-serif";
+            const heading = prefs.headingFont || "'Dancing Script', cursive";
+            const primary = prefs.primaryColor || '#d81b60';
+            const bg1 = prefs.bgStart || '#ffd1dc';
+            const bg2 = prefs.bgEnd || '#ffb7c5';
+            
+            styleEl.innerHTML = `
+                body, .fw-input, .fw-textarea, .fw-text, .security-text, #scheduled-maint-banner, .admin-transition-text, .repo-select { font-family: ${main} !important; }
+                h1, h2, h3, .welcome-message, .letter h3, .password-content h2, .maintenance-content h2 { font-family: ${heading} !important; }
+                
+                .submit-btn, .admin-target-btn.active, .admin-tab-btn.active, .control-btn.main-play, .artist-header.active-artist { background-color: ${primary} !important; }
+                .submit-btn:hover { background-color: ${primary} !important; opacity: 0.9; }
+                
+                body, .welcome-screen, .logout-screen { background: linear-gradient(135deg, ${bg1}, ${bg2}) !important; }
+                
+                .tab, .tab.active { color: ${primary} !important; }
+                
+                h2, .letter h3, .player-title, .fw-author, .admin-section-title, .welcome-message, .security-text, .toast-title { color: ${primary} !important; }
+                
+                .fw-message-card, .note, .device-card { border-left-color: ${primary} !important; }
+                
+                .liquid, .progress-fill, .volume-slider::-webkit-slider-thumb { background: ${primary} !important; }
+                
+                .control-btn, .song-icon, .custom-play-btn, .artist-header, #phClock { color: ${primary} !important; }
+                .control-btn.main-play { color: white !important; }
+                .artist-header.active-artist { color: white !important; }
+                
+                .password-input:focus, .fw-input:focus, .fw-textarea:focus, .repo-select:focus { border-color: ${primary} !important; }
+                
+                .beat-wave { border-color: ${primary} !important; box-shadow: 0 0 15px ${primary}40 !important; }
+                
+                #mainBgOverlay { background: radial-gradient(circle at 60% 40%, ${primary} 0%, #2a002a 100%) !important; }
+            `;
+        };
+
         async function initAuth() {
             try {
                 if(!auth.currentUser) {
@@ -2553,6 +2675,15 @@
             setupFreedomWall(user);
             setupDynamicContent(user); 
             setupGallery(user); 
+            
+            // Listen for user customization updates
+            onSnapshot(doc(db, 'preferences', user), (docSnap) => {
+                if(docSnap.exists()) {
+                    window.applyUserTheme(docSnap.data());
+                } else {
+                    window.applyUserTheme(null);
+                }
+            });
         };
         
         function setupNotificationSystem() {
@@ -3008,7 +3139,7 @@
                                 btn.classList.add('active');
                                 adminTargetUser = data.username;
                                 document.getElementById('adminTargetLabel').textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-                                if (window.loadAdminGallery) window.loadAdminGallery(adminTargetUser);
+                                window.updateAdminData(adminTargetUser);
                             };
                             dynamicTargets.appendChild(btn);
                         }
@@ -3179,9 +3310,41 @@
                         });
                     }
                 });
+                
+                // Superadmin Global Broadcast Implementation
+                const sendSystemBroadcastBtn = document.getElementById('sendSystemBroadcastBtn');
+                if (sendSystemBroadcastBtn) {
+                    sendSystemBroadcastBtn.onclick = async () => {
+                        const title = document.getElementById('systemBroadcastTitle').value.trim();
+                        const message = document.getElementById('systemBroadcastMessage').value.trim();
+                        if (!message) return alert("You must provide a message.");
+                        
+                        try {
+                            sendSystemBroadcastBtn.textContent = "Sending...";
+                            await setDoc(doc(db, 'settings', 'broadcast'), {
+                                title: title,
+                                message: message,
+                                timestamp: serverTimestamp()
+                            });
+                            showToast("Broadcast Sent! 🚀", "Prompt shown to all users.", "📢");
+                            document.getElementById('systemBroadcastTitle').value = '';
+                            document.getElementById('systemBroadcastMessage').value = '';
+                        } catch(e) {
+                            alert("Failed to send broadcast.");
+                            console.error(e);
+                        } finally {
+                            sendSystemBroadcastBtn.textContent = "🚀 Send Broadcast";
+                        }
+                    };
+                }
             }
 
-            // Make sure the function is accessible globally for dynamic buttons
+            // Central admin function to load components specific to targeted user
+            window.updateAdminData = function(user) {
+                window.loadAdminGallery(user);
+                window.loadAdminCustomization(user);
+            }
+
             window.loadAdminGallery = function(user) {
                 const list = document.getElementById('adminGalleryList');
                 if(galleryUnsubscribe) galleryUnsubscribe(); 
@@ -3263,7 +3426,55 @@
                 });
             };
 
-            window.loadAdminGallery(adminTargetUser);
+            // Customization Data Fetching
+            window.loadAdminCustomization = async function(user) {
+                try {
+                    const snap = await getDoc(doc(db, 'preferences', user));
+                    if(snap.exists()) {
+                        const data = snap.data();
+                        document.getElementById('prefPrimaryColor').value = data.primaryColor || '#d81b60';
+                        document.getElementById('prefBgStart').value = data.bgStart || '#ffd1dc';
+                        document.getElementById('prefBgEnd').value = data.bgEnd || '#ffb7c5';
+                        document.getElementById('prefMainFont').value = data.mainFont || "'Montserrat', sans-serif";
+                        document.getElementById('prefHeadingFont').value = data.headingFont || "'Dancing Script', cursive";
+                    } else {
+                        // Reset defaults
+                        document.getElementById('prefPrimaryColor').value = '#d81b60';
+                        document.getElementById('prefBgStart').value = '#ffd1dc';
+                        document.getElementById('prefBgEnd').value = '#ffb7c5';
+                        document.getElementById('prefMainFont').value = "'Montserrat', sans-serif";
+                        document.getElementById('prefHeadingFont').value = "'Dancing Script', cursive";
+                    }
+                } catch(e) { console.error("Error loading customization:", e); }
+            };
+            
+            // Save Customization Setup
+            document.getElementById('saveCustomizationBtn').onclick = async () => {
+                if(!adminTargetUser) return alert("Please select a target user first.");
+                const btn = document.getElementById('saveCustomizationBtn');
+                btn.textContent = "Saving...";
+                
+                const prefs = {
+                    primaryColor: document.getElementById('prefPrimaryColor').value,
+                    bgStart: document.getElementById('prefBgStart').value,
+                    bgEnd: document.getElementById('prefBgEnd').value,
+                    mainFont: document.getElementById('prefMainFont').value,
+                    headingFont: document.getElementById('prefHeadingFont').value
+                };
+
+                try {
+                    await setDoc(doc(db, 'preferences', adminTargetUser), prefs);
+                    showToast("Customization Saved! 🎨", `Live updates sent to ${adminTargetUser}`, "🎨");
+                } catch(e) {
+                    alert("Failed to save theme modifications.");
+                    console.error(e);
+                } finally {
+                    btn.textContent = "💾 Save & Apply Instantly";
+                }
+            };
+
+            // Initial Target Load
+            window.updateAdminData(adminTargetUser);
 
             // Left Sidebar Target Selection
             targetBtns.forEach(btn => {
@@ -3273,7 +3484,7 @@
                     btn.classList.add('active');
                     adminTargetUser = btn.getAttribute('data-target-user');
                     targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-                    window.loadAdminGallery(adminTargetUser);
+                    window.updateAdminData(adminTargetUser);
                 };
             });
 
@@ -4135,6 +4346,7 @@
         window.serverTimestamp = serverTimestamp;
         window.updateDoc = updateDoc;
         window.doc = doc;
+        window.getDoc = getDoc;
     </script>
 
     <!-- Original UI Logic -->
