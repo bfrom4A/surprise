@@ -16,6 +16,9 @@
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
+    <!-- PeerJS for Video Chat -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
     <title id="dynamicPageTitle">For You</title>
     
     <!-- Expanded Google Fonts for Customization -->
@@ -2188,6 +2191,9 @@
             <button class="tab" data-tab="freedom-wall">
                 <span>🕊️</span> Freedom Wall
             </button>
+            <button class="tab" data-tab="video-chat">
+                <span>📹</span> Video Chat
+            </button>
             <button class="tab" id="logoutButton">
                 <span>🔒</span> Log Out
             </button>
@@ -2299,6 +2305,39 @@
                 
                 <div id="fwMessagesContainer" class="fw-messages">
                     <div class="empty-wall-message">Loading messages...</div>
+                </div>
+            </div>
+
+            <!-- Video Chat Tab -->
+            <div class="tab-content" id="video-chat">
+                <h2>Video Chat 📹</h2>
+                <br>
+                <div id="videoChatContainer">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                        <input type="text" id="userName" placeholder="Your Name" style="padding: 10px; border-radius: 10px; border: 1px solid #ffb7c5; width: 200px; text-align: center;">
+                        <input type="text" id="peerIdInput" placeholder="Other User's ID" style="padding: 10px; border-radius: 10px; border: 1px solid #ffb7c5; width: 200px; text-align: center;">
+                        <div style="display: flex; gap: 10px;">
+                            <button id="startCallBtn" class="submit-btn">📞 Call</button>
+                            <button id="joinCallBtn" class="submit-btn">📱 Wait for Call</button>
+                        </div>
+                        <div id="videos" style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+                            <div style="text-align: center;">
+                                <video id="localVideo" autoplay muted style="width: 300px; height: 200px; border-radius: 10px; border: 2px solid #ffb7c5;"></video>
+                                <p id="localName" style="margin-top: 5px; font-weight: bold; color: #d81b60;">You</p>
+                            </div>
+                            <div style="text-align: center;">
+                                <video id="remoteVideo" autoplay style="width: 300px; height: 200px; border-radius: 10px; border: 2px solid #ffb7c5;"></video>
+                                <p id="remoteName" style="margin-top: 5px; font-weight: bold; color: #d81b60;">Other</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                            <button id="toggleCameraBtn" class="submit-btn">📹 Camera On</button>
+                            <button id="toggleMicBtn" class="submit-btn">🎤 Mic On</button>
+                            <button id="shareScreenBtn" class="submit-btn">🖥️ Share Screen</button>
+                            <button id="endCallBtn" class="submit-btn" style="background: #ff4d4d;">❌ End Call</button>
+                        </div>
+                        <div id="callStatus" style="font-size: 14px; color: #888; text-align: center;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -5385,6 +5424,199 @@
                 }
             }
         }
+
+        // VIDEO CHAT FUNCTIONALITY
+        let peer = null;
+        let localStream = null;
+        let currentCall = null;
+        let isCameraOn = true;
+        let isMicOn = true;
+        let isScreenSharing = false;
+
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const userNameInput = document.getElementById('userName');
+        const startCallBtn = document.getElementById('startCallBtn');
+        const joinCallBtn = document.getElementById('joinCallBtn');
+        const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+        const toggleMicBtn = document.getElementById('toggleMicBtn');
+        const shareScreenBtn = document.getElementById('shareScreenBtn');
+        const endCallBtn = document.getElementById('endCallBtn');
+
+        function getOtherUser() {
+            return currentUser === 'kate' ? 'baby' : 'kate';
+        }
+
+        async function getMedia(constraints = { video: true, audio: true }) {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                localVideo.srcObject = localStream;
+                return true;
+            } catch (err) {
+                console.error('Error accessing media devices:', err);
+                alert('Error accessing camera/microphone. Please check permissions.');
+                return false;
+            }
+        }
+
+        function initPeer() {
+            if (peer) peer.destroy();
+            peer = new Peer(currentUser, {
+                host: 'peerjs-server.herokuapp.com',
+                secure: true,
+                port: 443,
+                key: 'peerjs'
+            });
+
+            peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+            });
+
+            peer.on('call', (call) => {
+                if (confirm('Incoming call from ' + call.peer + '. Accept?')) {
+                    call.answer(localStream);
+                    currentCall = call;
+                    call.on('stream', (remoteStream) => {
+                        remoteVideo.srcObject = remoteStream;
+                    });
+                    call.on('close', () => {
+                        endCall();
+                    });
+                } else {
+                    call.close();
+                }
+            });
+
+            peer.on('error', (err) => {
+                console.error('Peer error:', err);
+                alert('Connection error: ' + err.message);
+            });
+        }
+
+        async function startCall() {
+            if (!userNameInput.value.trim()) {
+                alert('Please enter your name first.');
+                return;
+            }
+            if (!await getMedia()) return;
+            initPeer();
+            setTimeout(() => {
+                const call = peer.call(getOtherUser(), localStream);
+                if (call) {
+                    currentCall = call;
+                    call.on('stream', (remoteStream) => {
+                        remoteVideo.srcObject = remoteStream;
+                    });
+                    call.on('close', () => {
+                        endCall();
+                    });
+                } else {
+                    alert('Failed to start call. Other user may not be online.');
+                }
+            }, 1000);
+        }
+
+        async function joinCall() {
+            if (!userNameInput.value.trim()) {
+                alert('Please enter your name first.');
+                return;
+            }
+            if (!await getMedia()) return;
+            initPeer();
+            alert('Waiting for incoming call...');
+        }
+
+        function toggleCamera() {
+            if (localStream) {
+                const videoTrack = localStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    videoTrack.enabled = !videoTrack.enabled;
+                    isCameraOn = videoTrack.enabled;
+                    toggleCameraBtn.textContent = isCameraOn ? '📹 Camera On' : '📷 Camera Off';
+                }
+            }
+        }
+
+        function toggleMic() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioTrack.enabled = !audioTrack.enabled;
+                    isMicOn = audioTrack.enabled;
+                    toggleMicBtn.textContent = isMicOn ? '🎤 Mic On' : '🎤 Mic Off';
+                }
+            }
+        }
+
+        async function shareScreen() {
+            try {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const videoTrack = screenStream.getVideoTracks()[0];
+                if (currentCall) {
+                    const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+                    if (sender) {
+                        sender.replaceTrack(videoTrack);
+                        isScreenSharing = true;
+                        shareScreenBtn.textContent = '🖥️ Stop Sharing';
+                        videoTrack.onended = () => {
+                            stopScreenShare();
+                        };
+                    }
+                }
+            } catch (err) {
+                console.error('Error sharing screen:', err);
+                alert('Error sharing screen.');
+            }
+        }
+
+        function stopScreenShare() {
+            if (localStream && currentCall) {
+                const videoTrack = localStream.getVideoTracks()[0];
+                const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+                if (sender && videoTrack) {
+                    sender.replaceTrack(videoTrack);
+                }
+                isScreenSharing = false;
+                shareScreenBtn.textContent = '🖥️ Share Screen';
+            }
+        }
+
+        function endCall() {
+            if (currentCall) {
+                currentCall.close();
+                currentCall = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            localVideo.srcObject = null;
+            remoteVideo.srcObject = null;
+            if (peer) {
+                peer.destroy();
+                peer = null;
+            }
+            isCameraOn = true;
+            isMicOn = true;
+            isScreenSharing = false;
+            toggleCameraBtn.textContent = '📹 Camera On';
+            toggleMicBtn.textContent = '🎤 Mic On';
+            shareScreenBtn.textContent = '🖥️ Share Screen';
+        }
+
+        // Event listeners
+        startCallBtn.addEventListener('click', startCall);
+        joinCallBtn.addEventListener('click', joinCall);
+        toggleCameraBtn.addEventListener('click', toggleCamera);
+        toggleMicBtn.addEventListener('click', toggleMic);
+        shareScreenBtn.addEventListener('click', () => {
+            if (isScreenSharing) {
+                stopScreenShare();
+            } else {
+                shareScreen();
+            }
+        });
+        endCallBtn.addEventListener('click', endCall);
 
         // FIX: Ensure AudioContext resumes on ANY user interaction (for iOS/Chrome policy)
         // Check if context is defined before adding the listener
