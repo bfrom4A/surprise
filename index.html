@@ -1783,7 +1783,7 @@
                         
                         <!-- Superadmin exclusive tabs -->
                         <button class="admin-tab-btn superadmin-only" data-target="admin-deletion">🧨 Deletion</button>
-                        <button class="admin-tab-btn superadmin-only" data-target="admin-music">🎵 Music</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-music">🎵 Music <span id="adminMusicPendingBadge" style="display:none; margin-left:8px; background:#ff4d4d; color:#fff; font-size:11px; padding:2px 7px; border-radius:12px; min-width:24px; text-align:center;"></span></button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-devices">📱 Devices</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-system">⚙️ System</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-security">🛡️ Security</button>
@@ -1923,6 +1923,38 @@
                                 </div>
                                 
                                 <button id="startUploadBtn" class="submit-btn" style="width: 100%;">Upload & Sync</button>
+                            </div>
+
+                            <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                                <h4 class="admin-section-title">Submit Music Request</h4>
+                                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Admins can request new songs for Superadmin approval.</p>
+                                <div class="admin-form-group">
+                                    <input type="text" id="requestArtistName" class="fw-input" placeholder="Artist Name">
+                                    <input type="text" id="requestSongTitle" class="fw-input" placeholder="Song Title">
+                                    <div class="file-input-wrapper" onclick="document.getElementById('musicRequestFileInput').click()">
+                                        <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3 for Approval</p>
+                                        <span id="musicRequestFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
+                                        <input type="file" id="musicRequestFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('musicRequestFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                                    </div>
+                                </div>
+                                <button id="submitMusicRequestBtn" class="submit-btn" style="width: 100%;">Submit for Approval</button>
+                                <p id="musicRequestStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
+                            </div>
+
+                            <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                                <h4 class="admin-section-title">Pending Music Approval</h4>
+                                <div id="pendingMusicRequests" class="admin-list-container">
+                                    <p style="text-align: center; color: #999; font-size: 12px;">Loading pending requests...</p>
+                                </div>
+                            </div>
+
+                            <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                                <h4 class="admin-section-title">Default Maintenance Music</h4>
+                                <select id="maintenanceMusicSelect" class="repo-select" style="margin-bottom: 10px;">
+                                    <option value="">Loading music choices...</option>
+                                </select>
+                                <button id="setDefaultMaintBtn" class="submit-btn" style="width: 100%;">Set Default Maintenance Track</button>
+                                <p id="maintenanceDefaultStatus" style="margin-top: 10px; font-size: 12px; color: #555; text-align: center;"></p>
                             </div>
                             
                             <p id="musicStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
@@ -2313,26 +2345,29 @@
                 <h2>Video Chat 📹</h2>
                 <div id="videoChatContainer">
                     <div style="margin-bottom: 20px;">
-                        <input type="text" id="userName" placeholder="Your Name" class="fw-input" maxlength="30" style="margin-bottom: 10px;">
-                        <input type="text" id="peerIdInput" placeholder="Enter Peer ID to connect" class="fw-input" style="margin-bottom: 10px;">
-                        <button id="generateIdBtn" class="submit-btn" style="margin-right: 10px;">Generate My ID</button>
-                        <button id="connectBtn" class="submit-btn">Connect</button>
+                        <input type="text" id="userName" placeholder="Your Name / Identity" class="fw-input" maxlength="30" style="margin-bottom: 10px;">
+                        <button id="initVideoChatBtn" class="submit-btn" style="margin-right: 10px;">Start Video Chat</button>
+                        <button id="callBtn" class="submit-btn">Call Other Device</button>
                         <button id="hangupBtn" class="submit-btn" style="background: #ff4d4d; margin-left: 10px;">Hang Up</button>
+                        <button id="acceptCallBtn" class="submit-btn" style="background: #28a745; margin-left: 10px; display: none;">Accept</button>
+                        <button id="declineCallBtn" class="submit-btn" style="background: #ccc; margin-left: 10px; display: none; color: #333;">Decline</button>
                     </div>
                     <div id="myIdDisplay" style="margin-bottom: 10px; font-weight: bold; color: #d81b60;"></div>
+                    <div id="deviceInfo" style="margin-bottom: 10px; color: #555; font-size: 14px;"></div>
+                    <div id="ringStatus" style="margin-bottom: 10px; color: #b71550; font-weight: bold;"></div>
                     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                         <button id="toggleCameraBtn" class="submit-btn">📹 Camera On</button>
                         <button id="toggleMicBtn" class="submit-btn">🎤 Mic On</button>
                         <button id="shareScreenBtn" class="submit-btn">🖥️ Share Screen</button>
                     </div>
-                    <div style="display: flex; gap: 20px;">
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                         <div>
                             <h3>Your Video</h3>
-                            <video id="myVideo" autoplay muted style="width: 300px; border: 2px solid #ffb7c5; border-radius: 10px;"></video>
+                            <video id="myVideo" autoplay muted playsinline style="width: 300px; border: 2px solid #ffb7c5; border-radius: 10px;"></video>
                         </div>
                         <div>
                             <h3>Remote Video</h3>
-                            <video id="remoteVideo" autoplay style="width: 300px; border: 2px solid #ffb7c5; border-radius: 10px;"></video>
+                            <video id="remoteVideo" autoplay playsinline style="width: 300px; border: 2px solid #ffb7c5; border-radius: 10px;"></video>
                         </div>
                     </div>
                 </div>
@@ -2357,6 +2392,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithPopup, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
@@ -2372,17 +2408,25 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
         
         let currentUser = sessionStorage.getItem('loggedInUser') || null; 
         let currentDeactivatedUserId = null; 
+        let currentDisplayName = '';
         
         // --- VIDEO CHAT VARIABLES ---
         let myPeer = null;
         let myStream = null;
         let currentCall = null;
+        let incomingCall = null;
         let isCameraOn = true;
         let isMicOn = true;
         let videoChatInitialized = false;
+        let userBaseId = null;
+        let deviceSlot = null;
+        let videoChatDocRef = null;
+        let ringInterval = null;
+        let ringAudio = null;
         
         // --- GLOBAL SECURITY & BLOCKING LOGIC ---
         let userIPAddress = 'Unknown IP';
@@ -2496,100 +2540,284 @@
         });
 
         // --- VIDEO CHAT FUNCTIONS ---
+        function sanitizeUserBase(name) {
+            return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'user';
+        }
+
+        function getStoredDeviceSlot() {
+            return localStorage.getItem('videoChatDeviceSlot');
+        }
+
+        function setStoredDeviceSlot(slot) {
+            localStorage.setItem('videoChatDeviceSlot', slot);
+        }
+
+        function stopRing() {
+            document.getElementById('ringStatus').textContent = '';
+            if (ringInterval) {
+                clearInterval(ringInterval);
+                ringInterval = null;
+            }
+            if (ringAudio) {
+                ringAudio.pause();
+                ringAudio.currentTime = 0;
+            }
+        }
+
+        function startRing(text) {
+            document.getElementById('ringStatus').textContent = text;
+            if (!ringAudio) {
+                ringAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=');
+                ringAudio.loop = true;
+            }
+            ringAudio.play().catch(() => {});
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+            if (!ringInterval) {
+                ringInterval = setInterval(() => {
+                    const status = document.getElementById('ringStatus');
+                    status.textContent = status.textContent.endsWith('...') ? text : text + '...';
+                }, 700);
+            }
+        }
+
+        function setCallEndedState() {
+            if (currentCall) {
+                currentCall.close();
+                currentCall = null;
+            }
+            if (incomingCall) {
+                incomingCall.close();
+                incomingCall = null;
+            }
+            stopRing();
+            document.getElementById('acceptCallBtn').style.display = 'none';
+            document.getElementById('declineCallBtn').style.display = 'none';
+            document.getElementById('remoteVideo').srcObject = null;
+            document.getElementById('ringStatus').textContent = 'Call ended. Camera and mic are off.';
+            if (myStream) {
+                const videoTrack = myStream.getVideoTracks()[0];
+                const audioTrack = myStream.getAudioTracks()[0];
+                if (videoTrack) {
+                    videoTrack.enabled = false;
+                    isCameraOn = false;
+                    document.getElementById('toggleCameraBtn').textContent = '📷 Camera Off';
+                }
+                if (audioTrack) {
+                    audioTrack.enabled = false;
+                    isMicOn = false;
+                    document.getElementById('toggleMicBtn').textContent = '🔇 Mic Off';
+                }
+            }
+        }
+
+        async function writeDeviceRegistration(peerId, slot, name) {
+            if (!videoChatDocRef) return;
+            const deviceKey = slot === 1 ? 'device1' : 'device2';
+            const deviceData = {
+                [deviceKey]: {
+                    peerId,
+                    name,
+                    updatedAt: serverTimestamp(),
+                }
+            };
+            await setDoc(videoChatDocRef, deviceData, { merge: true });
+        }
+
+        async function clearDeviceRegistration() {
+            if (!videoChatDocRef || !deviceSlot) return;
+            const deviceKey = deviceSlot === 1 ? 'device1' : 'device2';
+            await setDoc(videoChatDocRef, { [deviceKey]: null }, { merge: true });
+        }
+
+        async function assignDeviceSlot(userBase) {
+            const docRef = doc(db, 'video_chat', userBase);
+            const snapshot = await getDoc(docRef);
+            const storedSlot = getStoredDeviceSlot();
+            if (storedSlot === '1' || storedSlot === '2') {
+                deviceSlot = Number(storedSlot);
+            }
+            if (!snapshot.exists() || !snapshot.data()) {
+                if (!deviceSlot) deviceSlot = 1;
+                return docRef;
+            }
+            const data = snapshot.data();
+            if (!deviceSlot) {
+                if (!data.device1 || !data.device1.peerId) deviceSlot = 1;
+                else if (!data.device2 || !data.device2.peerId) deviceSlot = 2;
+                else deviceSlot = 1;
+            }
+            return docRef;
+        }
+
+        function updateDeviceInfoText() {
+            const otherSlot = deviceSlot === 1 ? 2 : 1;
+            const myId = `${userBaseId}-${deviceSlot}`;
+            const otherId = `${userBaseId}-${otherSlot}`;
+            document.getElementById('myIdDisplay').textContent = `Your fixed ID: ${myId}`;
+            document.getElementById('deviceInfo').textContent = `Calling will ring device ${otherSlot}. Other device ID: ${otherId}`;
+        }
+
         async function initVideoChat() {
             if (videoChatInitialized) return;
             videoChatInitialized = true;
+
+            const nameInput = document.getElementById('userName').value.trim();
+            const base = currentUser || localStorage.getItem('videoChatBase') || nameInput;
+            if (!base) {
+                alert('Please enter your name or identity before starting the video chat.');
+                return;
+            }
+            userBaseId = sanitizeUserBase(base);
+            localStorage.setItem('videoChatBase', userBaseId);
+
+            videoChatDocRef = await assignDeviceSlot(userBaseId);
+            if (!deviceSlot) deviceSlot = 1;
+            setStoredDeviceSlot(deviceSlot);
+
             try {
                 myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('myVideo').srcObject = myStream;
-                myPeer = new Peer();
+
+                const peerId = `${userBaseId}-${deviceSlot}`;
+                myPeer = new Peer(peerId);
                 
-                myPeer.on('open', (id) => {
-                    document.getElementById('myIdDisplay').textContent = 'Your ID: ' + id;
+                myPeer.on('open', async (id) => {
+                    await writeDeviceRegistration(id, deviceSlot, nameInput || currentUser || `User ${deviceSlot}`);
+                    updateDeviceInfoText();
                 });
-                
+
                 myPeer.on('call', (call) => {
-                    currentCall = call;
-                    call.answer(myStream);
-                    call.on('stream', (remoteStream) => {
-                        document.getElementById('remoteVideo').srcObject = remoteStream;
-                    });
+                    if (currentCall) {
+                        call.close();
+                        return;
+                    }
+                    incomingCall = call;
+                    startRing('Incoming call');
+                    showIncomingCallButtons(true);
+                    document.getElementById('ringStatus').textContent = 'Incoming call. Accept to connect.';
                 });
+
+                // Watch for remote call close and cleanup
+                const onCallStream = (remoteStream) => {
+                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                };
+
+                        function showIncomingCallButtons(show) {
+                    document.getElementById('acceptCallBtn').style.display = show ? 'inline-flex' : 'none';
+                    document.getElementById('declineCallBtn').style.display = show ? 'inline-flex' : 'none';
+                }
+
+                async function acceptIncomingCall() {
+                    if (!incomingCall) return;
+                    stopRing();
+                    currentCall = incomingCall;
+                    incomingCall.answer(myStream);
+                    currentCall.on('stream', onCallStream);
+                    currentCall.on('close', () => setCallEndedState());
+                    currentCall.on('error', () => setCallEndedState());
+                    incomingCall = null;
+                    showIncomingCallButtons(false);
+                    document.getElementById('ringStatus').textContent = 'Call connected.';
+                }
+
+                function rejectIncomingCall() {
+                    if (!incomingCall) return;
+                    incomingCall.close();
+                    incomingCall = null;
+                    showIncomingCallButtons(false);
+                    stopRing();
+                    document.getElementById('ringStatus').textContent = 'Call declined.';
+                }
+
+                document.getElementById('acceptCallBtn').addEventListener('click', acceptIncomingCall);
+                document.getElementById('declineCallBtn').addEventListener('click', rejectIncomingCall);
+
+                document.getElementById('callBtn').addEventListener('click', async () => {
+                    if (!myStream) {
+                        alert('Start video chat first.');
+                        return;
+                    }
+                    const otherPeerId = `${userBaseId}-${deviceSlot === 1 ? 2 : 1}`;
+                    if (otherPeerId === `${userBaseId}-${deviceSlot}`) return;
+
+                    try {
+                        currentCall = myPeer.call(otherPeerId, myStream);
+                        currentCall.on('stream', onCallStream);
+                        currentCall.on('close', () => setCallEndedState());
+                        currentCall.on('error', () => setCallEndedState());
+                        document.getElementById('ringStatus').textContent = `Calling ${otherPeerId}...`;
+                    } catch (err) {
+                        console.error('Call failed', err);
+                        alert('Could not call the other device. Make sure the other device is connected and started.');
+                    }
+                });
+
+                document.getElementById('hangupBtn').addEventListener('click', () => {
+                    setCallEndedState();
+                });
+
+                document.getElementById('toggleCameraBtn').addEventListener('click', () => {
+                    if (myStream) {
+                        const videoTrack = myStream.getVideoTracks()[0];
+                        if (videoTrack) {
+                            isCameraOn = !isCameraOn;
+                            videoTrack.enabled = isCameraOn;
+                            document.getElementById('toggleCameraBtn').textContent = isCameraOn ? '📹 Camera On' : '📷 Camera Off';
+                        }
+                    }
+                });
+
+                document.getElementById('toggleMicBtn').addEventListener('click', () => {
+                    if (myStream) {
+                        const audioTrack = myStream.getAudioTracks()[0];
+                        if (audioTrack) {
+                            isMicOn = !isMicOn;
+                            audioTrack.enabled = isMicOn;
+                            document.getElementById('toggleMicBtn').textContent = isMicOn ? '🎤 Mic On' : '🔇 Mic Off';
+                        }
+                    }
+                });
+
+                document.getElementById('shareScreenBtn').addEventListener('click', async () => {
+                    try {
+                        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                        const screenTrack = screenStream.getVideoTracks()[0];
+                        if (currentCall && currentCall.peerConnection) {
+                            const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+                            if (sender) {
+                                sender.replaceTrack(screenTrack);
+                                screenTrack.onended = () => {
+                                    const videoTrack = myStream.getVideoTracks()[0];
+                                    sender.replaceTrack(videoTrack);
+                                };
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Error sharing screen:', err);
+                    }
+                });
+
+                window.addEventListener('beforeunload', clearDeviceRegistration);
             } catch (err) {
                 console.error('Error initializing video chat:', err);
                 alert('Error accessing camera/microphone. Please allow permissions.');
             }
         }
 
-        // Video chat event listeners
-        document.getElementById('generateIdBtn').addEventListener('click', () => {
-            initVideoChat();
-        });
-        
-        document.getElementById('connectBtn').addEventListener('click', () => {
-            const peerId = document.getElementById('peerIdInput').value;
-            if (peerId && myStream) {
-                const call = myPeer.call(peerId, myStream);
-                currentCall = call;
-                call.on('stream', (remoteStream) => {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
-                });
-            }
-        });
-        
+        document.getElementById('initVideoChatBtn').addEventListener('click', initVideoChat);
+
         document.getElementById('hangupBtn').addEventListener('click', () => {
-            if (currentCall) {
-                currentCall.close();
-                currentCall = null;
-                document.getElementById('remoteVideo').srcObject = null;
-            }
-        });
-        
-        document.getElementById('toggleCameraBtn').addEventListener('click', () => {
-            if (myStream) {
-                const videoTrack = myStream.getVideoTracks()[0];
-                if (videoTrack) {
-                    isCameraOn = !isCameraOn;
-                    videoTrack.enabled = isCameraOn;
-                    document.getElementById('toggleCameraBtn').textContent = isCameraOn ? '📹 Camera On' : '📷 Camera Off';
-                }
-            }
-        });
-        
-        document.getElementById('toggleMicBtn').addEventListener('click', () => {
-            if (myStream) {
-                const audioTrack = myStream.getAudioTracks()[0];
-                if (audioTrack) {
-                    isMicOn = !isMicOn;
-                    audioTrack.enabled = isMicOn;
-                    document.getElementById('toggleMicBtn').textContent = isMicOn ? '🎤 Mic On' : '🔇 Mic Off';
-                }
-            }
-        });
-        
-        document.getElementById('shareScreenBtn').addEventListener('click', async () => {
-            try {
-                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                const screenTrack = screenStream.getVideoTracks()[0];
-                if (currentCall && currentCall.peerConnection) {
-                    const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
-                    if (sender) {
-                        sender.replaceTrack(screenTrack);
-                        screenTrack.onended = () => {
-                            const videoTrack = myStream.getVideoTracks()[0];
-                            sender.replaceTrack(videoTrack);
-                        };
-                    }
-                }
-            } catch (err) {
-                console.error('Error sharing screen:', err);
-            }
+            if (currentCall || incomingCall) setCallEndedState();
         });
 
         // --- MAINTENANCE MODE LOGIC (ADVANCED SCHEDULE) ---
         let maintInterval = null;
         let isMaintenanceActiveLocally = false;
         let maintMusicInitialized = false;
+        let maintenanceDefaultSongUrl = null;
+        let maintenanceDefaultSongTitle = null;
 
         async function initMaintMusic() {
             if (maintMusicInitialized) {
@@ -2607,11 +2835,21 @@
             const maintPlayBtn = document.getElementById('maint-play-btn');
 
             try {
-                const songsQuery = query(collection(db, 'songs'), orderBy('timestamp', 'desc'));
-                const songsSnap = await getDocs(songsQuery);
-                
-                if (!songsSnap.empty) {
-                    const songData = songsSnap.docs[0].data();
+                let songData = null;
+                if (maintenanceDefaultSongUrl) {
+                    songData = {
+                        url: maintenanceDefaultSongUrl,
+                        title: maintenanceDefaultSongTitle || "Maintenance Track"
+                    };
+                } else {
+                    const songsQuery = query(collection(db, 'songs'), orderBy('timestamp', 'desc'));
+                    const songsSnap = await getDocs(songsQuery);
+                    if (!songsSnap.empty) {
+                        songData = songsSnap.docs[0].data();
+                    }
+                }
+
+                if (songData) {
                     maintAudio.src = songData.url;
                     maintTitle.textContent = songData.title || "Unknown Song";
                     
@@ -2696,7 +2934,14 @@
 
         onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
             let maintData = { isActive: false, isScheduled: false, startTime: '', endTime: '', message: '' };
-            if (docSnap.exists()) maintData = docSnap.data();
+            if (docSnap.exists()) {
+                maintData = docSnap.data();
+                maintenanceDefaultSongUrl = maintData.defaultSongUrl || null;
+                maintenanceDefaultSongTitle = maintData.defaultSongTitle || null;
+            } else {
+                maintenanceDefaultSongUrl = null;
+                maintenanceDefaultSongTitle = null;
+            }
 
             const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
             if (btnToggleMaintenance) {
@@ -4572,8 +4817,21 @@
                     if (!githubToken) return alert("Please log in with GitHub first.");
                     scanRepositoryForMusic(repoFullName, githubToken);
                 };
+            }
 
-                // --- CODE VERIFICATION AND UPLOAD SYSTEM ---
+            const musicRequestBtn = document.getElementById('submitMusicRequestBtn');
+            if (musicRequestBtn) {
+                musicRequestBtn.onclick = submitMusicRequest;
+            }
+
+            if (document.getElementById('pendingMusicRequests')) {
+                setupPendingMusicRequests();
+            }
+            if (document.getElementById('maintenanceMusicSelect')) {
+                setupMaintenanceMusicSelector();
+            }
+
+            // --- CODE VERIFICATION AND UPLOAD SYSTEM ---
                 const uploadCodeBtn = document.getElementById('uploadCodeBtn');
                 const codeInput = document.getElementById('codeUploadInput');
                 const systemStatus = document.getElementById('systemStatusText');
@@ -4758,7 +5016,7 @@
                     };
                 }
             } 
-        }
+        
 
         function setupAdminSongList() {
             const listContainer = document.getElementById('adminSongList');
@@ -4782,6 +5040,168 @@
                     item.style.display = item.textContent.toLowerCase().includes(term) ? 'flex' : 'none';
                 });
             });
+        }
+
+        function setupPendingMusicRequests() {
+            const pendingContainer = document.getElementById('pendingMusicRequests');
+            const q = query(collection(db, 'music_requests'), where('status', '==', 'pending'), orderBy('timestamp', 'desc'));
+            onSnapshot(q, (snapshot) => {
+                updateMusicRequestBadge(snapshot.size);
+                pendingContainer.innerHTML = '';
+                if (snapshot.empty) {
+                    pendingContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">No pending music requests.</p>';
+                    return;
+                }
+
+                snapshot.forEach((requestDoc) => {
+                    const request = requestDoc.data();
+                    const item = document.createElement('div');
+                    item.className = 'admin-list-item';
+                    item.innerHTML = `
+                        <div class="admin-item-info">
+                            <span style="font-weight:bold;">${escapeHtml(request.title)}</span>
+                            <span style="font-size:12px; color:#888;">${escapeHtml(request.artist)} • requested by ${escapeHtml(request.uploader || 'Admin')}</span>
+                        </div>
+                        <div style="display:flex; gap: 8px;">
+                            <button class="submit-btn approve-music-btn" style="background:#28a745;">Approve</button>
+                            <button class="submit-btn reject-music-btn" style="background:#ccc; color:#333;">Reject</button>
+                        </div>
+                    `;
+                    pendingContainer.appendChild(item);
+
+                    item.querySelector('.approve-music-btn').onclick = async () => {
+                        try {
+                            await addDoc(collection(db, 'songs'), {
+                                title: request.title,
+                                artist: request.artist,
+                                url: request.url,
+                                uploader: request.uploader || 'Admin',
+                                requestId: requestDoc.id,
+                                timestamp: serverTimestamp()
+                            });
+                            await updateDoc(requestDoc.ref, { status: 'approved', approvedBy: 'SuperAdmin', approvedAt: serverTimestamp() });
+                            showToast('Approved', `${request.title} is now global.`, '✅');
+                        } catch (e) {
+                            console.error('Approve request failed', e);
+                            alert('Failed to approve request.');
+                        }
+                    };
+
+                    item.querySelector('.reject-music-btn').onclick = async () => {
+                        try {
+                            await updateDoc(requestDoc.ref, { status: 'rejected', rejectedBy: 'SuperAdmin', rejectedAt: serverTimestamp() });
+                            showToast('Rejected', `${request.title} was rejected.`, '❌');
+                        } catch (e) {
+                            console.error('Reject request failed', e);
+                            alert('Failed to reject request.');
+                        }
+                    };
+                });
+            });
+        }
+
+        function updateMusicRequestBadge(count) {
+            const badge = document.getElementById('adminMusicPendingBadge');
+            if (!badge) return;
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function setupMaintenanceMusicSelector() {
+            const select = document.getElementById('maintenanceMusicSelect');
+            const statusText = document.getElementById('maintenanceDefaultStatus');
+            const setBtn = document.getElementById('setDefaultMaintBtn');
+
+            onSnapshot(collection(db, 'songs'), (snapshot) => {
+                select.innerHTML = '<option value="">Select a maintenance song</option>';
+                snapshot.forEach((songDoc) => {
+                    const song = songDoc.data();
+                    const option = document.createElement('option');
+                    option.value = songDoc.id;
+                    option.textContent = `${song.artist} - ${song.title}`;
+                    select.appendChild(option);
+                });
+            });
+
+            onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
+                if (docSnap.exists()) {
+                    const maintData = docSnap.data();
+                    if (maintData.defaultSongId) {
+                        select.value = maintData.defaultSongId;
+                        statusText.textContent = `Current default maintenance song: ${maintData.defaultSongArtist || ''} ${maintData.defaultSongTitle ? '- ' + maintData.defaultSongTitle : ''}`;
+                    } else {
+                        statusText.textContent = 'No default maintenance song selected.';
+                    }
+                }
+            });
+
+            setBtn.onclick = async () => {
+                const songId = select.value;
+                if (!songId) return alert('Please select a song to set as maintenance default.');
+                try {
+                    const songSnap = await getDoc(doc(db, 'songs', songId));
+                    if (!songSnap.exists()) return alert('Selected song no longer exists.');
+                    const songData = songSnap.data();
+                    await setDoc(doc(db, 'settings', 'maintenance'), {
+                        defaultSongId: songId,
+                        defaultSongTitle: songData.title,
+                        defaultSongArtist: songData.artist,
+                        defaultSongUrl: songData.url
+                    }, { merge: true });
+                    showToast('Default Maintenance Set', `${songData.title} will play during maintenance.`, '🎵');
+                } catch (e) {
+                    console.error('Set default maintenance failed', e);
+                    alert('Unable to set maintenance default song.');
+                }
+            };
+        }
+
+        async function submitMusicRequest() {
+            const artistName = document.getElementById('requestArtistName').value.trim();
+            const songTitle = document.getElementById('requestSongTitle').value.trim();
+            const fileInput = document.getElementById('musicRequestFileInput');
+            const status = document.getElementById('musicRequestStatus');
+
+            if (!artistName || !songTitle || !fileInput.files.length) {
+                alert('Please select a music file and fill in the artist/song fields.');
+                return;
+            }
+            const file = fileInput.files[0];
+            const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9-_.]/g, '_');
+            const storagePath = `music_requests/${safeName}`;
+            const requestUploader = currentUser || sessionStorage.getItem('subAdminTarget') || 'Admin';
+
+            try {
+                status.textContent = 'Uploading music request...';
+                const fileRef = storageRef(storage, storagePath);
+                await uploadBytes(fileRef, file);
+                const url = await getDownloadURL(fileRef);
+
+                await addDoc(collection(db, 'music_requests'), {
+                    title: songTitle,
+                    artist: artistName,
+                    url: url,
+                    uploader: requestUploader,
+                    status: 'pending',
+                    timestamp: serverTimestamp()
+                });
+
+                status.textContent = 'Request submitted for approval.';
+                document.getElementById('requestArtistName').value = '';
+                document.getElementById('requestSongTitle').value = '';
+                fileInput.value = '';
+                document.getElementById('musicRequestFileNameDisplay').textContent = 'No file selected';
+            } catch (e) {
+                console.error('Submit music request failed', e);
+                status.textContent = 'Upload failed. Check console.';
+                alert('Failed to submit music request.');
+            } finally {
+                setTimeout(() => { status.textContent = ''; }, 4000);
+            }
         }
 
         function setupFreedomWall(user) {
@@ -5154,6 +5574,9 @@
         }
 
         function showWelcomeScreen() {
+            if (currentDisplayName) {
+                welcomeMsg.textContent = `Loading ${currentDisplayName}'s interface...`;
+            }
             welcomeScreen.style.display = 'flex';
             setTimeout(() => {
                 welcomeScreen.style.opacity = '0';
@@ -5217,6 +5640,7 @@
 
         function setUserUI(user) {
             const name = user.charAt(0).toUpperCase() + user.slice(1);
+            currentDisplayName = name;
             welcomeMsg.textContent = `Welcome ${name}, enjoy your stay!!`;
             logoutMsg.textContent = `Thank you ${name}`;
             pageTitle.textContent = `For You ${name}`;
