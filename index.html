@@ -830,8 +830,7 @@
         #deviceListActive::-webkit-scrollbar,
         #deviceListHistory::-webkit-scrollbar,
         .admin-main-content::-webkit-scrollbar,
-        .chat-body::-webkit-scrollbar,
-        #vcChatMessages::-webkit-scrollbar {
+        .chat-body::-webkit-scrollbar {
             width: 8px;
         }
 
@@ -848,8 +847,7 @@
         #deviceListActive::-webkit-scrollbar-track,
         #deviceListHistory::-webkit-scrollbar-track,
         .admin-main-content::-webkit-scrollbar-track,
-        .chat-body::-webkit-scrollbar-track,
-        #vcChatMessages::-webkit-scrollbar-track {
+        .chat-body::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 4px;
         }
@@ -867,8 +865,7 @@
         #deviceListActive::-webkit-scrollbar-thumb,
         #deviceListHistory::-webkit-scrollbar-thumb,
         .admin-main-content::-webkit-scrollbar-thumb,
-        .chat-body::-webkit-scrollbar-thumb,
-        #vcChatMessages::-webkit-scrollbar-thumb {
+        .chat-body::-webkit-scrollbar-thumb {
             background: #ffb7c5;
             border-radius: 4px;
         }
@@ -1611,74 +1608,6 @@
         }
         .chat-back-btn { background:none; border:none; cursor:pointer; font-size:16px; color:#d81b60; margin-right:10px; display:none; }
 
-        /* WEBRTC EXPANDED DATA CHANNEL CHAT CSS */
-        .vc-chat-overlay {
-            flex: 1;
-            background: #fff;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 2px dashed #ffb7c5;
-            min-height: 250px;
-            max-height: 400px;
-        }
-        .vc-chat-header {
-            background: #ffe4e9;
-            padding: 10px;
-            font-weight: bold;
-            color: #d81b60;
-            text-align: center;
-            font-size: 14px;
-        }
-        .vc-chat-messages {
-            flex: 1;
-            padding: 10px;
-            overflow-y: auto;
-            background: #fffafc;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .vc-chat-input-container {
-            display: flex;
-            padding: 10px;
-            border-top: 1px solid #ffe4e9;
-            background: white;
-        }
-        .vc-msg-local {
-            align-self: flex-end; background: #d81b60; color: white; padding: 8px 12px; border-radius: 15px 15px 0 15px; max-width: 85%; font-size: 13px;
-        }
-        .vc-msg-remote {
-            align-self: flex-start; background: #eee; color: #333; padding: 8px 12px; border-radius: 15px 15px 15px 0; max-width: 85%; font-size: 13px;
-        }
-
-        /* WEBRTC EXPANDED WHITEBOARD CSS */
-        .vc-whiteboard-overlay {
-            flex: 1;
-            background: #fff;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            border: 2px solid #ddd;
-            overflow: hidden;
-            position: relative;
-            min-height: 250px;
-        }
-        .vc-whiteboard-toolbar {
-            background: #f0f0f0;
-            padding: 5px;
-            display: flex;
-            gap: 5px;
-            justify-content: center;
-            border-bottom: 1px solid #ccc;
-        }
-        .wb-btn {
-            background: white; border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;
-        }
-        .wb-btn:hover { background: #e0e0e0; }
-        .wb-btn.active { background: #d81b60; color: white; border-color: #d81b60; }
-        
     </style>
 </head>
 <body>
@@ -2259,9 +2188,6 @@
             <button class="tab" data-tab="freedom-wall">
                 <span>🕊️</span> Freedom Wall
             </button>
-            <button class="tab" data-tab="video-call">
-                <span>📞</span> Video Call
-            </button>
             <button class="tab" id="logoutButton">
                 <span>🔒</span> Log Out
             </button>
@@ -2373,80 +2299,6 @@
                 
                 <div id="fwMessagesContainer" class="fw-messages">
                     <div class="empty-wall-message">Loading messages...</div>
-                </div>
-            </div>
-
-            <!-- Video Call Tab (EXPANDED) -->
-            <div class="tab-content" id="video-call">
-                <h2>Video Call & Collab 📞</h2>
-                <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Connect face-to-face, chat, and draw securely peer-to-peer.</p>
-
-                <div id="setupCallUI" class="freedom-input-area">
-                    <input type="text" id="vcCallerName" placeholder="Your Identity Name" class="fw-input" maxlength="20">
-                    <input type="text" id="vcRoomCode" placeholder="Enter Room Code to Join" class="fw-input">
-
-                    <div style="display:flex; gap: 10px; margin-top: 10px;">
-                        <button id="btnCreateCall" class="submit-btn" style="flex: 1; background: #d81b60;">Start New Call</button>
-                        <button id="btnJoinCall" class="submit-btn" style="flex: 1; background: #b71550;">Join Call</button>
-                    </div>
-                    
-                    <div id="roomCodeDisplayContainer" style="display: none; margin-top: 20px; text-align: center; background: white; padding: 15px; border-radius: 10px; border: 2px dashed #ffb7c5;">
-                        <p style="font-size: 14px; color: #666; margin-bottom: 5px;">Share this Room Code:</p>
-                        <p id="vcRoomCodeDisplay" style="font-weight: bold; color: #d81b60; font-family: monospace; font-size: 20px; user-select: text;"></p>
-                        <p style="font-size: 11px; color: #999; margin-top: 5px;">Waiting for someone to join...</p>
-                    </div>
-                </div>
-
-                <div id="videoUI" style="display: none; flex-direction: column; gap: 15px; margin-top: 10px;">
-                    
-                    <!-- Advanced Tab Navigation for Video UI -->
-                    <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: -5px;">
-                        <button id="btnShowVideo" class="wb-btn active" style="flex:1;">Video</button>
-                        <button id="btnShowChat" class="wb-btn" style="flex:1;">Chat 💬</button>
-                        <button id="btnShowWhiteboard" class="wb-btn" style="flex:1;">Whiteboard 🎨</button>
-                    </div>
-
-                    <!-- 1. Video Container -->
-                    <div id="vcVideoContainer" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; background: #fff5f7; padding: 15px; border-radius: 15px; border: 2px dashed #ffb7c5;">
-                        <div style="position: relative; width: 48%; min-width: 200px; background: #000; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                            <video id="vcLocalVideo" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; display: block; aspect-ratio: 4/3; transform: scaleX(-1);"></video>
-                            <span id="vcLocalNameOverlay" style="position: absolute; bottom: 8px; left: 8px; color: white; background: rgba(216,27,96,0.8); padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold;">You</span>
-                        </div>
-                        <div style="position: relative; width: 48%; min-width: 200px; background: #1a1a1a; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                            <video id="vcRemoteVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: block; aspect-ratio: 4/3;"></video>
-                            <span id="vcRemoteNameOverlay" style="position: absolute; bottom: 8px; left: 8px; color: white; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold;">Waiting...</span>
-                        </div>
-                    </div>
-
-                    <!-- 2. WebRTC Data Channel Chat Container -->
-                    <div id="vcChatContainer" class="vc-chat-overlay" style="display: none;">
-                        <div class="vc-chat-header">Encrypted P2P Chat (Not Saved)</div>
-                        <div id="vcChatMessages" class="vc-chat-messages">
-                            <div style="text-align: center; color: #bbb; font-size: 11px;">Start of conversation</div>
-                        </div>
-                        <div class="vc-chat-input-container">
-                            <input type="text" id="vcChatInput" class="fw-input" placeholder="Type a secret message..." style="margin-bottom: 0; border-radius: 20px; padding: 8px 15px; font-size: 13px;">
-                            <button id="vcChatSendBtn" class="chat-send">➤</button>
-                        </div>
-                    </div>
-
-                    <!-- 3. WebRTC Shared Whiteboard Container -->
-                    <div id="vcWhiteboardContainer" class="vc-whiteboard-overlay" style="display: none;">
-                        <div class="vc-whiteboard-toolbar">
-                            <input type="color" id="wbColorPicker" value="#d81b60" style="cursor: pointer; height: 26px; width: 30px; padding: 0; border: none;">
-                            <input type="range" id="wbSizePicker" min="1" max="20" value="3" style="width: 80px;">
-                            <button id="wbClearBtn" class="wb-btn">Clear Canvas</button>
-                        </div>
-                        <canvas id="wbCanvas" style="width: 100%; height: 300px; cursor: crosshair; touch-action: none;"></canvas>
-                    </div>
-                    
-                    <!-- Media Controls -->
-                    <div style="display: flex; gap: 15px; justify-content: center; padding: 10px;">
-                        <button id="btnToggleCam" class="control-btn" style="width:50px; height:50px; font-size: 20px; box-shadow: 0 4px 10px rgba(216,27,96,0.2);" title="Toggle Camera">📹</button>
-                        <button id="btnToggleMic" class="control-btn" style="width:50px; height:50px; font-size: 20px; box-shadow: 0 4px 10px rgba(216,27,96,0.2);" title="Toggle Mic">🎤</button>
-                        <button id="btnShareScreen" class="control-btn" style="width:50px; height:50px; font-size: 20px; box-shadow: 0 4px 10px rgba(216,27,96,0.2);" title="Share Screen">🖥️</button>
-                        <button id="btnHangup" class="control-btn" style="width:50px; height:50px; font-size: 20px; background: #ff4d4d; color: white; box-shadow: 0 4px 10px rgba(255,77,77,0.3);" title="Hang Up">🛑</button>
-                    </div>
                 </div>
             </div>
 
@@ -2598,6 +2450,7 @@
         document.getElementById('security-overlay').addEventListener('click', () => {
             if(document.hasFocus()) handleSecurityFocus();
         });
+
 
         // --- MAINTENANCE MODE LOGIC (ADVANCED SCHEDULE) ---
         let maintInterval = null;
@@ -4896,475 +4749,659 @@
         window.updateDoc = updateDoc;
         window.doc = doc;
         window.getDoc = getDoc;
-        window.setDoc = setDoc;
-        window.onSnapshot = onSnapshot;
+    </script>
 
-        // --- WEBRTC VIDEO CHAT LOGIC (EXPANDED) ---
-        let pc = null;
-        let localStream = null;
-        let remoteStream = null;
-        let screenStream = null;
-        let dataChannel = null;
-        const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+    <!-- Original UI Logic -->
+    <script>
+    let audioContext; 
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordModal = document.getElementById('passwordModal');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const mainContent = document.getElementById('mainContent');
+        const adminContainer = document.getElementById('adminContainer');
+        const adminTransitionScreen = document.getElementById('adminTransitionScreen');
+        
+        // Modal Flow Elements
+        const loginContent = document.getElementById('loginContent');
+        const registerContent = document.getElementById('registerContent');
+        const pendingContent = document.getElementById('pendingContent');
+        const deactivatedContent = document.getElementById('deactivatedContent');
+        
+        // Inputs & Buttons
+        const submitPassword = document.getElementById('submitPassword');
+        const loginUsernameInput = document.getElementById('loginUsername');
+        const passwordInput = document.getElementById('passwordInput');
+        
+        const submitRegister = document.getElementById('submitRegister');
+        const regUsernameInput = document.getElementById('regUsername');
+        const regPasswordInput = document.getElementById('regPassword');
+        
+        const sendReactivationBtn = document.getElementById('sendReactivationBtn');
+        const reactivationMsg = document.getElementById('reactivationMsg');
 
-        const setupCallUI = document.getElementById('setupCallUI');
-        const videoUI = document.getElementById('videoUI');
-        const vcLocalVideo = document.getElementById('vcLocalVideo');
-        const vcRemoteVideo = document.getElementById('vcRemoteVideo');
-        const roomCodeDisplayContainer = document.getElementById('roomCodeDisplayContainer');
-        const vcRoomCodeDisplay = document.getElementById('vcRoomCodeDisplay');
-        const vcRemoteNameOverlay = document.getElementById('vcRemoteNameOverlay');
-        const vcChatMessages = document.getElementById('vcChatMessages');
+        const welcomeMsg = document.getElementById('welcomeMsg');
+        const logoutMsg = document.getElementById('logoutMsg');
+        const pageTitle = document.getElementById('dynamicPageTitle');
 
-        // Whiteboard vars
-        const wbCanvas = document.getElementById('wbCanvas');
-        const wbCtx = wbCanvas?.getContext('2d');
-        let isDrawing = false;
-        let wbColor = '#d81b60';
-        let wbSize = 3;
-        let lastX = 0; let lastY = 0;
+        document.getElementById('showRegisterBtn').onclick = () => {
+            loginContent.style.display = 'none';
+            registerContent.style.display = 'block';
+        };
+        
+        document.getElementById('showLoginBtn').onclick = () => {
+            registerContent.style.display = 'none';
+            loginContent.style.display = 'block';
+        };
+        
+        document.getElementById('pendingBackBtn').onclick = () => {
+            pendingContent.style.display = 'none';
+            loginContent.style.display = 'block';
+        };
+        
+        document.getElementById('deactivatedBackBtn').onclick = () => {
+            deactivatedContent.style.display = 'none';
+            loginContent.style.display = 'block';
+        };
 
-        let vcCallDocRef = null;
-        let vcCallerCandidatesUnsub = null;
-        let vcCalleeCandidatesUnsub = null;
-        let vcCallDocUnsub = null;
-        let myCallName = '';
-
-        // Handle advanced tab switching inside Video Call UI
-        document.getElementById('btnShowVideo')?.addEventListener('click', () => switchVcTab('video'));
-        document.getElementById('btnShowChat')?.addEventListener('click', () => switchVcTab('chat'));
-        document.getElementById('btnShowWhiteboard')?.addEventListener('click', () => switchVcTab('whiteboard'));
-
-        function switchVcTab(tab) {
-            document.getElementById('btnShowVideo').classList.remove('active');
-            document.getElementById('btnShowChat').classList.remove('active');
-            document.getElementById('btnShowWhiteboard').classList.remove('active');
-            
-            document.getElementById('vcVideoContainer').style.display = 'none';
-            document.getElementById('vcChatContainer').style.display = 'none';
-            document.getElementById('vcWhiteboardContainer').style.display = 'none';
-
-            if(tab === 'video') {
-                document.getElementById('btnShowVideo').classList.add('active');
-                document.getElementById('vcVideoContainer').style.display = 'flex';
-            } else if (tab === 'chat') {
-                document.getElementById('btnShowChat').classList.add('active');
-                document.getElementById('vcChatContainer').style.display = 'flex';
-                vcChatMessages.scrollTop = vcChatMessages.scrollHeight;
-            } else if (tab === 'whiteboard') {
-                document.getElementById('btnShowWhiteboard').classList.add('active');
-                document.getElementById('vcWhiteboardContainer').style.display = 'flex';
-                resizeWhiteboard();
-            }
+        const subAdminChangePassModal = document.getElementById('subAdminChangePassModal');
+        const subAdminChangePassTrigger = document.getElementById('subAdminChangePassTrigger');
+        if (subAdminChangePassTrigger) {
+            subAdminChangePassTrigger.addEventListener('click', () => {
+                subAdminChangePassModal.style.display = 'flex';
+            });
         }
-
-        async function initLocalStream() {
-            if (!localStream) {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                vcLocalVideo.srcObject = localStream;
-            }
-            return localStream;
-        }
-
-        function setupDataChannelEvents(channel) {
-            channel.onopen = () => {
-                appendChatMessage("System", "Secure Data Channel connected! Chat & Draw enabled.", true);
-            };
-            channel.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'chat') {
-                        appendChatMessage(data.name, data.msg, false);
-                    } else if (data.type === 'draw') {
-                        drawOnCanvas(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
-                    } else if (data.type === 'clearWb') {
-                        clearWhiteboard(false);
-                    }
-                } catch(e) {
-                    console.log("Received raw data:", event.data);
-                }
-            };
-        }
-
-        async function setupPeerConnection(isCaller) {
-            pc = new RTCPeerConnection(servers);
-            remoteStream = new MediaStream();
-            vcRemoteVideo.srcObject = remoteStream;
-
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-            pc.ontrack = event => {
-                event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-            };
-
-            if (isCaller) {
-                dataChannel = pc.createDataChannel('collabChannel');
-                setupDataChannelEvents(dataChannel);
-            } else {
-                pc.ondatachannel = event => {
-                    dataChannel = event.channel;
-                    setupDataChannelEvents(dataChannel);
-                };
-            }
-        }
-
-        document.getElementById('btnCreateCall')?.addEventListener('click', async () => {
-            myCallName = document.getElementById('vcCallerName').value.trim() || 'Caller';
-            document.getElementById('vcLocalNameOverlay').textContent = myCallName;
-
-            await initLocalStream();
-            await setupPeerConnection(true);
-
-            document.getElementById('vcCallerName').style.display = 'none';
-            document.getElementById('vcRoomCode').style.display = 'none';
-            document.getElementById('btnCreateCall').style.display = 'none';
-            document.getElementById('btnJoinCall').style.display = 'none';
-            roomCodeDisplayContainer.style.display = 'block';
-            videoUI.style.display = 'flex';
-            switchVcTab('video');
-
-            vcCallDocRef = doc(collection(db, 'calls'));
-            vcRoomCodeDisplay.textContent = vcCallDocRef.id;
-
-            const callerCandidatesCollection = collection(vcCallDocRef, 'callerCandidates');
-            pc.onicecandidate = event => {
-                if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
-            };
-
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-
-            await setDoc(vcCallDocRef, {
-                offer: { type: offer.type, sdp: offer.sdp },
-                callerName: myCallName
-            });
-
-            vcCallDocUnsub = onSnapshot(vcCallDocRef, (snapshot) => {
-                const data = snapshot.data();
-                if (!pc.currentRemoteDescription && data && data.answer) {
-                    const answerDescription = new RTCSessionDescription(data.answer);
-                    pc.setRemoteDescription(answerDescription);
-                }
-                if (data && data.calleeName) vcRemoteNameOverlay.textContent = data.calleeName;
-            });
-
-            vcCalleeCandidatesUnsub = onSnapshot(collection(vcCallDocRef, 'calleeCandidates'), (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        let data = change.doc.data();
-                        pc.addIceCandidate(new RTCIceCandidate(data));
-                    }
-                });
-            });
+        document.getElementById('cancelChangePassBtn')?.addEventListener('click', () => {
+            subAdminChangePassModal.style.display = 'none';
         });
-
-        // 2. JOIN CALL LOGIC
-        document.getElementById('btnJoinCall')?.addEventListener('click', async () => {
-            const roomCode = document.getElementById('vcRoomCode').value.trim();
-            myCallName = document.getElementById('vcCallerName').value.trim() || 'Joiner';
-            if (!roomCode) return alert("Please enter a Room Code");
-
-            vcCallDocRef = doc(db, 'calls', roomCode);
-            const callDoc = await getDoc(vcCallDocRef);
-            if (!callDoc.exists()) return alert("Room not found or call ended.");
-
-            document.getElementById('vcLocalNameOverlay').textContent = myCallName;
-            document.getElementById('vcCallerName').style.display = 'none';
-            document.getElementById('vcRoomCode').style.display = 'none';
-            document.getElementById('btnCreateCall').style.display = 'none';
-            document.getElementById('btnJoinCall').style.display = 'none';
-            videoUI.style.display = 'flex';
-            switchVcTab('video');
-
-            await initLocalStream();
-            await setupPeerConnection(false);
-
-            const calleeCandidatesCollection = collection(vcCallDocRef, 'calleeCandidates');
-            pc.onicecandidate = event => {
-                if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
-            };
-
-            const callData = callDoc.data();
-            vcRemoteNameOverlay.textContent = callData.callerName || 'Caller';
-
-            const offerDescription = callData.offer;
-            await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
-
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-
-            await updateDoc(vcCallDocRef, {
-                answer: { type: answer.type, sdp: answer.sdp },
-                calleeName: myCallName
-            });
-
-            vcCallerCandidatesUnsub = onSnapshot(collection(vcCallDocRef, 'callerCandidates'), (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        let data = change.doc.data();
-                        pc.addIceCandidate(new RTCIceCandidate(data));
-                    }
-                });
-            });
-
-            // Listen for caller hanging up
-            vcCallDocUnsub = onSnapshot(vcCallDocRef, (snapshot) => {
-               if(!snapshot.exists()) hangupCall(false); 
-            });
-        });
-
-        // 3. MEDIA CONTROLS
-        document.getElementById('btnToggleCam')?.addEventListener('click', (e) => {
-            if(!localStream) return;
-            const videoTrack = localStream.getVideoTracks()[0];
-            if(videoTrack) {
-                videoTrack.enabled = !videoTrack.enabled;
-                e.target.textContent = videoTrack.enabled ? '📹' : '📵';
-                e.target.style.background = videoTrack.enabled ? 'white' : '#ff4d4d';
-                e.target.style.color = videoTrack.enabled ? '#d81b60' : 'white';
-            }
-        });
-
-        document.getElementById('btnToggleMic')?.addEventListener('click', (e) => {
-            if(!localStream) return;
-            const audioTrack = localStream.getAudioTracks()[0];
-            if(audioTrack) {
-                audioTrack.enabled = !audioTrack.enabled;
-                e.target.textContent = audioTrack.enabled ? '🎤' : '🔇';
-                e.target.style.background = audioTrack.enabled ? 'white' : '#ff4d4d';
-                e.target.style.color = audioTrack.enabled ? '#d81b60' : 'white';
-            }
-        });
-
-        document.getElementById('btnShareScreen')?.addEventListener('click', async (e) => {
+        document.getElementById('confirmChangePassBtn')?.addEventListener('click', async () => {
+            const newPass = document.getElementById('newSubAdminPass').value.trim();
+            if(!newPass) return alert("Please enter a new password");
             try {
-                if (screenStream) {
-                    // Stop Screen Share
-                    screenStream.getTracks().forEach(t => t.stop());
-                    const videoTrack = localStream.getVideoTracks()[0];
-                    const sender = pc.getSenders().find(s => s.track.kind === videoTrack.kind);
-                    if(sender) sender.replaceTrack(videoTrack);
-                    vcLocalVideo.srcObject = localStream;
-                    screenStream = null;
-                    e.target.style.background = 'white';
-                    e.target.style.color = '#d81b60';
-                } else {
-                    // Start Screen Share
-                    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                    const screenTrack = screenStream.getVideoTracks()[0];
-                    const sender = pc.getSenders().find(s => s.track.kind === screenTrack.kind);
-                    if(sender) sender.replaceTrack(screenTrack);
-                    vcLocalVideo.srcObject = screenStream;
-                    e.target.style.background = '#4CAF50';
-                    e.target.style.color = 'white';
-
-                    // Revert UI automatically if user hits 'Stop Sharing' on browser level
-                    screenTrack.onended = () => {
-                        const videoTrack = localStream.getVideoTracks()[0];
-                        const s = pc.getSenders().find(send => send.track.kind === videoTrack.kind);
-                        if(s) s.replaceTrack(videoTrack);
-                        vcLocalVideo.srcObject = localStream;
-                        screenStream = null;
-                        document.getElementById('btnShareScreen').style.background = 'white';
-                        document.getElementById('btnShareScreen').style.color = '#d81b60';
-                    };
-                }
-            } catch(err) {
-                console.error("Screen share error:", err);
+                await window.updateDoc(window.doc(window.db, 'app_users', sessionStorage.getItem('subAdminDocId')), { adminPassword: newPass });
+                alert("Password updated successfully!");
+                subAdminChangePassModal.style.display = 'none';
+                document.getElementById('newSubAdminPass').value = '';
+            } catch(e) {
+                alert("Failed to update password.");
             }
         });
 
-        // 4. DATA CHANNEL CHAT LOGIC
-        function appendChatMessage(name, msg, isLocal) {
-            const div = document.createElement('div');
-            div.className = isLocal ? 'vc-msg-local' : 'vc-msg-remote';
-            if (name === "System") {
-                div.style.alignSelf = 'center';
-                div.style.background = 'transparent';
-                div.style.color = '#888';
-                div.style.fontSize = '11px';
-                div.textContent = msg;
-            } else {
-                div.innerHTML = `<strong>${escapeHtml(name)}:</strong><br>${escapeHtml(msg)}`;
-            }
-            vcChatMessages.appendChild(div);
-            vcChatMessages.scrollTop = vcChatMessages.scrollHeight;
-        }
+        const savedUser = sessionStorage.getItem('loggedInUser');
+        const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+        const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
-        document.getElementById('vcChatSendBtn')?.addEventListener('click', () => {
-            const input = document.getElementById('vcChatInput');
-            const msg = input.value.trim();
-            if (!msg || !dataChannel || dataChannel.readyState !== 'open') return;
-            
-            const payload = { type: 'chat', name: myCallName, msg: msg };
-            dataChannel.send(JSON.stringify(payload));
-            appendChatMessage(myCallName, msg, true);
-            input.value = '';
-        });
-        document.getElementById('vcChatInput')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('vcChatSendBtn').click();
-        });
+        if (isAdmin || isSubAdmin) {
+            passwordModal.style.display = 'none';
+            welcomeScreen.style.display = 'none';
+            adminContainer.style.display = 'block';
+        } else if (savedUser) {
+            setUserUI(savedUser);
+            passwordModal.style.display = 'none';
+            welcomeScreen.style.display = 'none';
+            mainContent.style.display = 'block';
+        } else {
+            submitPassword.addEventListener('click', async function() {
+                const username = loginUsernameInput.value.trim().toLowerCase();
+                const pass = passwordInput.value;
+                let user = null;
 
-        // 5. DATA CHANNEL WHITEBOARD LOGIC
-        function resizeWhiteboard() {
-            if(!wbCanvas) return;
-            const container = document.getElementById('vcWhiteboardContainer');
-            wbCanvas.width = container.clientWidth;
-            wbCanvas.height = 300; // Fixed for sync consistency
-        }
-        
-        window.addEventListener('resize', resizeWhiteboard);
-        
-        document.getElementById('wbColorPicker')?.addEventListener('input', (e) => wbColor = e.target.value);
-        document.getElementById('wbSizePicker')?.addEventListener('input', (e) => wbSize = e.target.value);
-        
-        document.getElementById('wbClearBtn')?.addEventListener('click', () => {
-            clearWhiteboard(true);
-        });
-
-        function clearWhiteboard(sendSync) {
-            if(!wbCtx) return;
-            wbCtx.clearRect(0, 0, wbCanvas.width, wbCanvas.height);
-            if (sendSync && dataChannel && dataChannel.readyState === 'open') {
-                dataChannel.send(JSON.stringify({ type: 'clearWb' }));
-            }
-        }
-
-        function drawOnCanvas(x0, y0, x1, y1, color, size, sendSync) {
-            if(!wbCtx) return;
-            wbCtx.beginPath();
-            wbCtx.moveTo(x0, y0);
-            wbCtx.lineTo(x1, y1);
-            wbCtx.strokeStyle = color;
-            wbCtx.lineWidth = size;
-            wbCtx.lineCap = 'round';
-            wbCtx.stroke();
-            wbCtx.closePath();
-
-            if (sendSync && dataChannel && dataChannel.readyState === 'open') {
-                dataChannel.send(JSON.stringify({
-                    type: 'draw', x0, y0, x1, y1, color, size
-                }));
-            }
-        }
-
-        if (wbCanvas) {
-            const getCoords = (e) => {
-                const rect = wbCanvas.getBoundingClientRect();
-                const x = (e.clientX || e.touches?.[0].clientX) - rect.left;
-                const y = (e.clientY || e.touches?.[0].clientY) - rect.top;
-                return { x, y };
-            };
-
-            const startDraw = (e) => {
-                e.preventDefault();
-                isDrawing = true;
-                const coords = getCoords(e);
-                lastX = coords.x;
-                lastY = coords.y;
-            };
-
-            const moveDraw = (e) => {
-                if (!isDrawing) return;
-                e.preventDefault();
-                const coords = getCoords(e);
-                drawOnCanvas(lastX, lastY, coords.x, coords.y, wbColor, wbSize, true);
-                lastX = coords.x;
-                lastY = coords.y;
-            };
-
-            const endDraw = () => isDrawing = false;
-
-            wbCanvas.addEventListener('mousedown', startDraw);
-            wbCanvas.addEventListener('mousemove', moveDraw);
-            wbCanvas.addEventListener('mouseup', endDraw);
-            wbCanvas.addEventListener('mouseout', endDraw);
-
-            wbCanvas.addEventListener('touchstart', startDraw);
-            wbCanvas.addEventListener('touchmove', moveDraw);
-            wbCanvas.addEventListener('touchend', endDraw);
-        }
-
-        // 6. HANG UP LOGIC
-        async function hangupCall(deleteDocFlag = true) {
-            if(dataChannel) { dataChannel.close(); dataChannel = null; }
-            if(pc) { pc.close(); pc = null; }
-            if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-            if(screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
-            
-            if(vcCallDocUnsub) vcCallDocUnsub();
-            if(vcCallerCandidatesUnsub) vcCallerCandidatesUnsub();
-            if(vcCalleeCandidatesUnsub) vcCalleeCandidatesUnsub();
-            
-            if(deleteDocFlag && vcCallDocRef) {
-                try { await deleteDoc(vcCallDocRef); } catch(e) {}
-            }
-            
-            vcCallDocRef = null;
-            vcLocalVideo.srcObject = null;
-            vcRemoteVideo.srcObject = null;
-            
-            document.getElementById('vcCallerName').style.display = 'block';
-            document.getElementById('vcRoomCode').style.display = 'block';
-            document.getElementById('vcRoomCode').value = '';
-            document.getElementById('btnCreateCall').style.display = 'block';
-            document.getElementById('btnJoinCall').style.display = 'block';
-            roomCodeDisplayContainer.style.display = 'none';
-            videoUI.style.display = 'none';
-            vcRemoteNameOverlay.textContent = 'Waiting...';
-            
-            const btnCam = document.getElementById('btnToggleCam');
-            if(btnCam) { btnCam.textContent = '📹'; btnCam.style.background = 'white'; btnCam.style.color = '#d81b60'; }
-            const btnMic = document.getElementById('btnToggleMic');
-            if(btnMic) { btnMic.textContent = '🎤'; btnMic.style.background = 'white'; btnMic.style.color = '#d81b60'; }
-            const btnShare = document.getElementById('btnShareScreen');
-            if(btnShare) { btnShare.style.background = 'white'; btnShare.style.color = '#d81b60'; }
-
-            // Clear data channel UI on hangup
-            if(vcChatMessages) {
-                vcChatMessages.innerHTML = '<div style="text-align: center; color: #bbb; font-size: 11px;">Start of conversation</div>';
-            }
-            if(typeof clearWhiteboard === 'function') {
-                clearWhiteboard(false);
-            }
-        }
-
-        document.getElementById('btnHangup')?.addEventListener('click', () => hangupCall(true));
-        // --- END WEBRTC LOGIC ---
-
-        // Basic Tab logic setup & Audio Context initialization
-        document.addEventListener('DOMContentLoaded', () => {
-            const tabs = document.querySelectorAll('.tab');
-            const contents = document.querySelectorAll('.tab-content');
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    if (tab.id === 'logoutButton') return;
-                    if (tab.id === 'subAdminChangePassTrigger') return;
+                if (!username) {
+                    if (pass.toLowerCase() === 'katecutie') user = 'kate';
+                    else if (pass.toLowerCase() === 'babycutie') user = 'baby';
+                    else if (pass.toLowerCase() === 'admin112003') {
+                        triggerAdminLogin(true);
+                        return;
+                    }
                     
-                    tabs.forEach(t => t.classList.remove('active'));
-                    contents.forEach(c => c.classList.remove('active'));
+                    if (user) {
+                        doLogin(user);
+                    } else {
+                        showLoginError();
+                    }
+                    return;
+                }
 
-                    tab.classList.add('active');
-                    const targetId = tab.getAttribute('data-tab');
-                    const targetContent = document.getElementById(targetId);
-                    if(targetContent) targetContent.classList.add('active');
-                });
+                if (pass === 'admin112003') {
+                    triggerAdminLogin(true);
+                    return;
+                }
+
+                try {
+                    submitPassword.textContent = "Checking...";
+                    submitPassword.disabled = true;
+                    
+                    let q = window.query(window.collection(window.db, 'app_users'), window.where('username', '==', username), window.where('password', '==', pass));
+                    let snap = await window.getDocs(q);
+                    
+                    if (!snap.empty) {
+                        const userDoc = snap.docs[0];
+                        const userData = userDoc.data();
+                        
+                        if (userData.status === 'pending') {
+                            loginContent.style.display = 'none';
+                            pendingContent.style.display = 'block';
+                        } else if (userData.status === 'deactivated') {
+                            window.currentDeactivatedUserId = userDoc.id; 
+                            loginContent.style.display = 'none';
+                            deactivatedContent.style.display = 'block';
+                        } else if (userData.status === 'rejected') {
+                            alert("This account was rejected by the superadmin.");
+                        } else if (userData.status === 'approved') {
+                            doLogin(username, userData, userDoc.id);
+                        }
+                        return;
+                    }
+
+                    q = window.query(window.collection(window.db, 'app_users'), window.where('adminUsername', '==', username), window.where('adminPassword', '==', pass));
+                    snap = await window.getDocs(q);
+
+                    if (!snap.empty) {
+                        const userDoc = snap.docs[0];
+                        const userData = userDoc.data();
+
+                        if (userData.status === 'approved') {
+                            sessionStorage.setItem('isSubAdminLoggedIn', 'true');
+                            sessionStorage.setItem('subAdminTarget', userData.username);
+                            sessionStorage.setItem('subAdminDocId', userDoc.id);
+                            triggerAdminLogin(false); 
+                        } else {
+                            alert("The associated user account is not currently active.");
+                        }
+                    } else {
+                        showLoginError(); 
+                    }
+
+                } catch(e) {
+                    console.error("Login Error:", e);
+                    alert("Error verifying account details.");
+                } finally {
+                    submitPassword.textContent = "Enter";
+                    submitPassword.disabled = false;
+                }
             });
 
-            // Ensure AudioContext resumes on ANY user interaction (for iOS/Chrome policy)
-            const AudioContextWindow = window.AudioContext || window.webkitAudioContext;
-            let audioContext;
-            if (AudioContextWindow) {
-                audioContext = new AudioContextWindow(); 
-                document.addEventListener('click', function() {
-                    if (audioContext && audioContext.state === 'suspended') {
-                        audioContext.resume().catch(e => console.error("Failed to resume context on click:", e));
+            passwordInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
+            loginUsernameInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
+            
+            submitRegister.addEventListener('click', async () => {
+                const u = regUsernameInput.value.trim().toLowerCase();
+                const p = regPasswordInput.value;
+                
+                if (!u || !p) return alert("Please fill in all fields.");
+                if (u === 'kate' || u === 'baby' || u === 'admin') return alert("This username is reserved.");
+                
+                try {
+                    submitRegister.textContent = "Registering...";
+                    submitRegister.disabled = true;
+                    
+                    const q = window.query(window.collection(window.db, 'app_users'), window.where('username', '==', u));
+                    const snap = await window.getDocs(q);
+                    
+                    if (!snap.empty) {
+                        alert("Username already taken. Please choose another.");
+                        return;
                     }
-                }, { once: true });
+                    
+                    await window.addDoc(window.collection(window.db, 'app_users'), {
+                        username: u,
+                        password: p, 
+                        status: 'pending',
+                        reactivationMessage: '',
+                        timestamp: window.serverTimestamp()
+                    });
+                    
+                    regUsernameInput.value = '';
+                    regPasswordInput.value = '';
+                    registerContent.style.display = 'none';
+                    pendingContent.style.display = 'block';
+                } catch (e) {
+                    console.error("Reg Error", e);
+                    alert("Failed to register account.");
+                } finally {
+                    submitRegister.textContent = "Register";
+                    submitRegister.disabled = false;
+                }
+            });
+
+            sendReactivationBtn.addEventListener('click', async () => {
+                const msg = reactivationMsg.value.trim();
+                if (!msg) return alert("Please enter a message to send to the Superadmin.");
+                if (!window.currentDeactivatedUserId) return alert("System error. Try reloading.");
+                
+                try {
+                    sendReactivationBtn.textContent = "Sending...";
+                    sendReactivationBtn.disabled = true;
+                    
+                    await window.updateDoc(window.doc(window.db, 'app_users', window.currentDeactivatedUserId), {
+                        reactivationMessage: msg
+                    });
+                    
+                    alert("Your request has been sent to the Superadmin in real-time.");
+                    reactivationMsg.value = '';
+                } catch(e) {
+                    console.error("Reactivation send err", e);
+                    alert("Failed to send request.");
+                } finally {
+                    sendReactivationBtn.textContent = "Send Request";
+                    sendReactivationBtn.disabled = false;
+                }
+            });
+        }
+
+        function doLogin(user, userData = null, userDocId = null) {
+            sessionStorage.setItem('loggedInUser', user);
+            setUserUI(user);
+            
+            if(window.loadUserContent) window.loadUserContent(user);
+            if(window.logDeviceLogin) window.logDeviceLogin(user);
+
+            passwordModal.style.opacity = '0';
+            setTimeout(() => {
+                passwordModal.style.display = 'none';
+
+                if (userData && userData.hasSeenAdminCreds === false && userData.adminUsername) {
+                    document.getElementById('displayAdminUser').textContent = userData.adminUsername;
+                    document.getElementById('displayAdminPass').textContent = userData.adminPassword;
+                    const credsModal = document.getElementById('userAdminCredsModal');
+                    credsModal.style.display = 'flex';
+
+                    document.getElementById('closeCredsModalBtn').onclick = async () => {
+                        try {
+                            await window.updateDoc(window.doc(window.db, 'app_users', userDocId), { hasSeenAdminCreds: true });
+                        } catch(e) { console.error(e); }
+                        credsModal.style.display = 'none';
+                        showWelcomeScreen(); 
+                    };
+                } else {
+                    showWelcomeScreen();
+                }
+            }, 500);
+        }
+
+        function showWelcomeScreen() {
+            welcomeScreen.style.display = 'flex';
+            setTimeout(() => {
+                welcomeScreen.style.opacity = '0';
+                setTimeout(() => {
+                    welcomeScreen.style.display = 'none';
+                    mainContent.style.display = 'block';
+                }, 800);
+            }, 2500);
+        }
+
+        function triggerAdminLogin(isSuper = true) {
+            if (isSuper) sessionStorage.setItem('isAdminLoggedIn', 'true');
+            
+            passwordModal.style.opacity = '0';
+            setTimeout(() => {
+                passwordModal.style.display = 'none';
+                adminTransitionScreen.style.display = 'flex';
+                
+                setTimeout(() => {
+                    adminTransitionScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        adminTransitionScreen.style.display = 'none';
+                        adminContainer.style.display = 'block';
+                        
+                        if(window.initAdminConsole) window.initAdminConsole();
+                    }, 500);
+                }, 2500); 
+            }, 500);
+        }
+
+        function showLoginError() {
+            passwordInput.value = '';
+            passwordInput.placeholder = 'Try again, cutie...';
+            passwordInput.style.borderColor = '#ff4d4d';
+            loginUsernameInput.style.borderColor = '#ff4d4d';
+            setTimeout(() => {
+                passwordInput.style.borderColor = '#ffb7c5';
+                loginUsernameInput.style.borderColor = '#ffb7c5';
+                passwordInput.placeholder = 'The special word...';
+            }, 1500);
+        }
+
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            sessionStorage.removeItem('loggedInUser');
+            mainContent.style.display = 'none';
+            document.getElementById('logoutScreen').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('logoutScreen').style.opacity = '1';
+                setTimeout(() => location.reload(), 2500);
+            }, 10);
+        });
+
+        document.getElementById('adminLogoutBtn').addEventListener('click', function() {
+            sessionStorage.removeItem('isAdminLoggedIn');
+            sessionStorage.removeItem('isSubAdminLoggedIn');
+            sessionStorage.removeItem('subAdminTarget');
+            sessionStorage.removeItem('subAdminDocId');
+            sessionStorage.removeItem('ghToken'); 
+            location.reload();
+        });
+
+        function setUserUI(user) {
+            const name = user.charAt(0).toUpperCase() + user.slice(1);
+            welcomeMsg.textContent = `Welcome ${name}, enjoy your stay!!`;
+            logoutMsg.textContent = `Thank you ${name}`;
+            pageTitle.textContent = `For You ${name}`;
+        }
+
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        let tulipInterval = null;
+
+        function createTulip() {
+            const container = document.getElementById('tulipRainContainer');
+            const tulip = document.createElement('div');
+            tulip.classList.add('tulip-drop');
+            tulip.textContent = '🌷';
+            
+            tulip.style.left = Math.random() * 100 + '%';
+            tulip.style.animationDuration = (Math.random() * 5 + 3) + 's'; 
+            
+            container.appendChild(tulip);
+
+            tulip.addEventListener('animationend', () => {
+                tulip.remove();
+            });
+        }
+
+        function startTulipRain() {
+            const container = document.getElementById('tulipRainContainer');
+            container.style.display = 'block';
+            if (!tulipInterval) {
+                tulipInterval = setInterval(createTulip, 300);
+            }
+        }
+
+        function stopTulipRain() {
+            const container = document.getElementById('tulipRainContainer');
+            if (tulipInterval) {
+                clearInterval(tulipInterval);
+                tulipInterval = null;
+            }
+            container.innerHTML = '';
+            container.style.display = 'none';
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                if (this.id === 'logoutButton' || this.id === 'adminLogoutBtn') return;
+                const targetTab = this.getAttribute('data-tab');
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    
+                    if (content.id === 'gallery') content.classList.remove('active');
+
+                    if (content.id === targetTab) {
+                        content.classList.add('active');
+                    }
+                });
+
+                if (targetTab === 'gallery') {
+                    startTulipRain();
+                } else {
+                    stopTulipRain();
+                }
+            });
+        });
+
+        function addFloatingElements() {
+            const container = document.getElementById('floatingElementsContainer');
+            const emojis = [
+                { char: '❤️', size: 24, delay: 0.5, top: '10%', left: '5%' },
+                { char: '❤️', size: 24, delay: 1.5, top: '20%', right: '10%' },
+                { char: '❤️', size: 24, delay: 2.5, bottom: '15%', left: '15%' },
+                { char: '🧸', size: 32, delay: 3.0, top: '30%', left: '10%' },
+                { char: '🧸', size: 32, delay: 4.0, bottom: '10%', right: '5%' }
+            ];
+
+            emojis.forEach(e => {
+                const el = document.createElement('div');
+                el.classList.add(e.char === '❤️' ? 'heart' : 'teddy-bear');
+                el.textContent = e.char;
+                el.style.fontSize = e.size + 'px';
+                el.style.animationDelay = e.delay + 's';
+                
+                if (e.top) el.style.top = e.top;
+                if (e.bottom) el.style.bottom = e.bottom;
+                if (e.left) el.style.left = e.left;
+                if (e.right) el.style.right = e.right;
+                
+                container.appendChild(el);
+            });
+        }
+        addFloatingElements();
+
+        function updatePHClock() {
+            const now = new Date();
+            const options = { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', year: 'numeric', month: 'numeric', day: '2-digit', hour12: true };
+            document.getElementById('phClock').textContent = `PH: ${now.toLocaleString('en-US', options)}`;
+        }
+        setInterval(updatePHClock, 1000);
+        updatePHClock();
+
+        const nowPlayingAudio = document.getElementById('nowPlayingAudio');
+        const playIcon = document.getElementById('playIcon');
+        const pauseIcon = document.getElementById('pauseIcon');
+        const mainPlayBtn = document.getElementById('mainPlayBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const loopBtn = document.getElementById('loopBtn');
+        const progressFill = document.getElementById('progressFill');
+        const progressBar = document.getElementById('progressBar');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const liquidWave = document.getElementById('liquidWave');
+        const liquidTimeText = document.getElementById('liquidTimeText');
+
+        let allSongs = []; 
+        let allSongsMap = {}; 
+        let isLooping = false;
+        let currentSongIndex = -1;
+
+        window.updateAllSongs = function(songsMap) {
+            allSongsMap = songsMap;
+            allSongs = Object.values(songsMap).flat();
+            
+            if (nowPlayingAudio.src && nowPlayingAudio.src !== window.location.href) {
+                currentSongIndex = allSongs.findIndex(s => s.src === nowPlayingAudio.src);
+            }
+        }
+
+        mainPlayBtn.addEventListener('click', () => {
+            if (!nowPlayingAudio.src || nowPlayingAudio.src === window.location.href) {
+                if(allSongs.length > 0) {
+                     window.playSong(allSongs[0].title, allSongs[0].artist, allSongs[0].src);
+                }
+            } else {
+                if (nowPlayingAudio.paused) {
+                    if (audioContext && audioContext.state === 'suspended') {
+                         audioContext.resume().then(() => nowPlayingAudio.play());
+                    } else {
+                         nowPlayingAudio.play();
+                    }
+                }
+                else nowPlayingAudio.pause();
             }
         });
 
+        loopBtn.addEventListener('click', () => {
+            nowPlayingAudio.loop = !nowPlayingAudio.loop;
+            loopBtn.style.background = nowPlayingAudio.loop ? '#d81b60' : 'white';
+            loopBtn.style.color = nowPlayingAudio.loop ? 'white' : '#d81b60';
+        });
+
+        volumeSlider.addEventListener('input', (e) => { nowPlayingAudio.volume = e.target.value; });
+
+        progressBar.addEventListener('click', (e) => {
+            const width = progressBar.clientWidth;
+            const clickX = e.offsetX;
+            const duration = nowPlayingAudio.duration;
+            if(duration) {
+                nowPlayingAudio.currentTime = (clickX / width) * duration;
+            }
+        });
+
+        nowPlayingAudio.addEventListener('play', () => {
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+            document.getElementById('mainBgOverlay').classList.add('active');
+            initAudioVisualizer();
+        });
+
+        nowPlayingAudio.addEventListener('pause', () => {
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+            document.getElementById('mainBgOverlay').classList.remove('active');
+        });
+
+        nowPlayingAudio.addEventListener('timeupdate', () => {
+            const curr = nowPlayingAudio.currentTime;
+            const dur = nowPlayingAudio.duration;
+            if(curr && dur) {
+                const percent = (curr / dur) * 100;
+                progressFill.style.width = `${percent}%`;
+                
+                liquidWave.style.top = `${100 - percent}%`;
+                
+                const currentTimeStr = formatTime(curr);
+                document.getElementById('currTime').textContent = currentTimeStr;
+                document.getElementById('totalTime').textContent = formatTime(dur);
+                liquidTimeText.textContent = currentTimeStr;
+            }
+        });
+
+        nowPlayingAudio.addEventListener('ended', () => {
+            if (nowPlayingAudio.loop) {
+                nowPlayingAudio.currentTime = 0;
+                nowPlayingAudio.play();
+            } else {
+                playNextSong();
+            }
+        });
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        window.playSong = function(title, artist, src) {
+            const playerTitle = document.getElementById('playerTitle');
+            const playerArtist = document.getElementById('playerArtist');
+            
+            playerTitle.textContent = title;
+            playerArtist.textContent = artist;
+            nowPlayingAudio.src = src;
+            nowPlayingAudio.play();
+            
+            currentSongIndex = allSongs.findIndex(s => s.src === src);
+        }
+
+        function playNextSong() {
+            if (allSongs.length === 0) return;
+            
+            let nextIndex = currentSongIndex + 1;
+            if (nextIndex >= allSongs.length) {
+                nextIndex = 0; 
+            }
+            
+            const s = allSongs[nextIndex];
+            window.playSong(s.title, s.artist, s.src);
+        }
+
+        if(nextBtn) nextBtn.addEventListener('click', playNextSong);
+
+        document.getElementById('artistSearch').addEventListener('input', function() {});
+
+        let analyser, source;
+        let isVisualizerInit = false;
+
+        function initAudioVisualizer() {
+            if (isVisualizerInit) return;
+
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!audioContext) { 
+                 audioContext = new AudioContext();
+            }
+            
+            if (audioContext.state === 'suspended') {
+                 audioContext.resume().catch(e => console.error("Failed to resume AudioContext:", e));
+            }
+            
+            if (!audioContext) return; 
+
+            analyser = audioContext.createAnalyser();
+            
+            try {
+                if (!source) {
+                    source = audioContext.createMediaElementSource(nowPlayingAudio);
+                    source.connect(analyser);
+                    analyser.connect(audioContext.destination);
+                } else {
+                     source.connect(analyser); 
+                     analyser.connect(audioContext.destination);
+                }
+                
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                const beatWave = document.getElementById('beatWave');
+
+                function animateBeat() {
+                    requestAnimationFrame(animateBeat);
+
+                    analyser.getByteFrequencyData(dataArray);
+
+                    let sum = 0;
+                    const bassBins = 10; 
+                    for (let i = 0; i < bassBins; i++) {
+                        sum += dataArray[i];
+                    }
+                    const average = sum / bassBins;
+
+                    const scale = 1 + (average / 255) * 0.4; 
+                    
+                    if(beatWave) {
+                         beatWave.style.transform = `scale(${scale})`;
+                         beatWave.style.opacity = 0.5 + (average / 255) * 0.5;
+                    }
+                }
+
+                animateBeat();
+                isVisualizerInit = true;
+                
+            } catch(err) {
+                console.log("Visualizer init failed (likely CORS on raw audio):", err);
+                const beatWave = document.getElementById('beatWave');
+                if(beatWave) {
+                    beatWave.style.animation = "pulse 0.5s infinite alternate";
+                }
+            }
+        }
+
+        // FIX: Ensure AudioContext resumes on ANY user interaction (for iOS/Chrome policy)
+        // Check if context is defined before adding the listener
+        const AudioContextWindow = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextWindow) {
+            audioContext = new AudioContextWindow(); // Initialize context early
+            document.addEventListener('click', function() {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume().catch(e => console.error("Failed to resume context on click:", e));
+                }
+            }, { once: true }); // Use { once: true } for initial resume
+            
+            // For subsequent clicks, we handle context resume in mainPlayBtn.onclick
+        }
+
+
+    });
     </script>
 </body>
 </html>
