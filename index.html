@@ -1807,6 +1807,11 @@
                             <input type="text" id="adminLetterTitle" class="fw-input" placeholder="Letter Title (e.g. Happy Anniversary)">
                             <input type="text" id="adminLetterDate" class="fw-input" placeholder="Date Label (e.g. 11-20-2025)">
                             <textarea id="adminLetterContent" class="fw-textarea" style="height: 150px;" placeholder="Write your heart out here..."></textarea>
+                            
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:10px; margin-bottom:5px;">🎵 Pick a Song (Optional):</label>
+                            <select id="adminLetterSongSelect" class="repo-select">
+                                <option value="">No song (silent letter)</option>
+                            </select>
                         </div>
                         <button class="submit-btn" id="postLetterBtn" style="width: 100%">Post Letter</button>
                     </div>
@@ -3602,8 +3607,9 @@
                     const data = doc.data();
                     const letterId = 'letter-' + doc.id;
                     const formattedContent = data.content ? data.content.replace(/\n/g, '<br>') : '';
+                    const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
                     html += `
-                        <div class="letter" id="${letterId}">
+                        <div class="letter" id="${letterId}" ${songDataAttrs}>
                             <div class="letter-header">
                                 <h3>${escapeHtml(data.title)} (${escapeHtml(data.dateLabel)})</h3>
                                 <span>Click to open</span>
@@ -3613,8 +3619,32 @@
                     `;
                 });
                 lettersContainer.innerHTML = html;
+                
+                let currentLetterAudio = null;
                 document.querySelectorAll('.letter').forEach(letter => {
-                    letter.addEventListener('click', function() { this.classList.toggle('expanded'); });
+                    letter.addEventListener('click', function() { 
+                        this.classList.toggle('expanded'); 
+                        
+                        if (this.classList.contains('expanded') && this.dataset.songUrl) {
+                            // Stop previous audio if playing
+                            if (currentLetterAudio) {
+                                currentLetterAudio.pause();
+                                currentLetterAudio = null;
+                            }
+                            
+                            // Play new audio
+                            currentLetterAudio = new Audio(this.dataset.songUrl);
+                            currentLetterAudio.volume = 0.25;
+                            currentLetterAudio.loop = true;
+                            currentLetterAudio.play().catch(e => console.error('Audio play error:', e));
+                        } else if (!this.classList.contains('expanded') && this.dataset.songUrl) {
+                            // Stop audio when collapsing
+                            if (currentLetterAudio) {
+                                currentLetterAudio.pause();
+                                currentLetterAudio = null;
+                            }
+                        }
+                    });
                 });
                 lettersLoaded = true;
             });
@@ -4462,22 +4492,60 @@
                 });
             };
 
+            // Populate song selector with available songs
+            onSnapshot(collection(db, 'songs'), (snapshot) => {
+                const songSelect = document.getElementById('adminLetterSongSelect');
+                const currentValue = songSelect.value; // Preserve current selection
+                songSelect.innerHTML = '<option value="">No song (silent letter)</option>';
+                
+                snapshot.forEach(doc => {
+                    const song = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${escapeHtml(song.title)} - ${escapeHtml(song.artist)}`;
+                    songSelect.appendChild(option);
+                });
+                
+                // Restore selection if still valid
+                songSelect.value = currentValue;
+            });
+
             document.getElementById('postLetterBtn').onclick = async () => {
                 if(!adminTargetUser) return;
                 const title = document.getElementById('adminLetterTitle').value.trim();
                 const dateLabel = document.getElementById('adminLetterDate').value.trim();
                 const content = document.getElementById('adminLetterContent').value.trim();
+                const selectedSongId = document.getElementById('adminLetterSongSelect').value;
+                
                 if(!title || !dateLabel || !content) return alert("Fill all fields");
                 try {
-                    await addDoc(collection(db, `${adminTargetUser}_love_letters`), {
+                    const letterData = {
                         title, dateLabel, content, timestamp: serverTimestamp()
-                    });
+                    };
+                    
+                    // Add song if selected
+                    if (selectedSongId) {
+                        const songDoc = await getDoc(doc(db, 'songs', selectedSongId));
+                        if (songDoc.exists()) {
+                            const song = songDoc.data();
+                            letterData.songId = selectedSongId;
+                            letterData.songTitle = song.title;
+                            letterData.songArtist = song.artist;
+                            letterData.songUrl = song.url;
+                        }
+                    }
+                    
+                    await addDoc(collection(db, `${adminTargetUser}_love_letters`), letterData);
                     showToast("Success", `Posted to ${adminTargetUser}'s Letters!`, "✅");
                     
                     document.getElementById('adminLetterTitle').value = '';
                     document.getElementById('adminLetterDate').value = '';
                     document.getElementById('adminLetterContent').value = '';
-                } catch (e) { alert("Error"); }
+                    document.getElementById('adminLetterSongSelect').value = '';
+                } catch (e) { 
+                    console.error('Post letter error:', e);
+                    alert("Error posting letter"); 
+                }
             };
 
             document.getElementById('scanNotesBtn').onclick = async () => {
