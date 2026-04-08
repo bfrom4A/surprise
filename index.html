@@ -1644,12 +1644,12 @@
             <!-- Left Sidebar -->
             <div class="admin-sidebar-left">
                 <h3 style="color: #d81b60; text-align: center; margin-bottom: 10px; font-family: 'Dancing Script', cursive; font-size: 32px;">Admin</h3>
-                <p style="color: #888; font-size: 12px; text-align: center; margin-bottom: 20px;">Select Target User</p>
+                <p id="targetSelectionHelperText" style="color: #888; font-size: 12px; text-align: center; margin-bottom: 20px;">Select Target User</p>
                 
-                <button class="admin-target-btn active" data-target-user="kate">
+                <button class="admin-target-btn static-target active" data-target-user="kate">
                     <span style="font-size: 20px;">👧🏻</span> Manage Kate
                 </button>
-                <button class="admin-target-btn" data-target-user="baby">
+                <button class="admin-target-btn static-target" data-target-user="baby">
                     <span style="font-size: 20px;">👶🏻</span> Manage Baby
                 </button>
                 
@@ -1657,6 +1657,10 @@
                 <div id="dynamicAdminTargets" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
                 
                 <div style="flex-grow: 1;"></div>
+                
+                <!-- SUB-ADMIN CHANGE PASSWORD BTN -->
+                <button id="subAdminChangePassTrigger" class="tab" style="background: #ffb7c5; color: white; width: 100%; justify-content: center; border-radius: 12px; display:none; margin-bottom:10px;">🔑 Change Password</button>
+
                 <button id="adminLogoutBtn" class="tab" style="background: #ffb7c5; color: white; width: 100%; justify-content: center; border-radius: 12px;">🔒 Log Out</button>
             </div>
 
@@ -1670,13 +1674,14 @@
                     <div class="admin-tabs">
                         <button class="admin-tab-btn active" data-target="admin-letters">💌 Letters</button>
                         <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
-                        <button class="admin-tab-btn" data-target="admin-music">🎵 Music</button>
                         <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
-                        <button class="admin-tab-btn" data-target="admin-devices">📱 Devices</button>
-                        <button class="admin-tab-btn" data-target="admin-system">⚙️ System</button>
-                        <button class="admin-tab-btn" data-target="admin-security">🛡️ Security</button>
-                        <button class="admin-tab-btn" data-target="admin-maintenance">🚧 Maintenance</button>
-                        <button class="admin-tab-btn" data-target="admin-users">👥 Users</button>
+                        <!-- Superadmin exclusive tabs -->
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-music">🎵 Music</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-devices">📱 Devices</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-system">⚙️ System</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-security">🛡️ Security</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-maintenance">🚧 Maintenance</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-users">👥 Users</button>
                     </div>
 
                     <!-- Tab: Add Letters -->
@@ -1900,7 +1905,7 @@
                         </div>
                     </div>
 
-                    <!-- NEW: Users Management Tab -->
+                    <!-- Users Management Tab -->
                     <div class="admin-panel" id="admin-users">
                         <h4 class="admin-section-title">User Accounts Management</h4>
                         <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Review user registrations and handle account status.</p>
@@ -1943,6 +1948,43 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- APPROVAL MODAL -->
+    <div id="approveUserModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:9999; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="background:white;">
+            <h3 style="color:#d81b60; margin-bottom:15px; font-family:'Dancing Script', cursive; font-size: 32px;">Setup Admin Access</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">Provide admin login details for this user so they can manage their own letters, notes, and gallery.</p>
+            <input type="text" id="setupAdminUsername" class="fw-input" placeholder="Admin Username">
+            <input type="text" id="setupAdminPassword" class="fw-input" placeholder="Admin Password">
+            <button class="submit-btn" id="confirmApproveBtn" style="width:100%;">Confirm & Approve</button>
+            <button class="submit-btn" id="cancelApproveBtn" style="width:100%; background:#ccc; margin-top:10px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ONE-TIME ADMIN CREDS MODAL FOR USER -->
+    <div id="userAdminCredsModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(255,183,197,0.9);z-index:9999; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="background:white; text-align:center;">
+            <h2 style="color:#d81b60; font-family:'Dancing Script', cursive; font-size:32px;">Account Approved!</h2>
+            <p style="font-size:14px; color:#555; margin:15px 0;">You have been granted a personal Admin Account to manage your own content.</p>
+            <div style="background:#fff0f5; padding:15px; border-radius:10px; margin-bottom:15px; border:2px dashed #ffb7c5; text-align:left;">
+                <p style="margin:5px 0; color:#555;"><strong>Admin Username:</strong> <span id="displayAdminUser" style="color:#d81b60; font-weight:bold;"></span></p>
+                <p style="margin:5px 0; color:#555;"><strong>Admin Password:</strong> <span id="displayAdminPass" style="color:#d81b60; font-weight:bold;"></span></p>
+            </div>
+            <p style="font-size:11px; color:#888; margin-bottom: 15px;">You can use these credentials to log in on the main screen to access your admin tools.</p>
+            <button class="submit-btn" id="closeCredsModalBtn" style="width:100%;">I have saved these details</button>
+        </div>
+    </div>
+
+    <!-- CHANGE SUB-ADMIN PASSWORD MODAL -->
+    <div id="subAdminChangePassModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:9999; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="background:white;">
+            <h3 style="color:#d81b60; margin-bottom:15px; font-family:'Dancing Script', cursive; font-size: 28px;">Change Admin Password</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:10px;">Please enter your new administrator password.</p>
+            <input type="password" id="newSubAdminPass" class="fw-input" placeholder="New Password">
+            <button class="submit-btn" id="confirmChangePassBtn" style="width:100%;">Save Changes</button>
+            <button class="submit-btn" id="cancelChangePassBtn" style="width:100%; background:#ccc; margin-top:10px;">Cancel</button>
         </div>
     </div>
 
@@ -2146,7 +2188,8 @@
 
         function applyBlockCheck() {
             const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
-            if (!isAdmin && userIPAddress && globalSecurityConfig.blockedIPs?.includes(userIPAddress)) {
+            const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
+            if (!isAdmin && !isSubAdmin && userIPAddress && globalSecurityConfig.blockedIPs?.includes(userIPAddress)) {
                 // If IP is blocked and NOT an admin, destroy the body and show a lock screen
                 document.body.innerHTML = `
                     <div style="display:flex; flex-direction:column; height:100vh; width:100vw; justify-content:center; align-items:center; background:#1a1a2e; color:#ff4d4d; font-family:'Montserrat', sans-serif; text-align:center; padding:20px; box-sizing:border-box;">
@@ -2493,7 +2536,9 @@
                 setupNotificationSystem();
                 
                 const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
-                if (isAdmin) {
+                const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
+
+                if (isAdmin || isSubAdmin) {
                      initAdminConsole();
                 } else if (currentUser) {
                     loadUserContent(currentUser);
@@ -2890,6 +2935,8 @@
 
         // --- ADMIN USER MANAGEMENT SUB-ROUTINE ---
         function setupAdminUserManagement() {
+            if(sessionStorage.getItem('isSubAdminLoggedIn') === 'true') return; // Skip entirely for sub-admin
+            
             const pendingContainer = document.getElementById('adminPendingUsers');
             const approvedContainer = document.getElementById('adminApprovedUsers');
             const deactivatedContainer = document.getElementById('adminDeactivatedUsers');
@@ -2985,16 +3032,47 @@
                 if (!deactivatedContainer.hasChildNodes()) deactivatedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No deactivated users.</p>';
 
                 // Bind click events
-                document.querySelectorAll('.btn-approve').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'approved'));
+                document.querySelectorAll('.btn-approve').forEach(b => {
+                    b.onclick = () => {
+                        const id = b.dataset.id;
+                        const modal = document.getElementById('approveUserModal');
+                        modal.style.display = 'flex';
+                        
+                        document.getElementById('setupAdminUsername').value = '';
+                        document.getElementById('setupAdminPassword').value = '';
+                        
+                        document.getElementById('confirmApproveBtn').onclick = () => {
+                            const aUser = document.getElementById('setupAdminUsername').value.trim();
+                            const aPass = document.getElementById('setupAdminPassword').value.trim();
+                            if(!aUser || !aPass) return alert("Please provide admin username and password.");
+                            
+                            // Check uniqueness of Admin username
+                            getDocs(query(collection(db, 'app_users'), where('adminUsername', '==', aUser)))
+                            .then(snap => {
+                                if(!snap.empty && snap.docs[0].id !== id) {
+                                    alert("This Admin Username is already taken!");
+                                    return;
+                                }
+                                updateUserStatus(id, 'approved', { adminUsername: aUser, adminPassword: aPass, hasSeenAdminCreds: false });
+                                modal.style.display = 'none';
+                            });
+                        };
+                        
+                        document.getElementById('cancelApproveBtn').onclick = () => {
+                            modal.style.display = 'none';
+                        };
+                    };
+                });
+                
                 document.querySelectorAll('.btn-reject').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'rejected'));
                 document.querySelectorAll('.btn-deactivate').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'deactivated'));
                 document.querySelectorAll('.btn-reactivate').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'approved'));
             });
         }
 
-        window.updateUserStatus = async (id, newStatus) => {
+        window.updateUserStatus = async (id, newStatus, extraData = {}) => {
             try {
-                const updatePayload = { status: newStatus };
+                const updatePayload = { status: newStatus, ...extraData };
                 if (newStatus === 'approved') {
                     updatePayload.reactivationMessage = '';
                 }
@@ -3009,6 +3087,9 @@
         };
 
         function initAdminConsole() {
+            const isSuperAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+            const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
+
             const targetLabel = document.getElementById('adminTargetLabel');
             const targetBtns = document.querySelectorAll('.admin-target-btn');
             const tabBtns = document.querySelectorAll('.admin-tab-btn');
@@ -3017,60 +3098,88 @@
             let galleryUnsubscribe = null;
             let deleteTimer = null; 
 
-            setupDeviceMonitor();
-            updateGitHubUI(!!githubToken);
-            startLiveScanner();
-            setupAdminUserManagement();
+            // Apply Sub-Admin Restrictions
+            if (isSubAdmin && !isSuperAdmin) {
+                const target = sessionStorage.getItem('subAdminTarget');
+                adminTargetUser = target;
+                targetLabel.textContent = `Target: ${target.toUpperCase()}`;
 
-            // Setup Security Panel Sync
+                // Hide superadmin exclusive tabs
+                document.querySelectorAll('.superadmin-only').forEach(btn => btn.style.display = 'none');
+                
+                // Hide target selection helper and static buttons
+                document.getElementById('targetSelectionHelperText').style.display = 'none';
+                document.querySelectorAll('.static-target').forEach(btn => btn.style.display = 'none');
+                
+                // Show change password
+                document.getElementById('subAdminChangePassTrigger').style.display = 'flex';
+
+                // Restrict layout structure
+                document.querySelector('.admin-sidebar-right').style.display = 'none';
+                document.querySelector('.admin-dashboard-wrapper').style.gridTemplateColumns = '250px 1fr';
+
+                document.querySelector('[data-target="admin-letters"]').click(); // Reset to allowed tab
+            } else {
+                // Initialize Superadmin Features
+                setupDeviceMonitor();
+                updateGitHubUI(!!githubToken);
+                startLiveScanner();
+                setupAdminUserManagement();
+                
+                targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
+            }
+
+            // Setup Security Panel Sync (Superadmin only)
             const toggleAntiScreenshot = document.getElementById('toggleAntiScreenshot');
             const blockedIpListContainer = document.getElementById('blockedIpList');
             
-            onSnapshot(doc(db, 'settings', 'security'), (docSnap) => {
-                let secData = { antiScreenshot: false, blockedIPs: [] };
-                if(docSnap.exists()) secData = docSnap.data();
+            if (isSuperAdmin) {
+                onSnapshot(doc(db, 'settings', 'security'), (docSnap) => {
+                    let secData = { antiScreenshot: false, blockedIPs: [] };
+                    if(docSnap.exists()) secData = docSnap.data();
 
-                // Update Toggle
-                if(secData.antiScreenshot) {
-                    toggleAntiScreenshot.textContent = "Enabled";
-                    toggleAntiScreenshot.style.background = "#28a745";
-                } else {
-                    toggleAntiScreenshot.textContent = "Disabled";
-                    toggleAntiScreenshot.style.background = "#ccc";
-                }
+                    // Update Toggle
+                    if(secData.antiScreenshot) {
+                        toggleAntiScreenshot.textContent = "Enabled";
+                        toggleAntiScreenshot.style.background = "#28a745";
+                    } else {
+                        toggleAntiScreenshot.textContent = "Disabled";
+                        toggleAntiScreenshot.style.background = "#ccc";
+                    }
 
-                toggleAntiScreenshot.onclick = async () => {
-                    await setDoc(doc(db, 'settings', 'security'), {
-                        antiScreenshot: !secData.antiScreenshot
-                    }, {merge: true});
-                };
+                    toggleAntiScreenshot.onclick = async () => {
+                        await setDoc(doc(db, 'settings', 'security'), {
+                            antiScreenshot: !secData.antiScreenshot
+                        }, {merge: true});
+                    };
 
-                // Update Blocked List Display
-                blockedIpListContainer.innerHTML = '';
-                if(!secData.blockedIPs || secData.blockedIPs.length === 0) {
-                    blockedIpListContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">No blocked IPs.</p>';
-                } else {
-                    secData.blockedIPs.forEach(ip => {
-                        const el = document.createElement('div');
-                        el.className = 'admin-list-item';
-                        el.innerHTML = `
-                            <div class="admin-item-info"><span>🌐 ${escapeHtml(ip)}</span></div>
-                            <button class="submit-btn unblock-ip-btn" data-ip="${escapeHtml(ip)}" style="background:#28a745; padding:6px 12px; font-size:12px;">Unblock</button>
-                        `;
-                        blockedIpListContainer.appendChild(el);
-                    });
+                    // Update Blocked List Display
+                    blockedIpListContainer.innerHTML = '';
+                    if(!secData.blockedIPs || secData.blockedIPs.length === 0) {
+                        blockedIpListContainer.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">No blocked IPs.</p>';
+                    } else {
+                        secData.blockedIPs.forEach(ip => {
+                            const el = document.createElement('div');
+                            el.className = 'admin-list-item';
+                            el.innerHTML = `
+                                <div class="admin-item-info"><span>🌐 ${escapeHtml(ip)}</span></div>
+                                <button class="submit-btn unblock-ip-btn" data-ip="${escapeHtml(ip)}" style="background:#28a745; padding:6px 12px; font-size:12px;">Unblock</button>
+                            `;
+                            blockedIpListContainer.appendChild(el);
+                        });
 
-                    // Handle Unblock
-                    blockedIpListContainer.querySelectorAll('.unblock-ip-btn').forEach(btn => {
-                        btn.onclick = async () => {
-                            const ipToRemove = btn.dataset.ip;
-                            const newArray = secData.blockedIPs.filter(i => i !== ipToRemove);
-                            await setDoc(doc(db, 'settings', 'security'), { blockedIPs: newArray }, {merge: true});
-                            showToast("IP Unblocked", `${ipToRemove} has been restored.`, "✅");
-                        };
-                    });
-                }
-            });
+                        // Handle Unblock
+                        blockedIpListContainer.querySelectorAll('.unblock-ip-btn').forEach(btn => {
+                            btn.onclick = async () => {
+                                const ipToRemove = btn.dataset.ip;
+                                const newArray = secData.blockedIPs.filter(i => i !== ipToRemove);
+                                await setDoc(doc(db, 'settings', 'security'), { blockedIPs: newArray }, {merge: true});
+                                showToast("IP Unblocked", `${ipToRemove} has been restored.`, "✅");
+                            };
+                        });
+                    }
+                });
+            }
 
             // Make sure the function is accessible globally for dynamic buttons
             window.loadAdminGallery = function(user) {
@@ -3084,13 +3193,27 @@
                         const data = doc.data();
                         const item = document.createElement('div');
                         item.className = 'admin-list-item';
-                        item.innerHTML = `<img src="${data.url}" class="admin-thumbnail"><div class="admin-item-info"><span>${escapeHtml(data.caption||'Img')}</span></div><button class="delete-btn" data-id="${doc.id}" data-repo="${data.githubRepo || ''}" data-path="${data.githubPath || ''}">🗑️</button>`;
+                        
+                        // For sub-admins, hide delete functionality via git since they don't have token
+                        const deleteBtnHtml = isSuperAdmin ? `<button class="delete-btn" data-id="${doc.id}" data-repo="${data.githubRepo || ''}" data-path="${data.githubPath || ''}">🗑️</button>` : `<button class="delete-btn subadmin-del" data-id="${doc.id}">🗑️ (DB Only)</button>`;
+                        
+                        item.innerHTML = `<img src="${data.url}" class="admin-thumbnail"><div class="admin-item-info"><span>${escapeHtml(data.caption||'Img')}</span></div>${deleteBtnHtml}`;
                         list.appendChild(item);
                     });
                     
                     list.querySelectorAll('.delete-btn').forEach(btn => {
                         btn.onclick = async () => {
                             const docId = btn.dataset.id;
+                            
+                            if (btn.classList.contains('subadmin-del')) {
+                                if(confirm("Delete image from the gallery?")) {
+                                    await deleteDoc(doc(db, `${user}_gallery`, docId));
+                                    btn.closest('.admin-list-item').remove();
+                                    showToast("Deleted", "Image removed.", "🗑️");
+                                }
+                                return;
+                            }
+
                             const repo = btn.dataset.repo;
                             const path = btn.dataset.path;
 
@@ -3140,13 +3263,12 @@
                 });
             };
 
-            // Initialize default active target (Kate)
-            targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
             window.loadAdminGallery(adminTargetUser);
 
             // Left Sidebar Target Selection
             targetBtns.forEach(btn => {
                 btn.onclick = () => {
+                    if(isSubAdmin && !isSuperAdmin) return; // Locked for sub-admin
                     document.querySelectorAll('.admin-target-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     adminTargetUser = btn.getAttribute('data-target-user');
@@ -3408,6 +3530,22 @@
                 const fileInput = document.getElementById('galleryFileInput');
                 const statusText = document.getElementById('galleryStatus');
 
+                // Allow Subadmins to post image locally via placeholder/database only if github not connected
+                if (isSubAdmin && !isSuperAdmin && !githubToken) {
+                    // For local-only uploads due to iframe restrictions, this simulates
+                    const fakeUrl = `https://placehold.co/400x400/ffb7c5/d81b60?text=${encodeURIComponent(caption || 'New Image')}`;
+                    await addDoc(collection(db, `${adminTargetUser}_gallery`), {
+                        url: fakeUrl,
+                        caption: caption,
+                        timestamp: serverTimestamp()
+                    });
+                    showToast("Added Placeholder", `Image submitted.`, "✅");
+                    document.getElementById('adminImgCaption').value = '';
+                    fileInput.value = '';
+                    document.getElementById('galleryFileNameDisplay').textContent = 'No file selected';
+                    return;
+                }
+
                 if (!repoFullName || !fileInput.files.length) {
                     alert("Please select a repository and an image file.");
                     return;
@@ -3492,384 +3630,386 @@
                 }
             };
 
-            setupAdminSongList(); 
-            
-            const uploadBtnMusic = document.getElementById('startUploadBtn');
-            const scanMusicBtn = document.getElementById('scanMusicBtn'); 
-            
-            uploadBtnMusic.onclick = async () => {
-                const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
-                const artistName = document.getElementById('uploadArtistName').value.trim();
-                const songTitle = document.getElementById('uploadSongTitle').value.trim();
-                const fileInput = document.getElementById('musicFileInput');
-                const statusText = document.getElementById('musicStatus');
+            if (isSuperAdmin) {
+                setupAdminSongList(); 
+                
+                const uploadBtnMusic = document.getElementById('startUploadBtn');
+                const scanMusicBtn = document.getElementById('scanMusicBtn'); 
+                
+                uploadBtnMusic.onclick = async () => {
+                    const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
+                    const artistName = document.getElementById('uploadArtistName').value.trim();
+                    const songTitle = document.getElementById('uploadSongTitle').value.trim();
+                    const fileInput = document.getElementById('musicFileInput');
+                    const statusText = document.getElementById('musicStatus');
 
-                if (!repoFullName || !artistName || !songTitle || !fileInput.files.length) {
-                    alert("Please select a repository, a music file, and fill in all song details.");
-                    return;
-                }
-                if (!githubToken) {
-                    alert("GitHub connection failed. Please log in again.");
-                    return;
-                }
-
-                const file = fileInput.files[0];
-                const baseFileName = `${artistName} - ${songTitle}`.replace(/[^a-zA-Z0-9-.\s]/g, '').replace(/\s+/g, '_');
-                const fileName = `${baseFileName}.mp3`;
-                const filePath = `music/${fileName}`;
-                
-                const [owner, repoName] = repoFullName.split('/');
-                const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/${filePath}`;
-                
-                statusText.textContent = "1/3: Checking for duplicates on GitHub...";
-                
-                try {
-                    const fileExists = await checkFileExists(repoFullName, filePath, githubToken);
-                    if (fileExists) {
-                        statusText.textContent = "❌ Upload Failed: Song already exists on GitHub.";
-                        showToast("Overwrite Blocked!", `"${fileName}" already exists in the repository.`, "🚫");
+                    if (!repoFullName || !artistName || !songTitle || !fileInput.files.length) {
+                        alert("Please select a repository, a music file, and fill in all song details.");
                         return;
                     }
-                    
-                    statusText.textContent = "1/3: Reading file...";
-                    const base64Content = await toBase64(file);
-                    
-                    const githubApiUrl = `https://api.github.com/repos/${repoFullName}/contents/${filePath}`;
-                    const commitMessage = `Add new music: ${fileName}`;
-
-                    const uploadPayload = {
-                        message: commitMessage,
-                        content: base64Content,
-                        branch: 'main' 
-                    };
-
-                    statusText.textContent = "2/3: Uploading to GitHub...";
-                    
-                    const ghResponse = await fetch(githubApiUrl, {
-                        method: 'PUT',
-                        headers: { 
-                            'Authorization': `token ${githubToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(uploadPayload)
-                    });
-
-                    if (!ghResponse.ok) {
-                        const errorData = await ghResponse.json();
-                        throw new Error(`GitHub API Error: ${errorData.message || ghResponse.statusText}`);
+                    if (!githubToken) {
+                        alert("GitHub connection failed. Please log in again.");
+                        return;
                     }
+
+                    const file = fileInput.files[0];
+                    const baseFileName = `${artistName} - ${songTitle}`.replace(/[^a-zA-Z0-9-.\s]/g, '').replace(/\s+/g, '_');
+                    const fileName = `${baseFileName}.mp3`;
+                    const filePath = `music/${fileName}`;
                     
-                    statusText.textContent = "3/3: Syncing with Firestore...";
-
-                    const songsCollectionRef = collection(db, 'songs');
-                    await addDoc(songsCollectionRef, {
-                        title: songTitle,
-                        artist: artistName,
-                        url: rawContentUrl,
-                        githubPath: filePath,
-                        githubRepo: repoFullName, 
-                        timestamp: serverTimestamp()
-                    });
-
-                    statusText.textContent = "✅ Upload and Sync Successful!";
-                    showToast("Success! 🎵", `"${songTitle}" synced to library.`, "✅");
-                    
-                    document.getElementById('uploadArtistName').value = '';
-                    document.getElementById('uploadSongTitle').value = '';
-                    fileInput.value = '';
-                    document.getElementById('fileNameDisplay').textContent = 'No file selected';
-
-                } catch (e) {
-                    console.error("Upload/Sync Error:", e);
-                    statusText.textContent = `❌ Upload Failed: ${e.message}`;
-                    alert("Upload Failed. Check console for details.");
-                } finally {
-                    setTimeout(() => statusText.textContent = '', 5000);
-                }
-            }
-            
-            async function scanRepositoryForMusic(repoFullName, token) {
-                const statusText = document.getElementById('musicStatus');
-                const prevStatus = statusText.textContent;
-                statusText.textContent = "Scanning GitHub repository...";
-                try {
                     const [owner, repoName] = repoFullName.split('/');
-                    const contentsUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/music`;
-
-                    const response = await fetch(contentsUrl, {
-                        headers: { 'Authorization': `token ${token}` }
-                    });
+                    const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/${filePath}`;
                     
-                    if (response.status === 404) {
-                         throw new Error("'/music' directory not found in the repository. Please create it.");
-                    }
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`GitHub API Error: ${errorData.message || response.statusText}`);
-                    }
+                    statusText.textContent = "1/3: Checking for duplicates on GitHub...";
                     
-                    const files = await response.json();
-                    
-                    if (!Array.isArray(files)) {
-                        throw new Error("Unexpected response from GitHub API.");
-                    }
-
-                    const mp3Files = files.filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.mp3'));
-                    
-                    if (mp3Files.length === 0) {
-                         statusText.textContent = "No MP3 files found in /music directory.";
-                         return;
-                    }
-
-                    const songsCollectionRef = collection(db, 'songs');
-                    let newSongsAdded = 0;
-                    
-                    for (const file of mp3Files) {
-                        const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/music/${file.name}`;
+                    try {
+                        const fileExists = await checkFileExists(repoFullName, filePath, githubToken);
+                        if (fileExists) {
+                            statusText.textContent = "❌ Upload Failed: Song already exists on GitHub.";
+                            showToast("Overwrite Blocked!", `"${fileName}" already exists in the repository.`, "🚫");
+                            return;
+                        }
                         
-                        const q = query(songsCollectionRef, where('url', '==', rawContentUrl));
-                        const existingDocs = await getDocs(q);
+                        statusText.textContent = "1/3: Reading file...";
+                        const base64Content = await toBase64(file);
+                        
+                        const githubApiUrl = `https://api.github.com/repos/${repoFullName}/contents/${filePath}`;
+                        const commitMessage = `Add new music: ${fileName}`;
 
-                        if (existingDocs.empty) {
-                            const cleanName = file.name.replace(/\.mp3$/i, '').replace(/_/g, ' '); 
-                            let artist = "Unknown Artist";
-                            let title = cleanName;
+                        const uploadPayload = {
+                            message: commitMessage,
+                            content: base64Content,
+                            branch: 'main' 
+                        };
+
+                        statusText.textContent = "2/3: Uploading to GitHub...";
+                        
+                        const ghResponse = await fetch(githubApiUrl, {
+                            method: 'PUT',
+                            headers: { 
+                                'Authorization': `token ${githubToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(uploadPayload)
+                        });
+
+                        if (!ghResponse.ok) {
+                            const errorData = await ghResponse.json();
+                            throw new Error(`GitHub API Error: ${errorData.message || ghResponse.statusText}`);
+                        }
+                        
+                        statusText.textContent = "3/3: Syncing with Firestore...";
+
+                        const songsCollectionRef = collection(db, 'songs');
+                        await addDoc(songsCollectionRef, {
+                            title: songTitle,
+                            artist: artistName,
+                            url: rawContentUrl,
+                            githubPath: filePath,
+                            githubRepo: repoFullName, 
+                            timestamp: serverTimestamp()
+                        });
+
+                        statusText.textContent = "✅ Upload and Sync Successful!";
+                        showToast("Success! 🎵", `"${songTitle}" synced to library.`, "✅");
+                        
+                        document.getElementById('uploadArtistName').value = '';
+                        document.getElementById('uploadSongTitle').value = '';
+                        fileInput.value = '';
+                        document.getElementById('fileNameDisplay').textContent = 'No file selected';
+
+                    } catch (e) {
+                        console.error("Upload/Sync Error:", e);
+                        statusText.textContent = `❌ Upload Failed: ${e.message}`;
+                        alert("Upload Failed. Check console for details.");
+                    } finally {
+                        setTimeout(() => statusText.textContent = '', 5000);
+                    }
+                }
+                
+                async function scanRepositoryForMusic(repoFullName, token) {
+                    const statusText = document.getElementById('musicStatus');
+                    const prevStatus = statusText.textContent;
+                    statusText.textContent = "Scanning GitHub repository...";
+                    try {
+                        const [owner, repoName] = repoFullName.split('/');
+                        const contentsUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/music`;
+
+                        const response = await fetch(contentsUrl, {
+                            headers: { 'Authorization': `token ${token}` }
+                        });
+                        
+                        if (response.status === 404) {
+                             throw new Error("'/music' directory not found in the repository. Please create it.");
+                        }
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(`GitHub API Error: ${errorData.message || response.statusText}`);
+                        }
+                        
+                        const files = await response.json();
+                        
+                        if (!Array.isArray(files)) {
+                            throw new Error("Unexpected response from GitHub API.");
+                        }
+
+                        const mp3Files = files.filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.mp3'));
+                        
+                        if (mp3Files.length === 0) {
+                             statusText.textContent = "No MP3 files found in /music directory.";
+                             return;
+                        }
+
+                        const songsCollectionRef = collection(db, 'songs');
+                        let newSongsAdded = 0;
+                        
+                        for (const file of mp3Files) {
+                            const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/music/${file.name}`;
                             
-                            const parts = cleanName.split(' - ').map(p => p.trim());
-                            if (parts.length >= 2) {
-                                artist = parts[0];
-                                title = parts.slice(1).join(' - ');
-                            } else if (cleanName.includes('-')) {
-                                artist = cleanName.substring(0, cleanName.indexOf('-')).trim();
-                                title = cleanName.substring(cleanName.indexOf('-') + 1).trim();
-                            } else {
-                                 title = cleanName;
+                            const q = query(songsCollectionRef, where('url', '==', rawContentUrl));
+                            const existingDocs = await getDocs(q);
+
+                            if (existingDocs.empty) {
+                                const cleanName = file.name.replace(/\.mp3$/i, '').replace(/_/g, ' '); 
+                                let artist = "Unknown Artist";
+                                let title = cleanName;
+                                
+                                const parts = cleanName.split(' - ').map(p => p.trim());
+                                if (parts.length >= 2) {
+                                    artist = parts[0];
+                                    title = parts.slice(1).join(' - ');
+                                } else if (cleanName.includes('-')) {
+                                    artist = cleanName.substring(0, cleanName.indexOf('-')).trim();
+                                    title = cleanName.substring(cleanName.indexOf('-') + 1).trim();
+                                } else {
+                                     title = cleanName;
+                                }
+                                
+                                await addDoc(songsCollectionRef, {
+                                    title: title,
+                                    artist: artist,
+                                    url: rawContentUrl,
+                                    githubPath: `music/${file.name}`,
+                                    githubRepo: repoFullName, 
+                                    timestamp: serverTimestamp()
+                                });
+                                newSongsAdded++;
                             }
-                            
-                            await addDoc(songsCollectionRef, {
-                                title: title,
-                                artist: artist,
-                                url: rawContentUrl,
-                                githubPath: `music/${file.name}`,
-                                githubRepo: repoFullName, 
-                                timestamp: serverTimestamp()
-                            });
-                            newSongsAdded++;
                         }
+
+                        statusText.textContent = `✅ Scan complete. ${newSongsAdded} new songs added.`;
+                        showToast("Music Sync Complete 🎵", `${newSongsAdded} songs added/verified.`, "✅");
+
+                    } catch (e) {
+                        console.error("Scan Error:", e);
+                        statusText.textContent = `❌ Scan Failed: ${e.message}`;
+                        alert(`Scan failed: ${e.message}`);
+                    } finally {
+                        setTimeout(() => statusText.textContent = prevStatus, 5000);
                     }
-
-                    statusText.textContent = `✅ Scan complete. ${newSongsAdded} new songs added.`;
-                    showToast("Music Sync Complete 🎵", `${newSongsAdded} songs added/verified.`, "✅");
-
-                } catch (e) {
-                    console.error("Scan Error:", e);
-                    statusText.textContent = `❌ Scan Failed: ${e.message}`;
-                    alert(`Scan failed: ${e.message}`);
-                } finally {
-                    setTimeout(() => statusText.textContent = prevStatus, 5000);
                 }
-            }
-            
-            scanMusicBtn.onclick = () => {
-                const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
-                if (!repoFullName) return alert("Please select a repository first.");
-                if (!githubToken) return alert("Please log in with GitHub first.");
-                scanRepositoryForMusic(repoFullName, githubToken);
-            };
-
-            // --- CODE VERIFICATION AND UPLOAD SYSTEM ---
-            const uploadCodeBtn = document.getElementById('uploadCodeBtn');
-            const codeInput = document.getElementById('codeUploadInput');
-            const systemStatus = document.getElementById('systemStatusText');
-
-            uploadCodeBtn.onclick = async () => {
-                const file = codeInput.files[0];
-                const repo = document.getElementById('ghRepoSelectSystem').value;
                 
-                if (!file) return alert("Please select an index.html file to upload.");
-                if (!repo || !githubToken) return alert("GitHub not connected or repo not selected.");
-                
-                systemStatus.textContent = "Scanning code for vulnerabilities...";
-                
-                try {
-                    const textContent = await file.text();
-                    
-                    // Code Verification / Risk Checks
-                    let riskFound = false;
-                    let findings = [];
+                scanMusicBtn.onclick = () => {
+                    const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
+                    if (!repoFullName) return alert("Please select a repository first.");
+                    if (!githubToken) return alert("Please log in with GitHub first.");
+                    scanRepositoryForMusic(repoFullName, githubToken);
+                };
 
-                    // Check 1: Insecure/Malicious Functions
-                    if (textContent.includes("eval(") || textContent.includes("document.write(")) {
-                        riskFound = true;
-                        findings.push("Use of risky functions (eval/document.write)");
-                    }
-                    
-                    // Check 2: Insecure scripts
-                    if (textContent.includes('<script src="http://')) {
-                        riskFound = true;
-                        findings.push("Insecure HTTP script sources detected");
-                    }
-                    
-                    // Check 3: Missing HTML skeleton
-                    if (!textContent.toLowerCase().includes("<!doctype html>") || !textContent.toLowerCase().includes("<head>")) {
-                        riskFound = true;
-                        findings.push("Missing core HTML5 structure (DOCTYPE/head)");
-                    }
+                // --- CODE VERIFICATION AND UPLOAD SYSTEM ---
+                const uploadCodeBtn = document.getElementById('uploadCodeBtn');
+                const codeInput = document.getElementById('codeUploadInput');
+                const systemStatus = document.getElementById('systemStatusText');
 
-                    if (riskFound) {
-                        systemStatus.textContent = "❌ Blocked: Security Risks Found";
-                        alert(`UPLOAD BLOCKED!\n\nSecurity Scanner found the following issues:\n- ${findings.join('\n- ')}\n\nPlease fix these vulnerabilities before pushing.`);
+                uploadCodeBtn.onclick = async () => {
+                    const file = codeInput.files[0];
+                    const repo = document.getElementById('ghRepoSelectSystem').value;
+                    
+                    if (!file) return alert("Please select an index.html file to upload.");
+                    if (!repo || !githubToken) return alert("GitHub not connected or repo not selected.");
+                    
+                    systemStatus.textContent = "Scanning code for vulnerabilities...";
+                    
+                    try {
+                        const textContent = await file.text();
+                        
+                        // Code Verification / Risk Checks
+                        let riskFound = false;
+                        let findings = [];
+
+                        // Check 1: Insecure/Malicious Functions
+                        if (textContent.includes("eval(") || textContent.includes("document.write(")) {
+                            riskFound = true;
+                            findings.push("Use of risky functions (eval/document.write)");
+                        }
+                        
+                        // Check 2: Insecure scripts
+                        if (textContent.includes('<script src="http://')) {
+                            riskFound = true;
+                            findings.push("Insecure HTTP script sources detected");
+                        }
+                        
+                        // Check 3: Missing HTML skeleton
+                        if (!textContent.toLowerCase().includes("<!doctype html>") || !textContent.toLowerCase().includes("<head>")) {
+                            riskFound = true;
+                            findings.push("Missing core HTML5 structure (DOCTYPE/head)");
+                        }
+
+                        if (riskFound) {
+                            systemStatus.textContent = "❌ Blocked: Security Risks Found";
+                            alert(`UPLOAD BLOCKED!\n\nSecurity Scanner found the following issues:\n- ${findings.join('\n- ')}\n\nPlease fix these vulnerabilities before pushing.`);
+                            return;
+                        }
+
+                        systemStatus.textContent = "Code verified safe. Pushing to GitHub main branch...";
+                        
+                        // Fetch existing SHA to overwrite
+                        const path = file.name; // Assumes root index.html or whatever name is uploaded
+                        const { sha } = await getShaAndPath(repo, path, githubToken);
+
+                        // GitHub requires base64. Our utf8ToBase64 prevents issues with unicode chars/emojis
+                        const base64Content = utf8ToBase64(textContent);
+
+                        const githubApiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+                        
+                        const uploadPayload = {
+                            message: `Admin System: Auto-verified update for ${path}`,
+                            content: base64Content,
+                            branch: 'main'
+                        };
+                        
+                        // If file exists, attach its SHA to overwrite it
+                        if(sha) uploadPayload.sha = sha;
+
+                        const ghResponse = await fetch(githubApiUrl, {
+                            method: 'PUT',
+                            headers: { 
+                                'Authorization': `token ${githubToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(uploadPayload)
+                        });
+
+                        if (!ghResponse.ok) {
+                            const errorData = await ghResponse.json();
+                            throw new Error(`GitHub API Error: ${errorData.message || ghResponse.statusText}`);
+                        }
+
+                        systemStatus.textContent = "✅ System Code pushed successfully!";
+                        showToast("Code Updated 💻", `${path} successfully updated and verified.`, "✅");
+                        
+                        // Clear inputs
+                        codeInput.value = '';
+                        document.getElementById('codeFileNameDisplay').textContent = 'No file selected';
+
+                    } catch (error) {
+                        console.error("System Update Error:", error);
+                        systemStatus.textContent = `❌ Update Failed: ${error.message}`;
+                        alert(`Update Failed: ${error.message}`);
+                    } finally {
+                        setTimeout(() => { if(systemStatus.textContent.includes("System Code pushed")) systemStatus.textContent = ''; }, 5000);
+                    }
+                };
+                
+                // --- ADMIN MAINTENANCE ACTIONS ---
+                const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
+                const btnEmergencyMaintenance = document.getElementById('btnEmergencyMaintenance');
+                
+                // PREVIEW LOGIC (Live Countdown Update based on Admin inputs)
+                let adminPreviewInterval = null;
+                function updateAdminMaintPreview() {
+                    const endInput = document.getElementById('maintEndTime').value;
+                    const previewBox = document.getElementById('adminMaintPreview');
+                    const previewText = document.getElementById('adminMaintCountdownText');
+                    
+                    if(adminPreviewInterval) clearInterval(adminPreviewInterval);
+                    
+                    if(!endInput) {
+                        previewBox.style.display = 'none';
                         return;
                     }
-
-                    systemStatus.textContent = "Code verified safe. Pushing to GitHub main branch...";
                     
-                    // Fetch existing SHA to overwrite
-                    const path = file.name; // Assumes root index.html or whatever name is uploaded
-                    const { sha } = await getShaAndPath(repo, path, githubToken);
-
-                    // GitHub requires base64. Our utf8ToBase64 prevents issues with unicode chars/emojis
-                    const base64Content = utf8ToBase64(textContent);
-
-                    const githubApiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+                    previewBox.style.display = 'block';
                     
-                    const uploadPayload = {
-                        message: `Admin System: Auto-verified update for ${path}`,
-                        content: base64Content,
-                        branch: 'main'
+                    const updateClock = () => {
+                        const nowMs = new Date().getTime();
+                        const endMs = new Date(endInput).getTime();
+                        const t = endMs - nowMs;
+                        
+                        if(t <= 0) {
+                            previewText.textContent = "00:00:00";
+                            clearInterval(adminPreviewInterval);
+                            return;
+                        }
+                        
+                        const days = Math.floor(t / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((t % (1000 * 60)) / 1000);
+
+                        let timeStr = "";
+                        if (days > 0) timeStr += `${days}d `;
+                        timeStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        previewText.textContent = timeStr;
                     };
-                    
-                    // If file exists, attach its SHA to overwrite it
-                    if(sha) uploadPayload.sha = sha;
-
-                    const ghResponse = await fetch(githubApiUrl, {
-                        method: 'PUT',
-                        headers: { 
-                            'Authorization': `token ${githubToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(uploadPayload)
-                    });
-
-                    if (!ghResponse.ok) {
-                        const errorData = await ghResponse.json();
-                        throw new Error(`GitHub API Error: ${errorData.message || ghResponse.statusText}`);
-                    }
-
-                    systemStatus.textContent = "✅ System Code pushed successfully!";
-                    showToast("Code Updated 💻", `${path} successfully updated and verified.`, "✅");
-                    
-                    // Clear inputs
-                    codeInput.value = '';
-                    document.getElementById('codeFileNameDisplay').textContent = 'No file selected';
-
-                } catch (error) {
-                    console.error("System Update Error:", error);
-                    systemStatus.textContent = `❌ Update Failed: ${error.message}`;
-                    alert(`Update Failed: ${error.message}`);
-                } finally {
-                    setTimeout(() => { if(systemStatus.textContent.includes("System Code pushed")) systemStatus.textContent = ''; }, 5000);
-                }
-            };
-            
-            // --- ADMIN MAINTENANCE ACTIONS ---
-            const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
-            const btnEmergencyMaintenance = document.getElementById('btnEmergencyMaintenance');
-            
-            // PREVIEW LOGIC (Live Countdown Update based on Admin inputs)
-            let adminPreviewInterval = null;
-            function updateAdminMaintPreview() {
-                const endInput = document.getElementById('maintEndTime').value;
-                const previewBox = document.getElementById('adminMaintPreview');
-                const previewText = document.getElementById('adminMaintCountdownText');
-                
-                if(adminPreviewInterval) clearInterval(adminPreviewInterval);
-                
-                if(!endInput) {
-                    previewBox.style.display = 'none';
-                    return;
+                    updateClock();
+                    adminPreviewInterval = setInterval(updateClock, 1000);
                 }
                 
-                previewBox.style.display = 'block';
+                const maintEndTimeEl = document.getElementById('maintEndTime');
+                if(maintEndTimeEl) {
+                    maintEndTimeEl.addEventListener('input', updateAdminMaintPreview);
+                }
                 
-                const updateClock = () => {
-                    const nowMs = new Date().getTime();
-                    const endMs = new Date(endInput).getTime();
-                    const t = endMs - nowMs;
-                    
-                    if(t <= 0) {
-                        previewText.textContent = "00:00:00";
-                        clearInterval(adminPreviewInterval);
-                        return;
-                    }
-                    
-                    const days = Math.floor(t / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((t % (1000 * 60)) / 1000);
-
-                    let timeStr = "";
-                    if (days > 0) timeStr += `${days}d `;
-                    timeStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                    previewText.textContent = timeStr;
-                };
-                updateClock();
-                adminPreviewInterval = setInterval(updateClock, 1000);
-            }
-            
-            const maintEndTimeEl = document.getElementById('maintEndTime');
-            if(maintEndTimeEl) {
-                maintEndTimeEl.addEventListener('input', updateAdminMaintPreview);
-            }
-            
-            if(btnToggleMaintenance) {
-                btnToggleMaintenance.onclick = async () => {
-                    const isCurrentlyActiveOrScheduled = btnToggleMaintenance.textContent === "Disable Maintenance";
-                    if (isCurrentlyActiveOrScheduled) {
-                        await setDoc(doc(db, 'settings', 'maintenance'), { isActive: false, isScheduled: false }, { merge: true });
-                        showToast("Maintenance Disabled", "Site is now open to users.", "✅");
-                    } else {
-                        const startTime = document.getElementById('maintStartTime').value;
-                        const endTime = document.getElementById('maintEndTime').value;
-                        const message = document.getElementById('maintMessage').value;
-                        if (!endTime) return alert("Please set an end date and time for the maintenance.");
-                        
-                        const isScheduled = !!startTime;
-                        
-                        await setDoc(doc(db, 'settings', 'maintenance'), { 
-                            isActive: !isScheduled, // If scheduled, it's not active NOW
-                            isScheduled: isScheduled,
-                            startTime: startTime || '',
-                            endTime, 
-                            message 
-                        }, { merge: true });
-                        
-                        if(isScheduled) {
-                             showToast("Maintenance Scheduled", "Will start at the designated time.", "🗓️");
+                if(btnToggleMaintenance) {
+                    btnToggleMaintenance.onclick = async () => {
+                        const isCurrentlyActiveOrScheduled = btnToggleMaintenance.textContent === "Disable Maintenance";
+                        if (isCurrentlyActiveOrScheduled) {
+                            await setDoc(doc(db, 'settings', 'maintenance'), { isActive: false, isScheduled: false }, { merge: true });
+                            showToast("Maintenance Disabled", "Site is now open to users.", "✅");
                         } else {
-                             showToast("Maintenance Enabled", "Site is now locked for users.", "🚧");
+                            const startTime = document.getElementById('maintStartTime').value;
+                            const endTime = document.getElementById('maintEndTime').value;
+                            const message = document.getElementById('maintMessage').value;
+                            if (!endTime) return alert("Please set an end date and time for the maintenance.");
+                            
+                            const isScheduled = !!startTime;
+                            
+                            await setDoc(doc(db, 'settings', 'maintenance'), { 
+                                isActive: !isScheduled, // If scheduled, it's not active NOW
+                                isScheduled: isScheduled,
+                                startTime: startTime || '',
+                                endTime, 
+                                message 
+                            }, { merge: true });
+                            
+                            if(isScheduled) {
+                                 showToast("Maintenance Scheduled", "Will start at the designated time.", "🗓️");
+                            } else {
+                                 showToast("Maintenance Enabled", "Site is now locked for users.", "🚧");
+                            }
                         }
-                    }
-                };
-            }
+                    };
+                }
 
-            if(btnEmergencyMaintenance) {
-                btnEmergencyMaintenance.onclick = async () => {
-                    const now = new Date();
-                    now.setHours(now.getHours() + 1); // 1 hour emergency
-                    const tzoffset = now.getTimezoneOffset() * 60000;
-                    const localISOTime = (new Date(now - tzoffset)).toISOString().slice(0, 16);
+                if(btnEmergencyMaintenance) {
+                    btnEmergencyMaintenance.onclick = async () => {
+                        const now = new Date();
+                        now.setHours(now.getHours() + 1); // 1 hour emergency
+                        const tzoffset = now.getTimezoneOffset() * 60000;
+                        const localISOTime = (new Date(now - tzoffset)).toISOString().slice(0, 16);
 
-                    await setDoc(doc(db, 'settings', 'maintenance'), {
-                        isActive: true,
-                        isScheduled: false, // Clear schedule flags
-                        startTime: '',
-                        endTime: localISOTime,
-                        message: "Emergency maintenance in progress. We are working quickly to restore service."
-                    }, { merge: true });
-                    showToast("Emergency Maintenance", "Enabled for 1 hour.", "🚨");
-                };
-            }
+                        await setDoc(doc(db, 'settings', 'maintenance'), {
+                            isActive: true,
+                            isScheduled: false, // Clear schedule flags
+                            startTime: '',
+                            endTime: localISOTime,
+                            message: "Emergency maintenance in progress. We are working quickly to restore service."
+                        }, { merge: true });
+                        showToast("Emergency Maintenance", "Enabled for 1 hour.", "🚨");
+                    };
+                }
+            } // end isSuperAdmin logic block
         }
 
         function setupAdminSongList() {
@@ -4052,11 +4192,36 @@
             loginContent.style.display = 'block';
         };
 
+        // Sub-Admin Password Change logic
+        const subAdminChangePassModal = document.getElementById('subAdminChangePassModal');
+        const subAdminChangePassTrigger = document.getElementById('subAdminChangePassTrigger');
+        if (subAdminChangePassTrigger) {
+            subAdminChangePassTrigger.addEventListener('click', () => {
+                subAdminChangePassModal.style.display = 'flex';
+            });
+        }
+        document.getElementById('cancelChangePassBtn')?.addEventListener('click', () => {
+            subAdminChangePassModal.style.display = 'none';
+        });
+        document.getElementById('confirmChangePassBtn')?.addEventListener('click', async () => {
+            const newPass = document.getElementById('newSubAdminPass').value.trim();
+            if(!newPass) return alert("Please enter a new password");
+            try {
+                await window.updateDoc(window.doc(window.db, 'app_users', sessionStorage.getItem('subAdminDocId')), { adminPassword: newPass });
+                alert("Password updated successfully!");
+                subAdminChangePassModal.style.display = 'none';
+                document.getElementById('newSubAdminPass').value = '';
+            } catch(e) {
+                alert("Failed to update password.");
+            }
+        });
+
         // Check Session state on reload
         const savedUser = sessionStorage.getItem('loggedInUser');
         const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+        const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
-        if (isAdmin) {
+        if (isAdmin || isSubAdmin) {
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             adminContainer.style.display = 'block';
@@ -4078,7 +4243,7 @@
                     if (pass.toLowerCase() === 'katecutie') user = 'kate';
                     else if (pass.toLowerCase() === 'babycutie') user = 'baby';
                     else if (pass.toLowerCase() === 'admin112003') {
-                        triggerAdminLogin();
+                        triggerAdminLogin(true);
                         return;
                     }
                     
@@ -4090,9 +4255,9 @@
                     return;
                 }
 
-                // If user specifies a username, they might be an admin
+                // If user specifies a username, they might be a superadmin
                 if (pass === 'admin112003') {
-                    triggerAdminLogin();
+                    triggerAdminLogin(true);
                     return;
                 }
 
@@ -4101,29 +4266,49 @@
                     submitPassword.textContent = "Checking...";
                     submitPassword.disabled = true;
                     
-                    const q = window.query(window.collection(window.db, 'app_users'), window.where('username', '==', username), window.where('password', '==', pass));
-                    const snap = await window.getDocs(q);
+                    // 1. Check Standard App User Login
+                    let q = window.query(window.collection(window.db, 'app_users'), window.where('username', '==', username), window.where('password', '==', pass));
+                    let snap = await window.getDocs(q);
                     
-                    if (snap.empty) {
-                        showLoginError();
+                    if (!snap.empty) {
+                        const userDoc = snap.docs[0];
+                        const userData = userDoc.data();
+                        
+                        if (userData.status === 'pending') {
+                            loginContent.style.display = 'none';
+                            pendingContent.style.display = 'block';
+                        } else if (userData.status === 'deactivated') {
+                            window.currentDeactivatedUserId = userDoc.id; // defined in module
+                            loginContent.style.display = 'none';
+                            deactivatedContent.style.display = 'block';
+                        } else if (userData.status === 'rejected') {
+                            alert("This account was rejected by the superadmin.");
+                        } else if (userData.status === 'approved') {
+                            doLogin(username, userData, userDoc.id);
+                        }
                         return;
                     }
-                    
-                    const userDoc = snap.docs[0];
-                    const userData = userDoc.data();
-                    
-                    if (userData.status === 'pending') {
-                        loginContent.style.display = 'none';
-                        pendingContent.style.display = 'block';
-                    } else if (userData.status === 'deactivated') {
-                        window.currentDeactivatedUserId = userDoc.id; // defined in module
-                        loginContent.style.display = 'none';
-                        deactivatedContent.style.display = 'block';
-                    } else if (userData.status === 'rejected') {
-                        alert("This account was rejected by the superadmin.");
-                    } else if (userData.status === 'approved') {
-                        doLogin(username);
+
+                    // 2. Check Sub-Admin Login
+                    q = window.query(window.collection(window.db, 'app_users'), window.where('adminUsername', '==', username), window.where('adminPassword', '==', pass));
+                    snap = await window.getDocs(q);
+
+                    if (!snap.empty) {
+                        const userDoc = snap.docs[0];
+                        const userData = userDoc.data();
+
+                        if (userData.status === 'approved') {
+                            sessionStorage.setItem('isSubAdminLoggedIn', 'true');
+                            sessionStorage.setItem('subAdminTarget', userData.username);
+                            sessionStorage.setItem('subAdminDocId', userDoc.id);
+                            triggerAdminLogin(false); // SubAdmin, not SuperAdmin
+                        } else {
+                            alert("The associated user account is not currently active.");
+                        }
+                    } else {
+                        showLoginError(); // Invalid credentials for both
                     }
+
                 } catch(e) {
                     console.error("Login Error:", e);
                     alert("Error verifying account details.");
@@ -4205,7 +4390,7 @@
         }
 
         // Shared Login Logic
-        function doLogin(user) {
+        function doLogin(user, userData = null, userDocId = null) {
             sessionStorage.setItem('loggedInUser', user);
             setUserUI(user);
             
@@ -4215,19 +4400,42 @@
             passwordModal.style.opacity = '0';
             setTimeout(() => {
                 passwordModal.style.display = 'none';
-                welcomeScreen.style.display = 'flex';
-                setTimeout(() => {
-                    welcomeScreen.style.opacity = '0';
-                    setTimeout(() => {
-                        welcomeScreen.style.display = 'none';
-                        mainContent.style.display = 'block';
-                    }, 800);
-                }, 2500);
+
+                // Check for One-Time Sub-Admin Creds
+                if (userData && userData.hasSeenAdminCreds === false && userData.adminUsername) {
+                    document.getElementById('displayAdminUser').textContent = userData.adminUsername;
+                    document.getElementById('displayAdminPass').textContent = userData.adminPassword;
+                    const credsModal = document.getElementById('userAdminCredsModal');
+                    credsModal.style.display = 'flex';
+
+                    document.getElementById('closeCredsModalBtn').onclick = async () => {
+                        try {
+                            await window.updateDoc(window.doc(window.db, 'app_users', userDocId), { hasSeenAdminCreds: true });
+                        } catch(e) { console.error(e); }
+                        credsModal.style.display = 'none';
+                        showWelcomeScreen(); 
+                    };
+                } else {
+                    showWelcomeScreen();
+                }
             }, 500);
         }
 
-        function triggerAdminLogin() {
-            sessionStorage.setItem('isAdminLoggedIn', 'true');
+        function showWelcomeScreen() {
+            welcomeScreen.style.display = 'flex';
+            setTimeout(() => {
+                welcomeScreen.style.opacity = '0';
+                setTimeout(() => {
+                    welcomeScreen.style.display = 'none';
+                    mainContent.style.display = 'block';
+                }, 800);
+            }, 2500);
+        }
+
+        function triggerAdminLogin(isSuper = true) {
+            if (isSuper) sessionStorage.setItem('isAdminLoggedIn', 'true');
+            // If subadmin, sessionStorage is already set before calling
+            
             passwordModal.style.opacity = '0';
             setTimeout(() => {
                 passwordModal.style.display = 'none';
@@ -4271,6 +4479,9 @@
         // Admin Session Logout
         document.getElementById('adminLogoutBtn').addEventListener('click', function() {
             sessionStorage.removeItem('isAdminLoggedIn');
+            sessionStorage.removeItem('isSubAdminLoggedIn');
+            sessionStorage.removeItem('subAdminTarget');
+            sessionStorage.removeItem('subAdminDocId');
             sessionStorage.removeItem('ghToken'); 
             location.reload();
         });
