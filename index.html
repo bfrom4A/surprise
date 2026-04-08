@@ -1778,9 +1778,11 @@
                         <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-customization">🎨 Customize</button>
                         
+                        <!-- Visible to BOTH now, handled dynamically inside -->
+                        <button class="admin-tab-btn" data-target="admin-music">🎵 Music</button>
+
                         <!-- Superadmin exclusive tabs -->
                         <button class="admin-tab-btn superadmin-only" data-target="admin-deletion">🧨 Deletion</button>
-                        <button class="admin-tab-btn superadmin-only" data-target="admin-music">🎵 Music</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-devices">📱 Devices</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-system">⚙️ System</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-security">🛡️ Security</button>
@@ -1870,59 +1872,88 @@
                         <button id="saveCustomizationBtn" class="submit-btn" style="width: 100%; margin-top: 10px;">💾 Save & Apply Instantly</button>
                     </div>
 
-                    <!-- Tab: Music Manager (Shared) -->
+                    <!-- Tab: Music Manager (Shared/Split logic) -->
                     <div class="admin-panel" id="admin-music">
-                        <p style="font-size: 12px; color: #888; font-style: italic; margin-bottom: 15px; text-align:center;">Music library is shared between users.</p>
                         
-                        <div style="border-bottom: 2px dashed #eee; margin-bottom: 20px; padding-bottom: 15px;">
-                            <h4 class="admin-section-title">Manage Library</h4>
-                            <input type="text" id="adminSongSearch" class="fw-input" placeholder="Search to delete..." style="font-size: 13px; padding: 8px; margin-bottom: 10px;">
-                            <div id="adminSongList" class="admin-list-container">
-                                <p style="text-align: center; color: #999; font-size: 12px;">Loading songs...</p>
-                            </div>
-                        </div>
-
-                        <!-- GitHub Login -->
-                        <div class="gh-status-box" id="ghStatusBox">
-                            <p style="font-size: 13px; margin-bottom: 12px; color: #555;">Connect to GitHub to manage assets & code</p>
-                            <button id="ghLoginBtn" class="gh-btn">
-                                <svg height="20" viewBox="0 0 16 16" width="20" fill="white" style="margin-right:8px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-                                Login with GitHub
-                            </button>
-                        </div>
-
-                        <!-- Authorized UI (Hidden until login) -->
-                        <div id="ghMusicAuthorizedUI" style="display: none;">
+                        <!-- SUBADMIN VIEW -->
+                        <div id="subadminMusicUI" style="display:none;">
+                            <h4 class="admin-section-title">Submit Song Request</h4>
+                            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Submit an MP3 file to the Superadmin for approval.</p>
                             <div class="admin-form-group">
-                                <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Repository:</label>
-                                <select id="ghRepoSelectMusic" class="repo-select">
-                                    <option value="">Loading repositories...</option>
-                                </select>
+                                <input type="text" id="pendingArtistName" class="fw-input" placeholder="Artist Name">
+                                <input type="text" id="pendingSongTitle" class="fw-input" placeholder="Song Title">
+                                <div class="file-input-wrapper" onclick="document.getElementById('pendingMusicFileInput').click()">
+                                    <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3</p>
+                                    <span id="pendingFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
+                                    <input type="file" id="pendingMusicFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('pendingFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                                </div>
+                                <button id="submitPendingSongBtn" class="submit-btn" style="width: 100%;">Submit for Approval</button>
+                            </div>
+                            <p id="pendingMusicStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
+                        </div>
+
+                        <!-- SUPERADMIN VIEW -->
+                        <div id="superadminMusicUI" style="display:none;">
+                            <p style="font-size: 12px; color: #888; font-style: italic; margin-bottom: 15px; text-align:center;">Music library is shared between users.</p>
+                            
+                            <!-- Pending Approvals list -->
+                            <div style="border-bottom: 2px dashed #eee; margin-bottom: 20px; padding-bottom: 15px;">
+                                <h4 class="admin-section-title" style="color: #ff9800; border-bottom-color: #ffcc80;">Pending Approvals</h4>
+                                <div id="adminPendingSongsList" class="admin-list-container" style="border-color: #ffcc80; background: #fff8e1;">
+                                    <p style="text-align: center; color: #999; font-size: 12px;">Loading pending requests...</p>
+                                </div>
                             </div>
 
-                            <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
-                                <h4 class="admin-section-title">Scan Existing Music</h4>
-                                <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Auto-adds mp3s from <code>/music</code> folder in repo.</p>
-                                <button id="scanMusicBtn" class="submit-btn" style="background: #7c3aed; width: 100%;">🔎 Scan Repository</button>
+                            <div style="border-bottom: 2px dashed #eee; margin-bottom: 20px; padding-bottom: 15px;">
+                                <h4 class="admin-section-title">Manage Library</h4>
+                                <input type="text" id="adminSongSearch" class="fw-input" placeholder="Search to delete..." style="font-size: 13px; padding: 8px; margin-bottom: 10px;">
+                                <div id="adminSongList" class="admin-list-container">
+                                    <p style="text-align: center; color: #999; font-size: 12px;">Loading songs...</p>
+                                </div>
                             </div>
 
-                            <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
-                                <h4 class="admin-section-title">Upload New Song</h4>
+                            <!-- GitHub Login -->
+                            <div class="gh-status-box" id="ghStatusBox">
+                                <p style="font-size: 13px; margin-bottom: 12px; color: #555;">Connect to GitHub to manage assets & code</p>
+                                <button id="ghLoginBtn" class="gh-btn">
+                                    <svg height="20" viewBox="0 0 16 16" width="20" fill="white" style="margin-right:8px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                                    Login with GitHub
+                                </button>
+                            </div>
+
+                            <!-- Authorized UI (Hidden until login) -->
+                            <div id="ghMusicAuthorizedUI" style="display: none;">
                                 <div class="admin-form-group">
-                                    <input type="text" id="uploadArtistName" class="fw-input" placeholder="Artist Name">
-                                    <input type="text" id="uploadSongTitle" class="fw-input" placeholder="Song Title">
-                                    
-                                    <div class="file-input-wrapper" onclick="document.getElementById('musicFileInput').click()">
-                                        <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3</p>
-                                        <span id="fileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
-                                        <input type="file" id="musicFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                                    <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Select Target Repository:</label>
+                                    <select id="ghRepoSelectMusic" class="repo-select">
+                                        <option value="">Loading repositories...</option>
+                                    </select>
+                                </div>
+
+                                <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                                    <h4 class="admin-section-title">Scan Existing Music</h4>
+                                    <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Auto-adds mp3s from <code>/music</code> folder in repo.</p>
+                                    <button id="scanMusicBtn" class="submit-btn" style="background: #7c3aed; width: 100%;">🔎 Scan Repository</button>
+                                </div>
+
+                                <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
+                                    <h4 class="admin-section-title">Upload New Song</h4>
+                                    <div class="admin-form-group">
+                                        <input type="text" id="uploadArtistName" class="fw-input" placeholder="Artist Name">
+                                        <input type="text" id="uploadSongTitle" class="fw-input" placeholder="Song Title">
+                                        
+                                        <div class="file-input-wrapper" onclick="document.getElementById('musicFileInput').click()">
+                                            <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3</p>
+                                            <span id="fileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
+                                            <input type="file" id="musicFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
+                                        </div>
                                     </div>
+                                    
+                                    <button id="startUploadBtn" class="submit-btn" style="width: 100%;">Upload & Sync</button>
                                 </div>
                                 
-                                <button id="startUploadBtn" class="submit-btn" style="width: 100%;">Upload & Sync</button>
+                                <p id="musicStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
                             </div>
-                            
-                            <p id="musicStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
                         </div>
                     </div>
 
@@ -2056,6 +2087,11 @@
                                 
                                 <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Maintenance Message:</label>
                                 <input type="text" id="maintMessage" class="fw-input" placeholder="e.g., Upgrading servers for better performance..." style="margin-top: 5px;">
+                                
+                                <label style="font-size: 12px; font-weight: bold; color: #d81b60;">Default Maintenance Music:</label>
+                                <select id="maintMusicSelect" class="fw-input" style="margin-top: 5px; margin-bottom: 10px; padding: 10px; height: 45px;">
+                                    <option value="">-- Random / First Available --</option>
+                                </select>
                                 
                                 <!-- Live Countdown Preview -->
                                 <div id="adminMaintPreview" style="margin-top: 15px; padding: 15px; background: #fff0f5; border: 2px dashed #ffb7c5; border-radius: 12px; text-align: center; display: none;">
@@ -2430,6 +2466,27 @@
             }
         }
 
+        // Prevent common Developer Tools shortcuts
+        document.addEventListener('contextmenu', event => event.preventDefault()); 
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+                e.preventDefault();
+                return false;
+            }
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
         function applyAntiScreenshotFeatures() {
             if(globalSecurityConfig.antiScreenshot) {
                 window.addEventListener('blur', handleSecurityBlur);
@@ -2457,6 +2514,8 @@
         let isMaintenanceActiveLocally = false;
         let maintMusicInitialized = false;
 
+        window._loadedMaintMusicUrl = '';
+
         async function initMaintMusic() {
             if (maintMusicInitialized) {
                 const maintAudio = document.getElementById('maintAudio');
@@ -2473,11 +2532,22 @@
             const maintPlayBtn = document.getElementById('maint-play-btn');
 
             try {
-                const songsQuery = query(collection(db, 'songs'), orderBy('timestamp', 'desc'));
-                const songsSnap = await getDocs(songsQuery);
+                let songData = null;
+                const maintDoc = await getDoc(doc(db, 'settings', 'maintenance'));
                 
-                if (!songsSnap.empty) {
-                    const songData = songsSnap.docs[0].data();
+                if (maintDoc.exists() && maintDoc.data().musicUrl) {
+                    const q = query(collection(db, 'songs'), where('url', '==', maintDoc.data().musicUrl));
+                    const snap = await getDocs(q);
+                    if (!snap.empty) songData = snap.docs[0].data();
+                }
+                
+                if (!songData) {
+                    const songsQuery = query(collection(db, 'songs'), orderBy('timestamp', 'desc'));
+                    const songsSnap = await getDocs(songsQuery);
+                    if (!songsSnap.empty) songData = songsSnap.docs[0].data();
+                }
+                
+                if (songData) {
                     maintAudio.src = songData.url;
                     maintTitle.textContent = songData.title || "Unknown Song";
                     
@@ -2562,7 +2632,12 @@
 
         onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
             let maintData = { isActive: false, isScheduled: false, startTime: '', endTime: '', message: '' };
-            if (docSnap.exists()) maintData = docSnap.data();
+            if (docSnap.exists()) {
+                maintData = docSnap.data();
+                window._loadedMaintMusicUrl = maintData.musicUrl || '';
+                const select = document.getElementById('maintMusicSelect');
+                if (select) select.value = window._loadedMaintMusicUrl;
+            }
 
             const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
             if (btnToggleMaintenance) {
@@ -2832,7 +2907,7 @@
 
         // --- REAL-TIME SUPPORT CHAT WIDGET ---
         let chatUnsubscribe = null;
-        let activeChatUser = null; // Used by Superadmin to track who they are chatting with
+        let activeChatUser = null; 
 
         function setupChatSystem(role, subAdminTargetName = null) {
             const fab = document.getElementById('chat-fab');
@@ -2890,18 +2965,14 @@
                     
                     renderMessages(msgs);
 
-                    // Mark as seen
                     if (hasUnseen && windowEl.style.display === 'flex') {
                         snap.forEach(d => {
                             if (d.data().sender !== role && !d.data().seen) {
                                 updateDoc(doc(db, 'admin_chats', targetUser, 'messages', d.id), { seen: true });
                             }
                         });
-                        // Clear my unread count in parent
                         const fieldToClear = role === 'SuperAdmin' ? 'superAdminUnread' : 'subAdminUnread';
-                        updateDoc(doc(db, 'admin_chats', targetUser), { [fieldToClear]: 0 }).catch(e => {
-                            // If doc doesn't exist yet, it'll fail, safely ignore.
-                        });
+                        updateDoc(doc(db, 'admin_chats', targetUser), { [fieldToClear]: 0 }).catch(e => {});
                     }
                 });
             };
@@ -2954,10 +3025,8 @@
                 loadInbox();
                 backBtn.onclick = () => loadInbox();
             } else {
-                // SubAdmin only sees direct chat
                 loadDirectChat(subAdminTargetName);
                 
-                // Monitor unread badge for SubAdmin
                 onSnapshot(doc(db, 'admin_chats', subAdminTargetName), (d) => {
                     if (d.exists()) {
                         const unread = d.data().subAdminUnread || 0;
@@ -2966,7 +3035,6 @@
                             badge.style.display = 'flex';
                         } else {
                             badge.style.display = 'none';
-                            // If window is open, auto-clear unreads
                             if (unread > 0 && windowEl.style.display === 'flex') {
                                 updateDoc(doc(db, 'admin_chats', subAdminTargetName), { subAdminUnread: 0 });
                             }
@@ -2975,7 +3043,6 @@
                 });
             }
 
-            // Sending logic
             const sendBtn = document.getElementById('chatSendBtn');
             const inputEl = document.getElementById('chatInput');
             
@@ -2988,7 +3055,6 @@
                 
                 const roomRef = doc(db, 'admin_chats', target);
                 
-                // Ensure room exists
                 try {
                     const r = await getDoc(roomRef);
                     const updateData = { 
@@ -3044,9 +3110,8 @@
             setupFreedomWall(user);
             setupDynamicContent(user); 
             setupGallery(user); 
-            setupDeletionMonitor(user); // Start account deletion monitor
+            setupDeletionMonitor(user); 
             
-            // Listen for user customization updates
             onSnapshot(doc(db, 'preferences', user), (docSnap) => {
                 if(docSnap.exists()) {
                     window.applyUserTheme(docSnap.data());
@@ -3338,248 +3403,7 @@
             }
         }
 
-        // --- ADMIN CONSOLE LOGIC ---
-        window.initAdminConsole = initAdminConsole; 
-        
-        let githubToken = sessionStorage.getItem('ghToken') || null; 
-        let adminTargetUser = 'kate'; 
-
-        function updateGitHubUI(isAuthorized) {
-            const musicUI = document.getElementById('ghMusicAuthorizedUI');
-            const galleryUI = document.getElementById('ghGalleryAuthorizedUI');
-            const systemUI = document.getElementById('ghSystemAuthorizedUI');
-            
-            const musicStatus = document.getElementById('ghStatusBox');
-            const galleryStatus = document.getElementById('ghGalleryAuthStatus');
-            const systemStatus = document.getElementById('ghSystemAuthStatus');
-            
-            musicUI.style.display = isAuthorized ? 'block' : 'none';
-            galleryUI.style.display = isAuthorized ? 'block' : 'none';
-            systemUI.style.display = isAuthorized ? 'block' : 'none';
-            
-            musicStatus.style.display = isAuthorized ? 'none' : 'block';
-            galleryStatus.style.display = isAuthorized ? 'none' : 'block';
-            systemStatus.style.display = isAuthorized ? 'none' : 'block';
-
-            if (isAuthorized) {
-                 fetchRepositories('music');
-                 fetchRepositories('gallery');
-                 fetchRepositories('system');
-            }
-        }
-        
-        async function fetchRepositories(type) {
-            if (!githubToken) return;
-            let selectId = 'ghRepoSelectMusic';
-            if(type === 'gallery') selectId = 'ghRepoSelectGallery';
-            if(type === 'system') selectId = 'ghRepoSelectSystem';
-            
-            const repoSelect = document.getElementById(selectId);
-            
-            if (repoSelect.options.length > 1 && repoSelect.options[1].textContent !== 'Loading repositories...') return;
-            
-            repoSelect.innerHTML = '<option value="">Loading repositories...</option>';
-            try {
-                const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100', { headers: { 'Authorization': `token ${githubToken}` } });
-                const repos = await response.json();
-                repoSelect.innerHTML = '<option value="">-- Select Repository --</option>';
-                if (Array.isArray(repos)) {
-                    repos.forEach(repo => {
-                        const opt = document.createElement('option');
-                        opt.value = repo.full_name; 
-                        opt.textContent = repo.name;
-                        repoSelect.appendChild(opt);
-                    });
-                } else {
-                    repoSelect.innerHTML = '<option value="">Error fetching repos</option>';
-                }
-            } catch (e) { 
-                console.error("Error fetching repos:", e);
-                repoSelect.innerHTML = '<option value="">Failed to load repos</option>';
-            }
-        }
-
-        function startLiveScanner() {
-            const scannerDiv = document.getElementById('liveScannerData');
-            
-            function updateScanner() {
-                const htmlP = (20 + Math.random() * 15).toFixed(1);
-                const cssP = (40 + Math.random() * 10).toFixed(1);
-                const jsP = (100 - htmlP - cssP).toFixed(1);
-                const now = new Date().toLocaleTimeString();
-                
-                scannerDiv.innerHTML = `
-                    <div style="margin-bottom: 15px; font-size: 11px; color: #999;">Last verified check: ${now}</div>
-                    
-                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>HTML5</span> <b>${htmlP}%</b></div>
-                    <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${htmlP}%; background: #e34f26; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
-
-                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>CSS3</span> <b>${cssP}%</b></div>
-                    <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${cssP}%; background: #1572b6; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
-
-                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>JavaScript</span> <b>${jsP}%</b></div>
-                    <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${jsP}%; background: #f7df1e; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
-                    
-                    <div style="margin-top: 20px; padding: 10px; background: #e8f5e9; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724; font-weight: bold; text-align: center;">
-                        ✅ Status: Clear & Safe
-                    </div>
-                `;
-            }
-            
-            updateScanner();
-            setInterval(updateScanner, 60000); 
-        }
-
-        // --- ADMIN USER MANAGEMENT SUB-ROUTINE ---
-        function setupAdminUserManagement() {
-            if(sessionStorage.getItem('isSubAdminLoggedIn') === 'true') return; 
-            
-            const pendingContainer = document.getElementById('adminPendingUsers');
-            const approvedContainer = document.getElementById('adminApprovedUsers');
-            const deactivatedContainer = document.getElementById('adminDeactivatedUsers');
-            const dynamicTargets = document.getElementById('dynamicAdminTargets');
-
-            let isInitialLoad = true;
-
-            onSnapshot(collection(db, 'app_users'), (snap) => {
-                
-                if (!isInitialLoad) {
-                    snap.docChanges().forEach(change => {
-                        const data = change.doc.data();
-                        if (change.type === 'modified' && data.status === 'deactivated' && data.reactivationMessage) {
-                            if (window.notifyUser) window.notifyUser("New Reactivation Request", `${data.username} sent a message.`, "🔔");
-                        }
-                        if (change.type === 'added' && data.status === 'pending') {
-                            if (window.notifyUser) window.notifyUser("New User Registration", `${data.username} is waiting for approval.`, "👥");
-                        }
-                    });
-                }
-                isInitialLoad = false;
-
-                pendingContainer.innerHTML = '';
-                approvedContainer.innerHTML = '';
-                deactivatedContainer.innerHTML = '';
-                
-                if (dynamicTargets) dynamicTargets.innerHTML = ''; 
-                
-                if (snap.empty) {
-                    pendingContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No pending users.</p>';
-                    approvedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No approved users.</p>';
-                    deactivatedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No deactivated users.</p>';
-                    return;
-                }
-
-                snap.forEach(userDoc => {
-                    const data = userDoc.data();
-                    const id = userDoc.id;
-                    
-                    const item = document.createElement('div');
-                    item.className = 'admin-list-item';
-                    
-                    if (data.status === 'pending') {
-                        item.innerHTML = `
-                            <div class="admin-item-info"><span>👤 ${escapeHtml(data.username)}</span></div>
-                            <div style="display:flex; gap:5px;">
-                                <button class="submit-btn btn-approve" data-id="${id}" style="background:#28a745; padding:4px 8px; font-size:11px;">Approve</button>
-                                <button class="submit-btn btn-reject" data-id="${id}" style="background:#ff4d4d; padding:4px 8px; font-size:11px;">Reject</button>
-                            </div>
-                        `;
-                        pendingContainer.appendChild(item);
-                    } 
-                    else if (data.status === 'approved') {
-                        item.innerHTML = `
-                            <div class="admin-item-info"><span>✅ ${escapeHtml(data.username)}</span></div>
-                            <button class="submit-btn btn-deactivate" data-id="${id}" style="background:#ff9800; padding:4px 8px; font-size:11px;">Deactivate</button>
-                        `;
-                        approvedContainer.appendChild(item);
-
-                        if(dynamicTargets && data.username !== 'kate' && data.username !== 'baby' && data.username !== 'admin') {
-                            const btn = document.createElement('button');
-                            btn.className = 'admin-target-btn';
-                            btn.setAttribute('data-target-user', data.username);
-                            btn.innerHTML = `<span style="font-size: 20px;">👤</span> Manage ${data.username}`;
-                            btn.onclick = () => {
-                                document.querySelectorAll('.admin-target-btn').forEach(b => b.classList.remove('active'));
-                                btn.classList.add('active');
-                                adminTargetUser = data.username;
-                                document.getElementById('adminTargetLabel').textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-                                window.updateAdminData(adminTargetUser);
-                            };
-                            dynamicTargets.appendChild(btn);
-                        }
-                    }
-                    else if (data.status === 'deactivated') {
-                        item.style.flexDirection = 'column';
-                        item.style.alignItems = 'flex-start';
-                        item.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; width:100%;">
-                                <div class="admin-item-info"><span>🚫 ${escapeHtml(data.username)}</span></div>
-                                <button class="submit-btn btn-reactivate" data-id="${id}" style="background:#28a745; padding:4px 8px; font-size:11px;">Reactivate</button>
-                            </div>
-                            ${data.reactivationMessage ? `<div style="background:#fff5f7; padding:8px; border-radius:6px; font-size:11px; margin-top:8px; width:100%; border-left:3px solid #d81b60;"><strong>Msg:</strong> ${escapeHtml(data.reactivationMessage)}</div>` : ''}
-                        `;
-                        deactivatedContainer.appendChild(item);
-                    }
-                });
-                
-                if (!pendingContainer.hasChildNodes()) pendingContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No pending users.</p>';
-                if (!approvedContainer.hasChildNodes()) approvedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No approved users.</p>';
-                if (!deactivatedContainer.hasChildNodes()) deactivatedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No deactivated users.</p>';
-
-                document.querySelectorAll('.btn-approve').forEach(b => {
-                    b.onclick = () => {
-                        const id = b.dataset.id;
-                        const modal = document.getElementById('approveUserModal');
-                        modal.style.display = 'flex';
-                        
-                        document.getElementById('setupAdminUsername').value = '';
-                        document.getElementById('setupAdminPassword').value = '';
-                        
-                        document.getElementById('confirmApproveBtn').onclick = () => {
-                            const aUser = document.getElementById('setupAdminUsername').value.trim();
-                            const aPass = document.getElementById('setupAdminPassword').value.trim();
-                            if(!aUser || !aPass) return alert("Please provide admin username and password.");
-                            
-                            getDocs(query(collection(db, 'app_users'), where('adminUsername', '==', aUser)))
-                            .then(snap => {
-                                if(!snap.empty && snap.docs[0].id !== id) {
-                                    alert("This Admin Username is already taken!");
-                                    return;
-                                }
-                                updateUserStatus(id, 'approved', { adminUsername: aUser, adminPassword: aPass, hasSeenAdminCreds: false });
-                                modal.style.display = 'none';
-                            });
-                        };
-                        
-                        document.getElementById('cancelApproveBtn').onclick = () => {
-                            modal.style.display = 'none';
-                        };
-                    };
-                });
-                
-                document.querySelectorAll('.btn-reject').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'rejected'));
-                document.querySelectorAll('.btn-deactivate').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'deactivated'));
-                document.querySelectorAll('.btn-reactivate').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'approved'));
-            });
-        }
-
-        window.updateUserStatus = async (id, newStatus, extraData = {}) => {
-            try {
-                const updatePayload = { status: newStatus, ...extraData };
-                if (newStatus === 'approved') {
-                    updatePayload.reactivationMessage = '';
-                }
-                
-                await updateDoc(doc(db, 'app_users', id), updatePayload);
-                
-                if (window.notifyUser && newStatus === 'approved') showToast("User Approved", "Account is now active.", "✅");
-            } catch (e) {
-                console.error("Status Update Error:", e);
-                alert("Error updating user status: " + e.message);
-            }
-        };
-
-        function initAdminConsole() {
+        window.initAdminConsole = function() {
             const isSuperAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
             const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
@@ -3591,7 +3415,6 @@
             let galleryUnsubscribe = null;
             let deleteTimer = null; 
 
-            // Apply Sub-Admin Restrictions
             if (isSubAdmin && !isSuperAdmin) {
                 const target = sessionStorage.getItem('subAdminTarget');
                 adminTargetUser = target;
@@ -3606,21 +3429,84 @@
                 document.querySelector('.admin-sidebar-right').style.display = 'none';
                 document.querySelector('.admin-dashboard-wrapper').style.gridTemplateColumns = '250px 1fr';
 
+                document.getElementById('subadminMusicUI').style.display = 'block';
+                document.getElementById('superadminMusicUI').style.display = 'none';
+
                 document.querySelector('[data-target="admin-letters"]').click(); 
                 
                 setupChatSystem('SubAdmin', target);
                 setupDeletionMonitor(target);
+                
+                // SUBADMIN PENDING MUSIC SUBMISSION
+                document.getElementById('submitPendingSongBtn').onclick = async () => {
+                    const artist = document.getElementById('pendingArtistName').value.trim();
+                    const title = document.getElementById('pendingSongTitle').value.trim();
+                    const fileInput = document.getElementById('pendingMusicFileInput');
+                    const statusText = document.getElementById('pendingMusicStatus');
+                    
+                    if(!artist || !title || !fileInput.files.length) return alert("Fill all fields and select a file.");
+                    
+                    const file = fileInput.files[0];
+                    const submitBtn = document.getElementById('submitPendingSongBtn');
+                    
+                    try {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = "Processing File...";
+                        
+                        const base64Content = await toBase64(file);
+                        const chunkSize = 800000;
+                        const chunks = [];
+                        for (let i = 0; i < base64Content.length; i += chunkSize) {
+                            chunks.push(base64Content.substring(i, i + chunkSize));
+                        }
+                        
+                        statusText.textContent = "Uploading chunks to pending queue...";
+                        const songDoc = await addDoc(collection(db, 'pending_songs'), {
+                            title: title,
+                            artist: artist,
+                            submitter: sessionStorage.getItem('subAdminTarget') || 'SubAdmin',
+                            chunkCount: chunks.length,
+                            timestamp: serverTimestamp()
+                        });
+                        
+                        for(let i=0; i<chunks.length; i++) {
+                            await setDoc(doc(db, `pending_songs/${songDoc.id}/chunks`, `chunk_${i}`), {
+                                data: chunks[i],
+                                index: i
+                            });
+                            statusText.textContent = `Uploading chunk ${i+1}/${chunks.length}...`;
+                        }
+                        
+                        statusText.textContent = "✅ Submitted successfully! Awaiting Superadmin approval.";
+                        document.getElementById('pendingArtistName').value = '';
+                        document.getElementById('pendingSongTitle').value = '';
+                        fileInput.value = '';
+                        document.getElementById('pendingFileNameDisplay').textContent = 'No file selected';
+                        
+                    } catch (e) {
+                        console.error(e);
+                        statusText.textContent = "❌ Error submitting request. File might be too large.";
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "Submit for Approval";
+                        setTimeout(() => { if(statusText.textContent.includes('Submitted')) statusText.textContent = ''; }, 5000);
+                    }
+                };
+
             } else {
                 setupDeviceMonitor();
                 updateGitHubUI(!!githubToken);
                 startLiveScanner();
                 setupAdminUserManagement();
                 setupChatSystem('SuperAdmin');
+                window.setupAdminPendingSongs(); // SUPERADMIN PENDING SONG HANDLER
                 
                 targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
+                
+                document.getElementById('subadminMusicUI').style.display = 'none';
+                document.getElementById('superadminMusicUI').style.display = 'block';
             }
 
-            // Setup Security Panel Sync (Superadmin only)
             const toggleAntiScreenshot = document.getElementById('toggleAntiScreenshot');
             const blockedIpListContainer = document.getElementById('blockedIpList');
             
@@ -3668,7 +3554,6 @@
                     }
                 });
                 
-                // Superadmin Global Broadcast Implementation
                 const sendSystemBroadcastBtn = document.getElementById('sendSystemBroadcastBtn');
                 if (sendSystemBroadcastBtn) {
                     sendSystemBroadcastBtn.onclick = async () => {
@@ -3707,7 +3592,6 @@
                 window.loadAdminGallery(user);
                 window.loadAdminCustomization(user);
                 
-                // Fetch existing deletion schedule if any
                 getDocs(query(collection(db, 'app_users'), where('username', '==', user))).then(snap => {
                     if (!snap.empty) {
                         const data = snap.docs[0].data();
@@ -3803,7 +3687,6 @@
                 });
             };
 
-            // Customization Data Fetching
             window.loadAdminCustomization = async function(user) {
                 try {
                     const snap = await getDoc(doc(db, 'preferences', user));
@@ -3824,7 +3707,6 @@
                 } catch(e) { console.error("Error loading customization:", e); }
             };
             
-            // Save Customization Setup
             document.getElementById('saveCustomizationBtn').onclick = async () => {
                 if(!adminTargetUser) return alert("Please select a target user first.");
                 const btn = document.getElementById('saveCustomizationBtn');
@@ -3849,7 +3731,6 @@
                 }
             };
             
-            // Setup Schedule Deletion Handlers
             const btnScheduleDeletion = document.getElementById('btnScheduleDeletion');
             const btnCancelDeletion = document.getElementById('btnCancelDeletion');
             
@@ -3889,7 +3770,6 @@
                 };
             }
 
-            // Initial Target Load
             window.updateAdminData(adminTargetUser);
 
             targetBtns.forEach(btn => {
@@ -4253,6 +4133,126 @@
                 }
             };
 
+            // Setup SUPERADMIN PENDING SONG HANDLERS
+            window.setupAdminPendingSongs = function() {
+                const list = document.getElementById('adminPendingSongsList');
+                if(!list) return;
+
+                onSnapshot(collection(db, 'pending_songs'), (snapshot) => {
+                    list.innerHTML = '';
+                    if (snapshot.empty) {
+                        list.innerHTML = '<p style="text-align: center; color: #999; font-size: 12px;">No pending requests.</p>';
+                        return;
+                    }
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const item = document.createElement('div');
+                        item.className = 'admin-list-item';
+                        item.innerHTML = `
+                            <div class="admin-item-info">
+                                <span style="font-weight:bold; color:#d81b60;">${escapeHtml(data.title)}</span>
+                                <span style="font-size:11px; color:#888;">By ${escapeHtml(data.artist)} (from ${escapeHtml(data.submitter)})</span>
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                <button class="submit-btn approve-song-btn" data-id="${docSnap.id}" style="background:#28a745; padding:4px 8px; font-size:11px;">Approve</button>
+                                <button class="submit-btn reject-song-btn" data-id="${docSnap.id}" style="background:#ff4d4d; padding:4px 8px; font-size:11px;">Reject</button>
+                            </div>
+                        `;
+                        list.appendChild(item);
+                    });
+                    
+                    list.querySelectorAll('.reject-song-btn').forEach(btn => {
+                        btn.onclick = async () => {
+                            if(!confirm("Reject this song?")) return;
+                            btn.disabled = true;
+                            btn.textContent = "...";
+                            const id = btn.dataset.id;
+                            const chunksSnap = await getDocs(collection(db, `pending_songs/${id}/chunks`));
+                            for(let d of chunksSnap.docs) { await deleteDoc(d.ref); }
+                            await deleteDoc(doc(db, 'pending_songs', id));
+                        };
+                    });
+                    
+                    list.querySelectorAll('.approve-song-btn').forEach(btn => {
+                        btn.onclick = async () => {
+                            const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
+                            if (!repoFullName) return alert("Please select a target GitHub repository from the dropdown below first.");
+                            if (!githubToken) return alert("Please authorize GitHub first.");
+                            
+                            if(!confirm("Approve and push this song to GitHub?")) return;
+                            
+                            const id = btn.dataset.id;
+                            btn.disabled = true;
+                            btn.textContent = "Pushing...";
+                            
+                            try {
+                                const songDocSnap = await getDoc(doc(db, 'pending_songs', id));
+                                const songData = songDocSnap.data();
+                                
+                                const chunksSnap = await getDocs(collection(db, `pending_songs/${id}/chunks`));
+                                const chunkMap = {};
+                                chunksSnap.forEach(d => { chunkMap[d.data().index] = d.data().data; });
+                                let base64Content = '';
+                                for(let i=0; i<songData.chunkCount; i++) {
+                                    base64Content += chunkMap[i];
+                                }
+                                
+                                const baseFileName = `${songData.artist} - ${songData.title}`.replace(/[^a-zA-Z0-9-.\s]/g, '').replace(/\s+/g, '_');
+                                const fileName = `${baseFileName}.mp3`;
+                                const filePath = `music/${fileName}`;
+                                
+                                const [owner, repoName] = repoFullName.split('/');
+                                const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/${filePath}`;
+                                
+                                const fileExists = await checkFileExists(repoFullName, filePath, githubToken);
+                                if (fileExists) throw new Error("File already exists on GitHub.");
+                                
+                                const githubApiUrl = `https://api.github.com/repos/${repoFullName}/contents/${filePath}`;
+                                const uploadPayload = {
+                                    message: `Approve pending music: ${fileName}`,
+                                    content: base64Content,
+                                    branch: 'main'
+                                };
+                                
+                                const ghResponse = await fetch(githubApiUrl, {
+                                    method: 'PUT',
+                                    headers: { 
+                                        'Authorization': `token ${githubToken}`,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(uploadPayload)
+                                });
+
+                                if (!ghResponse.ok) {
+                                    const errorData = await ghResponse.json();
+                                    throw new Error(`GitHub Error: ${errorData.message}`);
+                                }
+                                
+                                await addDoc(collection(db, 'songs'), {
+                                    title: songData.title,
+                                    artist: songData.artist,
+                                    url: rawContentUrl,
+                                    githubPath: filePath,
+                                    githubRepo: repoFullName, 
+                                    timestamp: serverTimestamp()
+                                });
+                                
+                                for(let d of chunksSnap.docs) { await deleteDoc(d.ref); }
+                                await deleteDoc(doc(db, 'pending_songs', id));
+                                
+                                showToast("Approved! 🎵", `"${songData.title}" added to library.`, "✅");
+                                
+                            } catch(e) {
+                                console.error(e);
+                                alert("Approval failed: " + e.message);
+                                btn.disabled = false;
+                                btn.textContent = "Approve";
+                            }
+                        };
+                    });
+                });
+            };
+
             if (isSuperAdmin) {
                 setupAdminSongList(); 
                 
@@ -4525,104 +4525,6 @@
                         setTimeout(() => { if(systemStatus.textContent.includes("System Code pushed")) systemStatus.textContent = ''; }, 5000);
                     }
                 };
-                
-                // --- ADMIN MAINTENANCE ACTIONS ---
-                const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
-                const btnEmergencyMaintenance = document.getElementById('btnEmergencyMaintenance');
-                
-                let adminPreviewInterval = null;
-                function updateAdminMaintPreview() {
-                    const endInput = document.getElementById('maintEndTime').value;
-                    const previewBox = document.getElementById('adminMaintPreview');
-                    const previewText = document.getElementById('adminMaintCountdownText');
-                    
-                    if(adminPreviewInterval) clearInterval(adminPreviewInterval);
-                    
-                    if(!endInput) {
-                        previewBox.style.display = 'none';
-                        return;
-                    }
-                    
-                    previewBox.style.display = 'block';
-                    
-                    const updateClock = () => {
-                        const nowMs = new Date().getTime();
-                        const endMs = new Date(endInput).getTime();
-                        const t = endMs - nowMs;
-                        
-                        if(t <= 0) {
-                            previewText.textContent = "00:00:00";
-                            clearInterval(adminPreviewInterval);
-                            return;
-                        }
-                        
-                        const days = Math.floor(t / (1000 * 60 * 60 * 24));
-                        const hours = Math.floor((t % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                        const minutes = Math.floor((t % (1000 * 60 * 60)) / (1000 * 60));
-                        const seconds = Math.floor((t % (1000 * 60)) / 1000);
-
-                        let timeStr = "";
-                        if (days > 0) timeStr += `${days}d `;
-                        timeStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                        previewText.textContent = timeStr;
-                    };
-                    updateClock();
-                    adminPreviewInterval = setInterval(updateClock, 1000);
-                }
-                
-                const maintEndTimeEl = document.getElementById('maintEndTime');
-                if(maintEndTimeEl) {
-                    maintEndTimeEl.addEventListener('input', updateAdminMaintPreview);
-                }
-                
-                if(btnToggleMaintenance) {
-                    btnToggleMaintenance.onclick = async () => {
-                        const isCurrentlyActiveOrScheduled = btnToggleMaintenance.textContent === "Disable Maintenance";
-                        if (isCurrentlyActiveOrScheduled) {
-                            await setDoc(doc(db, 'settings', 'maintenance'), { isActive: false, isScheduled: false }, { merge: true });
-                            showToast("Maintenance Disabled", "Site is now open to users.", "✅");
-                        } else {
-                            const startTime = document.getElementById('maintStartTime').value;
-                            const endTime = document.getElementById('maintEndTime').value;
-                            const message = document.getElementById('maintMessage').value;
-                            if (!endTime) return alert("Please set an end date and time for the maintenance.");
-                            
-                            const isScheduled = !!startTime;
-                            
-                            await setDoc(doc(db, 'settings', 'maintenance'), { 
-                                isActive: !isScheduled, 
-                                isScheduled: isScheduled,
-                                startTime: startTime || '',
-                                endTime, 
-                                message 
-                            }, { merge: true });
-                            
-                            if(isScheduled) {
-                                 showToast("Maintenance Scheduled", "Will start at the designated time.", "🗓️");
-                            } else {
-                                 showToast("Maintenance Enabled", "Site is now locked for users.", "🚧");
-                            }
-                        }
-                    };
-                }
-
-                if(btnEmergencyMaintenance) {
-                    btnEmergencyMaintenance.onclick = async () => {
-                        const now = new Date();
-                        now.setHours(now.getHours() + 1); // 1 hour emergency
-                        const tzoffset = now.getTimezoneOffset() * 60000;
-                        const localISOTime = (new Date(now - tzoffset)).toISOString().slice(0, 16);
-
-                        await setDoc(doc(db, 'settings', 'maintenance'), {
-                            isActive: true,
-                            isScheduled: false, 
-                            startTime: '',
-                            endTime: localISOTime,
-                            message: "Emergency maintenance in progress. We are working quickly to restore service."
-                        }, { merge: true });
-                        showToast("Emergency Maintenance", "Enabled for 1 hour.", "🚨");
-                    };
-                }
             } 
         }
 
@@ -4631,13 +4533,35 @@
             const searchInput = document.getElementById('adminSongSearch');
             onSnapshot(collection(db, 'songs'), (snapshot) => {
                 listContainer.innerHTML = '';
+                
+                const maintSelect = document.getElementById('maintMusicSelect');
+                let currentMaintVal = maintSelect ? maintSelect.value : '';
+                if(maintSelect) {
+                    maintSelect.innerHTML = '<option value="">-- Random / First Available --</option>';
+                }
+
                 snapshot.forEach(doc => {
                     const s = doc.data();
+                    
                     const item = document.createElement('div');
                     item.className = 'admin-song-item';
                     item.innerHTML = `<div class="admin-song-info"><span style="font-weight:bold; color:#d81b60;">${escapeHtml(s.title)}</span><span style="color:#888;">${escapeHtml(s.artist)}</span></div><button class="delete-btn" data-id="${doc.id}">🗑️</button>`;
                     listContainer.appendChild(item);
+
+                    if(maintSelect) {
+                        const opt = document.createElement('option');
+                        opt.value = s.url;
+                        opt.textContent = `${s.artist} - ${s.title}`;
+                        if(s.url === window._loadedMaintMusicUrl) {
+                            opt.selected = true;
+                            currentMaintVal = s.url;
+                        }
+                        maintSelect.appendChild(opt);
+                    }
                 });
+
+                if(maintSelect && currentMaintVal) maintSelect.value = currentMaintVal;
+
                 listContainer.querySelectorAll('.delete-btn').forEach(btn => {
                     btn.onclick = async () => { if(confirm("Delete song? This only removes it from the shared library, not from GitHub.")) await deleteDoc(doc(db, 'songs', btn.dataset.id)); };
                 });
