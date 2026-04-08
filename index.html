@@ -1944,22 +1944,6 @@
                             </div>
 
                             <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
-                                <h4 class="admin-section-title">Submit Music Request</h4>
-                                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Admins can request new songs for Superadmin approval.</p>
-                                <div class="admin-form-group">
-                                    <input type="text" id="requestArtistName" class="fw-input" placeholder="Artist Name">
-                                    <input type="text" id="requestSongTitle" class="fw-input" placeholder="Song Title">
-                                    <div class="file-input-wrapper" onclick="document.getElementById('musicRequestFileInput').click()">
-                                        <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3 for Approval</p>
-                                        <span id="musicRequestFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
-                                        <input type="file" id="musicRequestFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('musicRequestFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
-                                    </div>
-                                </div>
-                                <button id="submitMusicRequestBtn" class="submit-btn" style="width: 100%;">Submit for Approval</button>
-                                <p id="musicRequestStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
-                            </div>
-
-                            <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
                                 <h4 class="admin-section-title">Pending Music Approval</h4>
                                 <div id="pendingMusicRequests" class="admin-list-container">
                                     <p style="text-align: center; color: #999; font-size: 12px;">Loading pending requests...</p>
@@ -4837,10 +4821,6 @@
                 };
             }
 
-            const musicRequestBtn = document.getElementById('submitMusicRequestBtn');
-            if (musicRequestBtn) {
-                musicRequestBtn.onclick = submitMusicRequest;
-            }
             const subMusicRequestBtn = document.getElementById('submitSubMusicRequestBtn');
             if (subMusicRequestBtn) {
                 subMusicRequestBtn.onclick = submitSubMusicRequest;
@@ -5187,91 +5167,71 @@
             };
         }
 
-        async function submitMusicRequest() {
-            const artistName = document.getElementById('requestArtistName').value.trim();
-            const songTitle = document.getElementById('requestSongTitle').value.trim();
-            const fileInput = document.getElementById('musicRequestFileInput');
-            const status = document.getElementById('musicRequestStatus');
-
-            if (!artistName || !songTitle || !fileInput.files.length) {
-                alert('Please select a music file and fill in the artist/song fields.');
-                return;
-            }
-            const file = fileInput.files[0];
-            const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9-_.]/g, '_');
-            const storagePath = `music_requests/${safeName}`;
-            const requestUploader = currentUser || sessionStorage.getItem('subAdminTarget') || 'Admin';
-
-            try {
-                status.textContent = 'Uploading music request...';
-                const fileRef = storageRef(storage, storagePath);
-                await uploadBytes(fileRef, file);
-                const url = await getDownloadURL(fileRef);
-
-                await addDoc(collection(db, 'music_requests'), {
-                    title: songTitle,
-                    artist: artistName,
-                    url: url,
-                    uploader: requestUploader,
-                    status: 'pending',
-                    timestamp: serverTimestamp()
-                });
-
-                status.textContent = 'Request submitted for approval.';
-                document.getElementById('requestArtistName').value = '';
-                document.getElementById('requestSongTitle').value = '';
-                fileInput.value = '';
-                document.getElementById('musicRequestFileNameDisplay').textContent = 'No file selected';
-            } catch (e) {
-                console.error('Submit music request failed', e);
-                status.textContent = 'Upload failed. Check console.';
-                alert('Failed to submit music request.');
-            } finally {
-                setTimeout(() => { status.textContent = ''; }, 4000);
-            }
-        }
-
         async function submitSubMusicRequest() {
             const artistName = document.getElementById('subRequestArtistName').value.trim();
             const songTitle = document.getElementById('subRequestSongTitle').value.trim();
             const fileInput = document.getElementById('subMusicRequestFileInput');
             const status = document.getElementById('subMusicRequestStatus');
+            const submitBtn = document.getElementById('submitSubMusicRequestBtn');
 
             if (!artistName || !songTitle || !fileInput.files.length) {
-                alert('Please select a music file and fill in the artist/song fields.');
+                alert('Please fill in artist name, song title, and select a music file.');
                 return;
             }
+
             const file = fileInput.files[0];
-            const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9-_.]/g, '_');
-            const storagePath = `music_requests/${safeName}`;
             const requestUploader = currentUser || sessionStorage.getItem('subAdminTarget') || 'Admin';
 
             try {
-                status.textContent = 'Uploading music request...';
-                const fileRef = storageRef(storage, storagePath);
-                await uploadBytes(fileRef, file);
-                const url = await getDownloadURL(fileRef);
+                // Disable button to prevent double-click
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Uploading...';
+                status.textContent = 'Processing...';
 
-                await addDoc(collection(db, 'music_requests'), {
+                // Upload file to Firebase Storage
+                const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9-_.]/g, '_');
+                const storagePath = `music_requests/${safeName}`;
+                const fileRef = window.storageRef(window.storage, storagePath);
+                
+                status.textContent = '1/2: Uploading file...';
+                await window.uploadBytes(fileRef, file);
+                const url = await window.getDownloadURL(fileRef);
+
+                // Create Firestore document
+                status.textContent = '2/2: Creating request...';
+                await window.addDoc(window.collection(window.db, 'music_requests'), {
                     title: songTitle,
                     artist: artistName,
                     url: url,
                     uploader: requestUploader,
                     status: 'pending',
-                    timestamp: serverTimestamp()
+                    timestamp: window.serverTimestamp()
                 });
 
-                status.textContent = 'Request submitted for approval.';
+                // Success
+                status.textContent = '✅ Request submitted! Superadmin will review shortly.';
+                if (typeof showToast === 'function') {
+                    showToast('Music Request Sent 🎵', `${songTitle} by ${artistName} is pending approval`, '✅');
+                }
+                
+                // Clear form
                 document.getElementById('subRequestArtistName').value = '';
                 document.getElementById('subRequestSongTitle').value = '';
                 fileInput.value = '';
                 document.getElementById('subMusicRequestFileNameDisplay').textContent = 'No file selected';
+                
+                // Clear status after 3 seconds
+                setTimeout(() => { 
+                    status.textContent = ''; 
+                }, 3000);
             } catch (e) {
-                console.error('Submit music request failed', e);
-                status.textContent = 'Upload failed. Check console.';
-                alert('Failed to submit music request.');
+                console.error('Submit music request failed:', e);
+                status.textContent = '❌ Upload failed: ' + e.message;
+                alert('Failed to submit music request.\n\nError: ' + e.message);
             } finally {
-                setTimeout(() => { status.textContent = ''; }, 4000);
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Music Request';
             }
         }
 
