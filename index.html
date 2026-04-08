@@ -5432,10 +5432,17 @@
         let isCameraOn = true;
         let isMicOn = true;
         let isScreenSharing = false;
+        let ringAudioContext = null;
+        let ringOscillator = null;
+        let ringGain = null;
 
         const localVideo = document.getElementById('localVideo');
         const remoteVideo = document.getElementById('remoteVideo');
         const userNameInput = document.getElementById('userName');
+        const peerIdInput = document.getElementById('peerIdInput');
+        const localName = document.getElementById('localName');
+        const remoteName = document.getElementById('remoteName');
+        const callStatus = document.getElementById('callStatus');
         const startCallBtn = document.getElementById('startCallBtn');
         const joinCallBtn = document.getElementById('joinCallBtn');
         const toggleCameraBtn = document.getElementById('toggleCameraBtn');
@@ -5443,25 +5450,66 @@
         const shareScreenBtn = document.getElementById('shareScreenBtn');
         const endCallBtn = document.getElementById('endCallBtn');
 
-        function getOtherUser() {
-            return currentUser === 'kate' ? 'baby' : 'kate';
+        function updateStatus(message) {
+            callStatus.textContent = message;
+        }
+
+        function startRinging() {
+            if (!ringAudioContext) {
+                ringAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (ringOscillator) return; // Already ringing
+
+            ringOscillator = ringAudioContext.createOscillator();
+            ringGain = ringAudioContext.createGain();
+
+            ringOscillator.connect(ringGain);
+            ringGain.connect(ringAudioContext.destination);
+
+            ringOscillator.frequency.setValueAtTime(800, ringAudioContext.currentTime);
+            ringGain.gain.setValueAtTime(0.1, ringAudioContext.currentTime);
+
+            // Create a ringing pattern: on for 1s, off for 1s
+            const now = ringAudioContext.currentTime;
+            ringGain.gain.setValueAtTime(0.1, now);
+            ringGain.gain.setValueAtTime(0, now + 1);
+            ringGain.gain.setValueAtTime(0.1, now + 2);
+            ringGain.gain.setValueAtTime(0, now + 3);
+            ringGain.gain.setValueAtTime(0.1, now + 4);
+            ringGain.gain.setValueAtTime(0, now + 5);
+
+            ringOscillator.start(now);
+        }
+
+        function stopRinging() {
+            if (ringOscillator) {
+                ringOscillator.stop();
+                ringOscillator = null;
+            }
+            if (ringGain) {
+                ringGain.disconnect();
+                ringGain = null;
+            }
         }
 
         async function getMedia(constraints = { video: true, audio: true }) {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia(constraints);
                 localVideo.srcObject = localStream;
+                localName.textContent = userNameInput.value || 'You';
+                updateStatus('Media access granted.');
                 return true;
             } catch (err) {
                 console.error('Error accessing media devices:', err);
-                alert('Error accessing camera/microphone. Please check permissions.');
+                updateStatus('Error accessing camera/microphone. Please check permissions.');
                 return false;
             }
         }
 
         function initPeer() {
             if (peer) peer.destroy();
-            peer = new Peer(currentUser, {
+            const myId = currentUser || 'anonymous';
+            peer = new Peer(myId, {
                 host: 'peerjs-server.herokuapp.com',
                 secure: true,
                 port: 443,
@@ -5470,60 +5518,85 @@
 
             peer.on('open', (id) => {
                 console.log('My peer ID is: ' + id);
+                updateStatus('Connected as ' + id + '. Share this ID with the other user.');
             });
 
             peer.on('call', (call) => {
-                if (confirm('Incoming call from ' + call.peer + '. Accept?')) {
+                remoteName.textContent = call.peer;
+                startRinging();
+                if (confirm('📞 Incoming call from ' + call.peer + '. Accept?')) {
+                    stopRinging();
                     call.answer(localStream);
                     currentCall = call;
+                    updateStatus('Call connected.');
                     call.on('stream', (remoteStream) => {
                         remoteVideo.srcObject = remoteStream;
                     });
                     call.on('close', () => {
                         endCall();
                     });
+                    call.on('error', (err) => {
+                        console.error('Call error:', err);
+                        updateStatus('Call error: ' + err.message);
+                    });
                 } else {
+                    stopRinging();
                     call.close();
+                    updateStatus('Call declined.');
                 }
             });
 
             peer.on('error', (err) => {
                 console.error('Peer error:', err);
-                alert('Connection error: ' + err.message);
+                updateStatus('Connection error: ' + err.message);
             });
         }
 
         async function startCall() {
-            if (!userNameInput.value.trim()) {
-                alert('Please enter your name first.');
+            const name = userNameInput.value.trim();
+            const peerId = peerIdInput.value.trim();
+            if (!name) {
+                alert('Please enter your name.');
+                return;
+            }
+            if (!peerId) {
+                alert('Please enter the other user\'s ID.');
                 return;
             }
             if (!await getMedia()) return;
             initPeer();
             setTimeout(() => {
-                const call = peer.call(getOtherUser(), localStream);
+                const call = peer.call(peerId, localStream);
                 if (call) {
                     currentCall = call;
+                    remoteName.textContent = peerId;
+                    updateStatus('Calling ' + peerId + '...');
                     call.on('stream', (remoteStream) => {
                         remoteVideo.srcObject = remoteStream;
+                        updateStatus('Call connected.');
                     });
                     call.on('close', () => {
                         endCall();
                     });
+                    call.on('error', (err) => {
+                        console.error('Call error:', err);
+                        updateStatus('Call failed: ' + err.message);
+                    });
                 } else {
-                    alert('Failed to start call. Other user may not be online.');
+                    updateStatus('Failed to start call. User may not be online.');
                 }
             }, 1000);
         }
 
         async function joinCall() {
-            if (!userNameInput.value.trim()) {
-                alert('Please enter your name first.');
+            const name = userNameInput.value.trim();
+            if (!name) {
+                alert('Please enter your name.');
                 return;
             }
             if (!await getMedia()) return;
             initPeer();
-            alert('Waiting for incoming call...');
+            updateStatus('Waiting for incoming call...');
         }
 
         function toggleCamera() {
@@ -5549,6 +5622,10 @@
         }
 
         async function shareScreen() {
+            if (isScreenSharing) {
+                stopScreenShare();
+                return;
+            }
             try {
                 const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 const videoTrack = screenStream.getVideoTracks()[0];
@@ -5558,14 +5635,17 @@
                         sender.replaceTrack(videoTrack);
                         isScreenSharing = true;
                         shareScreenBtn.textContent = '🖥️ Stop Sharing';
+                        updateStatus('Screen sharing started.');
                         videoTrack.onended = () => {
                             stopScreenShare();
                         };
                     }
+                } else {
+                    updateStatus('No active call to share screen.');
                 }
             } catch (err) {
                 console.error('Error sharing screen:', err);
-                alert('Error sharing screen.');
+                updateStatus('Error sharing screen.');
             }
         }
 
@@ -5578,10 +5658,12 @@
                 }
                 isScreenSharing = false;
                 shareScreenBtn.textContent = '🖥️ Share Screen';
+                updateStatus('Screen sharing stopped.');
             }
         }
 
         function endCall() {
+            stopRinging();
             if (currentCall) {
                 currentCall.close();
                 currentCall = null;
@@ -5602,6 +5684,9 @@
             toggleCameraBtn.textContent = '📹 Camera On';
             toggleMicBtn.textContent = '🎤 Mic On';
             shareScreenBtn.textContent = '🖥️ Share Screen';
+            localName.textContent = 'You';
+            remoteName.textContent = 'Other';
+            updateStatus('Call ended.');
         }
 
         // Event listeners
@@ -5609,13 +5694,7 @@
         joinCallBtn.addEventListener('click', joinCall);
         toggleCameraBtn.addEventListener('click', toggleCamera);
         toggleMicBtn.addEventListener('click', toggleMic);
-        shareScreenBtn.addEventListener('click', () => {
-            if (isScreenSharing) {
-                stopScreenShare();
-            } else {
-                shareScreen();
-            }
-        });
+        shareScreenBtn.addEventListener('click', shareScreen);
         endCallBtn.addEventListener('click', endCall);
 
         // FIX: Ensure AudioContext resumes on ANY user interaction (for iOS/Chrome policy)
