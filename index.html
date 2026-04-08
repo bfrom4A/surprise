@@ -16,6 +16,9 @@
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
+    <!-- PeerJS for WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
     <title id="dynamicPageTitle">For You</title>
     
     <!-- Expanded Google Fonts for Customization -->
@@ -2188,6 +2191,9 @@
             <button class="tab" data-tab="freedom-wall">
                 <span>🕊️</span> Freedom Wall
             </button>
+            <button class="tab" data-tab="video-chat">
+                <span>📹</span> Video Chat
+            </button>
             <button class="tab" id="logoutButton">
                 <span>🔒</span> Log Out
             </button>
@@ -2302,6 +2308,36 @@
                 </div>
             </div>
 
+            <!-- Video Chat Tab -->
+            <div class="tab-content" id="video-chat">
+                <h2>Video Chat 📹</h2>
+                <div id="videoChatContainer">
+                    <div style="margin-bottom: 20px;">
+                        <input type="text" id="userName" placeholder="Your Name" class="fw-input" maxlength="30" style="margin-bottom: 10px;">
+                        <input type="text" id="peerIdInput" placeholder="Enter Peer ID to connect" class="fw-input" style="margin-bottom: 10px;">
+                        <button id="generateIdBtn" class="submit-btn" style="margin-right: 10px;">Generate My ID</button>
+                        <button id="connectBtn" class="submit-btn">Connect</button>
+                        <button id="hangupBtn" class="submit-btn" style="background: #ff4d4d; margin-left: 10px;">Hang Up</button>
+                    </div>
+                    <div id="myIdDisplay" style="margin-bottom: 10px; font-weight: bold; color: #d81b60;"></div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button id="toggleCameraBtn" class="submit-btn">📹 Camera On</button>
+                        <button id="toggleMicBtn" class="submit-btn">🎤 Mic On</button>
+                        <button id="shareScreenBtn" class="submit-btn">🖥️ Share Screen</button>
+                    </div>
+                    <div style="display: flex; gap: 20px;">
+                        <div>
+                            <h3>Your Video</h3>
+                            <video id="myVideo" autoplay muted style="width: 300px; border: 2px solid #ffb7c5; border-radius: 10px;"></video>
+                        </div>
+                        <div>
+                            <h3>Remote Video</h3>
+                            <video id="remoteVideo" autoplay style="width: 300px; border: 2px solid #ffb7c5; border-radius: 10px;"></video>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
     
@@ -2339,6 +2375,14 @@
         
         let currentUser = sessionStorage.getItem('loggedInUser') || null; 
         let currentDeactivatedUserId = null; 
+        
+        // --- VIDEO CHAT VARIABLES ---
+        let myPeer = null;
+        let myStream = null;
+        let currentCall = null;
+        let isCameraOn = true;
+        let isMicOn = true;
+        let videoChatInitialized = false;
         
         // --- GLOBAL SECURITY & BLOCKING LOGIC ---
         let userIPAddress = 'Unknown IP';
@@ -2451,6 +2495,96 @@
             if(document.hasFocus()) handleSecurityFocus();
         });
 
+        // --- VIDEO CHAT FUNCTIONS ---
+        async function initVideoChat() {
+            if (videoChatInitialized) return;
+            videoChatInitialized = true;
+            try {
+                myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('myVideo').srcObject = myStream;
+                myPeer = new Peer();
+                
+                myPeer.on('open', (id) => {
+                    document.getElementById('myIdDisplay').textContent = 'Your ID: ' + id;
+                });
+                
+                myPeer.on('call', (call) => {
+                    currentCall = call;
+                    call.answer(myStream);
+                    call.on('stream', (remoteStream) => {
+                        document.getElementById('remoteVideo').srcObject = remoteStream;
+                    });
+                });
+            } catch (err) {
+                console.error('Error initializing video chat:', err);
+                alert('Error accessing camera/microphone. Please allow permissions.');
+            }
+        }
+
+        // Video chat event listeners
+        document.getElementById('generateIdBtn').addEventListener('click', () => {
+            initVideoChat();
+        });
+        
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            const peerId = document.getElementById('peerIdInput').value;
+            if (peerId && myStream) {
+                const call = myPeer.call(peerId, myStream);
+                currentCall = call;
+                call.on('stream', (remoteStream) => {
+                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                });
+            }
+        });
+        
+        document.getElementById('hangupBtn').addEventListener('click', () => {
+            if (currentCall) {
+                currentCall.close();
+                currentCall = null;
+                document.getElementById('remoteVideo').srcObject = null;
+            }
+        });
+        
+        document.getElementById('toggleCameraBtn').addEventListener('click', () => {
+            if (myStream) {
+                const videoTrack = myStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    isCameraOn = !isCameraOn;
+                    videoTrack.enabled = isCameraOn;
+                    document.getElementById('toggleCameraBtn').textContent = isCameraOn ? '📹 Camera On' : '📷 Camera Off';
+                }
+            }
+        });
+        
+        document.getElementById('toggleMicBtn').addEventListener('click', () => {
+            if (myStream) {
+                const audioTrack = myStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    isMicOn = !isMicOn;
+                    audioTrack.enabled = isMicOn;
+                    document.getElementById('toggleMicBtn').textContent = isMicOn ? '🎤 Mic On' : '🔇 Mic Off';
+                }
+            }
+        });
+        
+        document.getElementById('shareScreenBtn').addEventListener('click', async () => {
+            try {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const screenTrack = screenStream.getVideoTracks()[0];
+                if (currentCall && currentCall.peerConnection) {
+                    const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+                    if (sender) {
+                        sender.replaceTrack(screenTrack);
+                        screenTrack.onended = () => {
+                            const videoTrack = myStream.getVideoTracks()[0];
+                            sender.replaceTrack(videoTrack);
+                        };
+                    }
+                }
+            } catch (err) {
+                console.error('Error sharing screen:', err);
+            }
+        });
 
         // --- MAINTENANCE MODE LOGIC (ADVANCED SCHEDULE) ---
         let maintInterval = null;
@@ -5149,6 +5283,10 @@
                     startTulipRain();
                 } else {
                     stopTulipRain();
+                }
+
+                if (targetTab === 'video-chat') {
+                    initVideoChat();
                 }
             });
         });
