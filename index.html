@@ -6079,7 +6079,13 @@
                         adminTransitionScreen.style.display = 'none';
                         adminContainer.style.display = 'block';
                         
-                        if(window.initAdminConsole) window.initAdminConsole();
+                        if(window.initAdminConsole) {
+                            try {
+                                window.initAdminConsole();
+                            } catch(e) {
+                                console.error('Error initializing admin console:', e);
+                            }
+                        }
                     }, 500);
                 }, 2500); 
             }, 500);
