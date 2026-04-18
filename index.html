@@ -406,8 +406,7 @@
             justify-content: center;
             align-items: center;
             z-index: 3000;
-            opacity: 0;
-            transition: opacity 0.8s ease;
+            transition: opacity 0.5s ease;
         }
 
         .admin-transition-spinner {
@@ -683,12 +682,11 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg, #ffd1dc, #ffb7c5);
-            display: none;
+            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 99;
-            opacity: 0;
             transition: opacity 0.8s ease;
         }
         
@@ -5755,7 +5753,6 @@
         
         // Modal Flow Elements
         const loginContent = document.getElementById('loginContent');
-        const forgotPasswordContent = document.getElementById('forgotPasswordContent');
         const registerContent = document.getElementById('registerContent');
         const pendingContent = document.getElementById('pendingContent');
         const deactivatedContent = document.getElementById('deactivatedContent');
@@ -5928,35 +5925,6 @@
 
             passwordInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
             loginUsernameInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
-            forgotBackupCodeInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitForgotPassword.click(); });
-            forgotUsernameInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitForgotPassword.click(); });
-
-            submitForgotPassword.addEventListener('click', async () => {
-                const username = forgotUsernameInput.value.trim().toLowerCase();
-                const backupCode = forgotBackupCodeInput.value.trim().toUpperCase();
-                if (!username || !backupCode) {
-                    return alert('Please enter your username and backup code.');
-                }
-                try {
-                    submitForgotPassword.textContent = 'Verifying...';
-                    submitForgotPassword.disabled = true;
-                    const user = await useBackupCodeForLogin(username, backupCode);
-                    if (!user) {
-                        alert('Invalid username or backup code, or the account is not approved.');
-                        return;
-                    }
-                    forgotUsernameInput.value = '';
-                    forgotBackupCodeInput.value = '';
-                    forgotPasswordContent.style.display = 'none';
-                    doLogin(user);
-                } catch (e) {
-                    console.error('Backup login failed:', e);
-                    alert('Failed to log in with backup code.');
-                } finally {
-                    submitForgotPassword.textContent = 'Use Backup Code';
-                    submitForgotPassword.disabled = false;
-                }
-            });
             
             submitRegister.addEventListener('click', async () => {
                 const u = regUsernameInput.value.trim().toLowerCase();
@@ -6030,24 +5998,27 @@
             if(window.loadUserContent) window.loadUserContent(user);
             if(window.logDeviceLogin) window.logDeviceLogin(user);
 
-            passwordModal.style.display = 'none';
+            passwordModal.style.opacity = '0';
+            setTimeout(() => {
+                passwordModal.style.display = 'none';
 
-            if (userData && userData.hasSeenAdminCreds === false && userData.adminUsername) {
-                document.getElementById('displayAdminUser').textContent = userData.adminUsername;
-                document.getElementById('displayAdminPass').textContent = userData.adminPassword;
-                const credsModal = document.getElementById('userAdminCredsModal');
-                credsModal.style.display = 'flex';
+                if (userData && userData.hasSeenAdminCreds === false && userData.adminUsername) {
+                    document.getElementById('displayAdminUser').textContent = userData.adminUsername;
+                    document.getElementById('displayAdminPass').textContent = userData.adminPassword;
+                    const credsModal = document.getElementById('userAdminCredsModal');
+                    credsModal.style.display = 'flex';
 
-                document.getElementById('closeCredsModalBtn').onclick = async () => {
-                    try {
-                        await window.updateDoc(window.doc(window.db, 'app_users', userDocId), { hasSeenAdminCreds: true });
-                    } catch(e) { console.error(e); }
-                    credsModal.style.display = 'none';
-                    showWelcomeScreen(); 
-                };
-            } else {
-                showWelcomeScreen();
-            }
+                    document.getElementById('closeCredsModalBtn').onclick = async () => {
+                        try {
+                            await window.updateDoc(window.doc(window.db, 'app_users', userDocId), { hasSeenAdminCreds: true });
+                        } catch(e) { console.error(e); }
+                        credsModal.style.display = 'none';
+                        showWelcomeScreen(); 
+                    };
+                } else {
+                    showWelcomeScreen();
+                }
+            }, 500);
         }
 
         function showWelcomeScreen() {
@@ -6055,9 +6026,6 @@
                 welcomeMsg.textContent = `Loading ${currentDisplayName}'s interface...`;
             }
             welcomeScreen.style.display = 'flex';
-            setTimeout(() => {
-                welcomeScreen.style.opacity = '1';
-            }, 50);
             setTimeout(() => {
                 welcomeScreen.style.opacity = '0';
                 setTimeout(() => {
@@ -6070,25 +6038,21 @@
         function triggerAdminLogin(isSuper = true) {
             if (isSuper) sessionStorage.setItem('isAdminLoggedIn', 'true');
             
-            passwordModal.style.display = 'none';
-            adminTransitionScreen.style.display = 'flex';
-            adminTransitionScreen.style.opacity = '1';
-            
-            if(window.initAdminConsole) {
-                try {
-                    window.initAdminConsole();
-                } catch(e) {
-                    console.error('Error initializing admin console:', e);
-                }
-            }
-            
+            passwordModal.style.opacity = '0';
             setTimeout(() => {
-                adminTransitionScreen.style.opacity = '0';
+                passwordModal.style.display = 'none';
+                adminTransitionScreen.style.display = 'flex';
+                
                 setTimeout(() => {
-                    adminTransitionScreen.style.display = 'none';
-                    adminContainer.style.display = 'block';
-                }, 800);
-            }, 3000);
+                    adminTransitionScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        adminTransitionScreen.style.display = 'none';
+                        adminContainer.style.display = 'block';
+                        
+                        if(window.initAdminConsole) window.initAdminConsole();
+                    }, 500);
+                }, 2500); 
+            }, 500);
         }
 
         function showLoginError() {
