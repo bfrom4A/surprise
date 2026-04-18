@@ -406,7 +406,8 @@
             justify-content: center;
             align-items: center;
             z-index: 3000;
-            transition: opacity 0.5s ease;
+            opacity: 0;
+            transition: opacity 0.8s ease;
         }
 
         .admin-transition-spinner {
@@ -682,11 +683,12 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg, #ffd1dc, #ffb7c5);
-            display: flex;
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 99;
+            opacity: 0;
             transition: opacity 0.8s ease;
         }
         
@@ -6028,35 +6030,34 @@
             if(window.loadUserContent) window.loadUserContent(user);
             if(window.logDeviceLogin) window.logDeviceLogin(user);
 
-            passwordModal.style.opacity = '0';
-            setTimeout(() => {
-                passwordModal.style.display = 'none';
+            passwordModal.style.display = 'none';
 
-                if (userData && userData.hasSeenAdminCreds === false && userData.adminUsername) {
-                    document.getElementById('displayAdminUser').textContent = userData.adminUsername;
-                    document.getElementById('displayAdminPass').textContent = userData.adminPassword;
-                    const credsModal = document.getElementById('userAdminCredsModal');
-                    credsModal.style.display = 'flex';
+            if (userData && userData.hasSeenAdminCreds === false && userData.adminUsername) {
+                document.getElementById('displayAdminUser').textContent = userData.adminUsername;
+                document.getElementById('displayAdminPass').textContent = userData.adminPassword;
+                const credsModal = document.getElementById('userAdminCredsModal');
+                credsModal.style.display = 'flex';
 
-                    document.getElementById('closeCredsModalBtn').onclick = async () => {
-                        try {
-                            await window.updateDoc(window.doc(window.db, 'app_users', userDocId), { hasSeenAdminCreds: true });
-                        } catch(e) { console.error(e); }
-                        credsModal.style.display = 'none';
-                        showWelcomeScreen(); 
-                    };
-                } else {
-                    showWelcomeScreen();
-                }
-            }, 500);
+                document.getElementById('closeCredsModalBtn').onclick = async () => {
+                    try {
+                        await window.updateDoc(window.doc(window.db, 'app_users', userDocId), { hasSeenAdminCreds: true });
+                    } catch(e) { console.error(e); }
+                    credsModal.style.display = 'none';
+                    showWelcomeScreen(); 
+                };
+            } else {
+                showWelcomeScreen();
+            }
         }
 
         function showWelcomeScreen() {
             if (currentDisplayName) {
                 welcomeMsg.textContent = `Loading ${currentDisplayName}'s interface...`;
             }
-            welcomeScreen.style.opacity = '1';
             welcomeScreen.style.display = 'flex';
+            setTimeout(() => {
+                welcomeScreen.style.opacity = '1';
+            }, 50);
             setTimeout(() => {
                 welcomeScreen.style.opacity = '0';
                 setTimeout(() => {
@@ -6069,36 +6070,25 @@
         function triggerAdminLogin(isSuper = true) {
             if (isSuper) sessionStorage.setItem('isAdminLoggedIn', 'true');
             
-            passwordModal.style.opacity = '0';
-            setTimeout(() => {
-                passwordModal.style.display = 'none';
-                adminTransitionScreen.style.opacity = '1';
-                adminTransitionScreen.style.display = 'flex';
-                adminContainer.style.display = 'block';
-                
-                if(window.initAdminConsole) {
-                    try {
-                        window.initAdminConsole();
-                    } catch(e) {
-                        console.error('Error initializing admin console:', e);
-                    }
+            passwordModal.style.display = 'none';
+            adminTransitionScreen.style.display = 'flex';
+            adminTransitionScreen.style.opacity = '1';
+            
+            if(window.initAdminConsole) {
+                try {
+                    window.initAdminConsole();
+                } catch(e) {
+                    console.error('Error initializing admin console:', e);
                 }
-                
+            }
+            
+            setTimeout(() => {
+                adminTransitionScreen.style.opacity = '0';
                 setTimeout(() => {
-                    adminTransitionScreen.style.opacity = '0';
-                    setTimeout(() => {
-                        adminTransitionScreen.style.display = 'none';
-                    }, 300);
-                }, 3000);
-            }, 500);
-
-            setTimeout(() => {
-                if (adminTransitionScreen.style.display === 'flex') {
                     adminTransitionScreen.style.display = 'none';
-                    adminTransitionScreen.style.opacity = '0';
                     adminContainer.style.display = 'block';
-                }
-            }, 5500);
+                }, 800);
+            }, 3000);
         }
 
         function showLoginError() {
