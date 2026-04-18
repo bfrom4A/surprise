@@ -6055,6 +6055,7 @@
             if (currentDisplayName) {
                 welcomeMsg.textContent = `Loading ${currentDisplayName}'s interface...`;
             }
+            welcomeScreen.style.opacity = '1';
             welcomeScreen.style.display = 'flex';
             setTimeout(() => {
                 welcomeScreen.style.opacity = '0';
@@ -6071,21 +6072,33 @@
             passwordModal.style.opacity = '0';
             setTimeout(() => {
                 passwordModal.style.display = 'none';
+                adminTransitionScreen.style.opacity = '1';
                 adminTransitionScreen.style.display = 'flex';
+                adminContainer.style.display = 'block';
+                
+                if(window.initAdminConsole) {
+                    try {
+                        window.initAdminConsole();
+                    } catch(e) {
+                        console.error('Error initializing admin console:', e);
+                    }
+                }
                 
                 setTimeout(() => {
-                    adminTransitionScreen.style.display = 'none';
-                    adminContainer.style.display = 'block';
-                    
-                    if(window.initAdminConsole) {
-                        try {
-                            window.initAdminConsole();
-                        } catch(e) {
-                            console.error('Error initializing admin console:', e);
-                        }
-                    }
+                    adminTransitionScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        adminTransitionScreen.style.display = 'none';
+                    }, 300);
                 }, 3000);
             }, 500);
+
+            setTimeout(() => {
+                if (adminTransitionScreen.style.display === 'flex') {
+                    adminTransitionScreen.style.display = 'none';
+                    adminTransitionScreen.style.opacity = '0';
+                    adminContainer.style.display = 'block';
+                }
+            }, 5500);
         }
 
         function showLoginError() {
