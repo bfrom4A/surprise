@@ -1472,6 +1472,11 @@
             100% { transform: translateY(0px); }
         }
 
+        @keyframes miniTicker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
         @keyframes maintSpin {
             100% { transform: rotate(360deg); }
         }
@@ -1635,6 +1640,21 @@
         ⚠️ Scheduled Maintenance starts in: <span id="scheduled-maint-countdown">00:00:00</span>
     </div>
 
+    <!-- MINI ANNOUNCEMENT BAR -->
+    <div id="mini-announcement-bar" style="display:none; position:fixed; top:50px; left:0; width:100%; background:#ffde59; color:#333; padding:12px 20px; font-size:14px; z-index:99998; overflow:hidden; white-space:nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
+        <div id="mini-announcement-text" style="display:inline-block; position:relative; will-change: transform; animation: miniTicker 20s linear forwards;"></div>
+    </div>
+
+    <!-- MAINTENANCE UPDATE PROMPT -->
+    <div id="maintenanceUpdateModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:1000000; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="max-width: 500px; width: 90%; text-align:left;">
+            <h2 style="color:#d81b60; font-family:'Dancing Script', cursive; font-size:32px; margin-bottom:10px;">Maintenance Summary</h2>
+            <p style="font-size:14px; color:#555; margin-bottom:10px;">The site was recently under maintenance. Here are the fixes and updates made:</p>
+            <div id="maintenanceUpdateNotesList" style="background:#fff5f7; padding:15px; border-radius:12px; max-height:300px; overflow-y:auto; border:1px solid #ffb7c5; font-size:13px; color:#444;"></div>
+            <button class="submit-btn" id="closeMaintenanceUpdateBtn" style="width:100%; margin-top:20px;">Got it</button>
+        </div>
+    </div>
+
     <!-- GLOBAL BROADCAST MODAL -->
     <div id="globalBroadcastModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:999999; justify-content:center; align-items:center;">
         <div class="maintenance-content" style="background:white; text-align:center; animation: bounceIn 0.5s forwards;">
@@ -1707,6 +1727,17 @@
             <input type="password" class="password-input" id="passwordInput" placeholder="The special word...">
             <button class="submit-btn" id="submitPassword" style="width: 100%; margin-bottom: 10px;">Enter</button>
             <p id="showRegisterBtn" style="margin-top: 10px; font-size: 13px; color: #d81b60; cursor: pointer; text-decoration: underline;">Or register an account</p>
+            <p id="showForgotPasswordBtn" style="margin-top: 10px; font-size: 13px; color: #007bff; cursor: pointer; text-decoration: underline;">Forgot password?</p>
+        </div>
+
+        <!-- Forgot Password Screen -->
+        <div class="password-content" id="forgotPasswordContent" style="display: none;">
+            <h2>Forgot Password</h2>
+            <p style="font-size: 14px; color: #555; margin-bottom: 10px;">Use one of your backup codes to log in.</p>
+            <input type="text" class="password-input" id="forgotUsername" placeholder="Username" style="margin-bottom: 10px;">
+            <input type="text" class="password-input" id="forgotBackupCode" placeholder="Backup Code" style="margin-bottom: 10px;">
+            <button class="submit-btn" id="submitForgotPassword" style="width: 100%; margin-bottom: 10px;">Use Backup Code</button>
+            <p id="forgotBackBtn" style="margin-top: 10px; font-size: 13px; color: #888; cursor: pointer;">Back to Login</p>
         </div>
 
         <!-- Registration Screen -->
@@ -1808,6 +1839,10 @@
                             <input type="text" id="adminLetterDate" class="fw-input" placeholder="Date Label (e.g. 11-20-2025)">
                             <textarea id="adminLetterContent" class="fw-textarea" style="height: 150px;" placeholder="Write your heart out here..."></textarea>
                             
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:10px; margin-bottom:5px;">🗓️ Schedule post (optional):</label>
+                            <input type="datetime-local" id="adminLetterPublishAt" class="fw-input" style="margin-bottom: 10px;">
+                            <p style="font-size:12px; color:#888; margin-top:-10px; margin-bottom:10px;">Leave blank to publish immediately, or choose a future date/time.</p>
+
                             <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:10px; margin-bottom:5px;">🎵 Pick a Song (Optional):</label>
                             <select id="adminLetterSongSelect" class="repo-select">
                                 <option value="">No song (silent letter)</option>
@@ -2034,6 +2069,11 @@
 
                             <button id="sendSystemBroadcastBtn" class="submit-btn" style="width: 100%; background: #ff9800; border: none; box-shadow: 0 4px 10px rgba(255,152,0,0.3); margin-top:10px;">🚀 Send / Schedule Broadcast</button>
                         </div>
+                        <div style="margin-top: 15px; background: #fff5f7; padding: 15px; border-radius: 12px; border: 1px solid #ffe4e9;">
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:5px;">Mini Top Announcement</label>
+                            <input type="text" id="miniAnnouncementInput" class="fw-input" placeholder="Type a top announcement..." style="background:white; border-color:#ffcc80;">
+                            <button id="setMiniAnnouncementBtn" class="submit-btn" style="width:100%; margin-top:10px; background:#f59e0b;">Set Mini Announcement</button>
+                        </div>
 
                         <div id="ghSystemAuthStatus" style="margin-top: 30px;">
                             <div class="gh-status-box" style="background: #fff5f7; border-color: #ffb7c5;">
@@ -2112,10 +2152,13 @@
                                 <h4 class="admin-section-title" style="color:#ff4d4d; border-bottom: none; margin-bottom: 10px;">Emergency Action</h4>
                                 <button id="btnEmergencyMaintenance" class="submit-btn" style="width: 100%; background: #ff4d4d; border: 1px solid #ffcdd2;">🚨 Emergency Maintenance (+1 Hour)</button>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Users Management Tab -->
+                    <div style="margin-top: 15px; background: #fff5f7; padding: 15px; border-radius: 12px; border: 1px solid #ffe4e9;">
+                        <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:5px;">Maintenance Fixes & Updates</label>
+                        <textarea id="maintenanceUpdateNotes" class="fw-textarea" style="height: 120px;" placeholder="Enter bullet points or notes for users after maintenance..."></textarea>
+                        <button id="saveMaintenanceNotesBtn" class="submit-btn" style="width:100%; margin-top:10px; background:#7c3aed;">Save Maintenance Notes</button>
+                    </div>
+                </div>
                     <div class="admin-panel" id="admin-users">
                         <h4 class="admin-section-title">User Accounts Management</h4>
                         <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Review user registrations and handle account status.</p>
@@ -2170,6 +2213,30 @@
             <input type="text" id="setupAdminPassword" class="fw-input" placeholder="Admin Password">
             <button class="submit-btn" id="confirmApproveBtn" style="width:100%;">Confirm & Approve</button>
             <button class="submit-btn" id="cancelApproveBtn" style="width:100%; background:#ccc; margin-top:10px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- BACKUP CODE AUTH MODAL -->
+    <div id="backupCodeAuthModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:99999; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="background:white; text-align:center; max-width: 400px; width: 90%;">
+            <h3 style="color:#d81b60; margin-bottom:15px; font-family:'Dancing Script', cursive; font-size: 30px;">Verify Access</h3>
+            <p style="font-size:14px; color:#555; margin-bottom:15px;">Enter the admin password before viewing backup codes.</p>
+            <input type="password" id="backupAuthPassword" class="fw-input" placeholder="Admin Password" style="margin-bottom: 10px;">
+            <button id="confirmBackupAuthBtn" class="submit-btn" style="width:100%;">Verify</button>
+            <button id="cancelBackupAuthBtn" class="submit-btn" style="width:100%; background:#ccc; color:#333; margin-top:10px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- BACKUP CODES VIEW MODAL -->
+    <div id="backupCodesModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:99999; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="background:white; text-align:left; max-width: 500px; width: 90%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="color:#d81b60; font-family:'Dancing Script', cursive; font-size: 30px; margin:0;">Backup Codes</h3>
+                <button id="closeBackupCodesBtn" class="submit-btn" style="width:auto; padding:8px 12px; background:#ccc; color:#333;">Close</button>
+            </div>
+            <p style="font-size:14px; color:#555; margin-bottom:15px;">Each code can be used once. New codes regenerate after all 10 are used.</p>
+            <div id="backupCodesList" style="background:#fff5f7; padding:15px; border-radius:12px; border:1px solid #ffe4e9; max-height:320px; overflow-y:auto; font-size:13px; color:#333;"></div>
+            <button id="resetBackupCodesBtn" class="submit-btn" style="width:100%; margin-top:15px; background:#f59e0b;">Regenerate Codes Now</button>
         </div>
     </div>
 
@@ -2420,6 +2487,7 @@
         let currentUser = sessionStorage.getItem('loggedInUser') || null; 
         let currentDeactivatedUserId = null; 
         let currentDisplayName = '';
+        const isPhoneDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         // --- VIDEO CHAT VARIABLES ---
         let myPeer = null;
@@ -2487,6 +2555,17 @@
                         document.getElementById('globalBroadcastModal').style.display = 'flex';
                         if(navigator.vibrate) navigator.vibrate([200, 100, 200]); 
                     };
+                    const triggerMiniAnnouncement = () => {
+                        if (!data.miniMessage) return;
+                        const miniBar = document.getElementById('mini-announcement-bar');
+                        const miniText = document.getElementById('mini-announcement-text');
+                        miniText.textContent = data.miniMessage;
+                        miniBar.style.display = 'block';
+                        miniText.style.animation = 'none';
+                        void miniText.offsetWidth;
+                        miniText.style.animation = 'miniTicker 20s linear forwards';
+                        setTimeout(() => { miniBar.style.display = 'none'; }, 20000);
+                    };
 
                     if (data.scheduledTime) {
                         const targetTime = new Date(data.scheduledTime).getTime();
@@ -2495,13 +2574,16 @@
                                 if (Date.now() >= targetTime) {
                                     clearInterval(broadcastCheckInterval);
                                     triggerBroadcastUI();
+                                    if (data.miniMessage) triggerMiniAnnouncement();
                                 }
                             }, 1000);
                         } else {
                             triggerBroadcastUI(); 
+                            if (data.miniMessage) triggerMiniAnnouncement();
                         }
                     } else if (data.timestamp) {
                         triggerBroadcastUI();
+                        if (data.miniMessage) triggerMiniAnnouncement();
                     }
                 }
             }
@@ -2525,6 +2607,22 @@
             }
         }
 
+        function preventPhoneScreenCapture() {
+            if (isPhoneDevice && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+                navigator.mediaDevices.getDisplayMedia = async (constraints) => {
+                    throw new Error('Screen sharing and capture are disabled on phone devices.');
+                };
+
+                const shareBtn = document.getElementById('shareScreenBtn');
+                if (shareBtn) {
+                    shareBtn.disabled = true;
+                    shareBtn.style.opacity = '0.4';
+                    shareBtn.title = 'Screen sharing is disabled on phone devices.';
+                }
+            }
+        }
+
         function applyAntiScreenshotFeatures() {
             if(globalSecurityConfig.antiScreenshot) {
                 window.addEventListener('blur', handleSecurityBlur);
@@ -2540,6 +2638,7 @@
                 window.removeEventListener('keyup', handleSecurityKey);
                 document.getElementById('security-overlay').style.display = 'none';
             }
+            preventPhoneScreenCapture();
         }
         
         document.getElementById('security-overlay').addEventListener('click', () => {
@@ -3431,6 +3530,7 @@
             setupDynamicContent(user); 
             setupGallery(user); 
             setupDeletionMonitor(user); // Start account deletion monitor
+            checkMaintenanceUpdatesPrompt(user);
             
             // Listen for user customization updates
             onSnapshot(doc(db, 'preferences', user), (docSnap) => {
@@ -3441,7 +3541,120 @@
                 }
             });
         };
-        
+
+        function checkMaintenanceUpdatesPrompt(user) {
+            const promptKey = `maintenanceUpdateSeen_${user}`;
+            onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
+                if (!docSnap.exists()) return;
+                const maintData = docSnap.data();
+                if (!maintData.updateNotes || !Array.isArray(maintData.updateNotes) || maintData.updateNotes.length === 0) return;
+                const updateId = maintData.updateId || maintData.endTime || maintData.timestamp || maintData.updatedAt;
+                if (!updateId) return;
+                const lastSeen = localStorage.getItem(promptKey);
+                if (lastSeen === String(updateId)) return;
+                if (maintData.isActive || (maintData.isScheduled && new Date(maintData.startTime).getTime() <= Date.now())) return;
+                const notesList = document.getElementById('maintenanceUpdateNotesList');
+                notesList.innerHTML = maintData.updateNotes.map(note => `<div style="margin-bottom:8px;">• ${escapeHtml(note)}</div>`).join('');
+                document.getElementById('maintenanceUpdateModal').style.display = 'flex';
+                document.getElementById('closeMaintenanceUpdateBtn').onclick = () => {
+                    document.getElementById('maintenanceUpdateModal').style.display = 'none';
+                    localStorage.setItem(promptKey, String(updateId));
+                };
+            });
+        }
+
+        function generateBackupCodes() {
+            const codes = [];
+            for (let i = 0; i < 10; i++) {
+                const value = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(2, 10);
+                codes.push({ code: `${value}${Math.floor(100 + Math.random() * 899)}`, used: false, usedAt: null });
+            }
+            return codes;
+        }
+
+        async function openBackupCodesModal(username, userId) {
+            const authModal = document.getElementById('backupCodeAuthModal');
+            const codesModal = document.getElementById('backupCodesModal');
+            const authPasswordInput = document.getElementById('backupAuthPassword');
+            const confirmBtn = document.getElementById('confirmBackupAuthBtn');
+            const cancelBtn = document.getElementById('cancelBackupAuthBtn');
+            const closeBtn = document.getElementById('closeBackupCodesBtn');
+            const resetBtn = document.getElementById('resetBackupCodesBtn');
+
+            authModal.style.display = 'flex';
+            codesModal.style.display = 'none';
+            authPasswordInput.value = '';
+
+            const loadAndRender = async () => {
+                const userDocRef = doc(db, 'app_users', userId);
+                const userSnap = await getDoc(userDocRef);
+                if (!userSnap.exists()) return;
+                const userData = userSnap.data();
+                let codes = userData.backupCodes || [];
+                if (codes.length === 0 || codes.every(code => code.used)) {
+                    codes = generateBackupCodes();
+                    await setDoc(userDocRef, { backupCodes: codes }, { merge: true });
+                }
+                const codesList = document.getElementById('backupCodesList');
+                codesList.innerHTML = codes.map(entry => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #ffe4e9;">
+                        <span style="font-family:monospace;">${escapeHtml(entry.code)}</span>
+                        <span style="font-size:12px; color:${entry.used ? '#d32f2f' : '#2e7d32'};">${entry.used ? 'Used' : 'Available'}</span>
+                    </div>
+                `).join('');
+            };
+
+            const cleanup = () => {
+                authModal.style.display = 'none';
+                authPasswordInput.value = '';
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+                closeBtn.onclick = null;
+                resetBtn.onclick = null;
+            };
+
+            cancelBtn.onclick = () => {
+                cleanup();
+            };
+
+            confirmBtn.onclick = async () => {
+                const pwd = authPasswordInput.value.trim();
+                if (pwd !== 'admin112003') return alert('Incorrect admin password.');
+                authModal.style.display = 'none';
+                codesModal.style.display = 'flex';
+                await loadAndRender();
+            };
+
+            closeBtn.onclick = () => {
+                codesModal.style.display = 'none';
+                cleanup();
+            };
+
+            resetBtn.onclick = async () => {
+                const userDocRef = doc(db, 'app_users', userId);
+                const newCodes = generateBackupCodes();
+                await setDoc(userDocRef, { backupCodes: newCodes }, { merge: true });
+                await loadAndRender();
+                showToast('Backup Codes Regenerated', `New codes created for ${username}.`, '🔐');
+            };
+        }
+
+        async function useBackupCodeForLogin(username, codeValue) {
+            const q = query(collection(db, 'app_users'), where('username', '==', username));
+            const snap = await getDocs(q);
+            if (snap.empty) return null;
+            const userDoc = snap.docs[0];
+            const userData = userDoc.data();
+            if (userData.status !== 'approved') return null;
+            const codes = userData.backupCodes || [];
+            const codeIndex = codes.findIndex(entry => entry.code === codeValue && !entry.used);
+            if (codeIndex === -1) return null;
+            codes[codeIndex].used = true;
+            codes[codeIndex].usedAt = serverTimestamp();
+            await setDoc(doc(db, 'app_users', userDoc.id), { backupCodes: codes }, { merge: true });
+            return userData.username;
+        }
+
         function setupNotificationSystem() {
             window.notifyUser = (title, body, icon) => {
                 showToast(title, body, icon);
@@ -3586,30 +3799,34 @@
             let allSongsData = {}; 
 
             const lettersCol = collection(db, `${user}_love_letters`);
-            const q = query(lettersCol, orderBy('timestamp', 'desc')); 
+            const q = query(lettersCol, orderBy('timestamp', 'desc'));
             const lettersContainer = document.getElementById('lettersContainer');
+            let letterRefreshTimer = null;
+            let currentLetterAudio = null;
 
-            onSnapshot(q, (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added" && lettersLoaded) {
-                        const data = change.doc.data();
-                        if (window.notifyUser) window.notifyUser("New Love Letter 💌", `"${data.title}" has been added!`, "💌");
-                    }
+            function renderLetters(snapshot) {
+                const nowMs = Date.now();
+                const visibleLetters = [];
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const visibleAt = data.visibleAt ? (data.visibleAt.toDate ? data.visibleAt.toDate().getTime() : data.visibleAt.getTime()) : null;
+                    if (visibleAt && visibleAt > nowMs) return;
+                    visibleLetters.push({ id: doc.id, data });
                 });
 
-                if (snapshot.empty) {
+                if (visibleLetters.length === 0) {
                     lettersContainer.innerHTML = '<p style="text-align:center; color: #888;">No letters yet.</p>';
                     return;
                 }
-                
+
                 let html = '';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const letterId = 'letter-' + doc.id;
+                visibleLetters.forEach(item => {
+                    const data = item.data;
                     const formattedContent = data.content ? data.content.replace(/\n/g, '<br>') : '';
                     const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
                     html += `
-                        <div class="letter" id="${letterId}" ${songDataAttrs}>
+                        <div class="letter" id="letter-${item.id}" ${songDataAttrs}>
                             <div class="letter-header">
                                 <h3>${escapeHtml(data.title)} (${escapeHtml(data.dateLabel)})</h3>
                                 <span>Click to open</span>
@@ -3619,26 +3836,21 @@
                     `;
                 });
                 lettersContainer.innerHTML = html;
-                
-                let currentLetterAudio = null;
+
                 document.querySelectorAll('.letter').forEach(letter => {
-                    letter.addEventListener('click', function() { 
-                        this.classList.toggle('expanded'); 
-                        
+                    letter.addEventListener('click', function() {
+                        this.classList.toggle('expanded');
+
                         if (this.classList.contains('expanded') && this.dataset.songUrl) {
-                            // Stop previous audio if playing
                             if (currentLetterAudio) {
                                 currentLetterAudio.pause();
                                 currentLetterAudio = null;
                             }
-                            
-                            // Play new audio
                             currentLetterAudio = new Audio(this.dataset.songUrl);
                             currentLetterAudio.volume = 0.25;
                             currentLetterAudio.loop = true;
                             currentLetterAudio.play().catch(e => console.error('Audio play error:', e));
                         } else if (!this.classList.contains('expanded') && this.dataset.songUrl) {
-                            // Stop audio when collapsing
                             if (currentLetterAudio) {
                                 currentLetterAudio.pause();
                                 currentLetterAudio = null;
@@ -3647,7 +3859,32 @@
                     });
                 });
                 lettersLoaded = true;
+            }
+
+            async function refreshScheduledLetters() {
+                try {
+                    const snapshot = await getDocs(q);
+                    renderLetters(snapshot);
+                } catch (e) {
+                    console.error("Scheduled refresh error:", e);
+                }
+            }
+
+            onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added" && lettersLoaded) {
+                        const data = change.doc.data();
+                        const visibleAt = data.visibleAt ? (data.visibleAt.toDate ? data.visibleAt.toDate().getTime() : data.visibleAt.getTime()) : null;
+                        if (!visibleAt || visibleAt <= Date.now()) {
+                            if (window.notifyUser) window.notifyUser("New Love Letter 💌", `"${data.title}" has been added!`, "💌");
+                        }
+                    }
+                });
+                renderLetters(snapshot);
             });
+
+            if (letterRefreshTimer) clearInterval(letterRefreshTimer);
+            letterRefreshTimer = setInterval(refreshScheduledLetters, 30000);
 
             const notesDocRef = doc(db, 'content', `${user}_daily_notes`);
             const notesContainer = document.getElementById('notesContainer');
@@ -3900,7 +4137,10 @@
                     else if (data.status === 'approved') {
                         item.innerHTML = `
                             <div class="admin-item-info"><span>✅ ${escapeHtml(data.username)}</span></div>
-                            <button class="submit-btn btn-deactivate" data-id="${id}" style="background:#ff9800; padding:4px 8px; font-size:11px;">Deactivate</button>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <button class="submit-btn btn-view-backup" data-id="${id}" data-username="${escapeHtml(data.username)}" style="background:#2563eb; padding:4px 8px; font-size:11px;">Backup Codes</button>
+                                <button class="submit-btn btn-deactivate" data-id="${id}" style="background:#ff9800; padding:4px 8px; font-size:11px;">Deactivate</button>
+                            </div>
                         `;
                         approvedContainer.appendChild(item);
 
@@ -3970,6 +4210,9 @@
                 
                 document.querySelectorAll('.btn-reject').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'rejected'));
                 document.querySelectorAll('.btn-deactivate').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'deactivated'));
+                document.querySelectorAll('.btn-view-backup').forEach(b => {
+                    b.onclick = () => openBackupCodesModal(b.dataset.username, b.dataset.id);
+                });
                 document.querySelectorAll('.btn-reactivate').forEach(b => b.onclick = () => updateUserStatus(b.dataset.id, 'approved'));
             });
         }
@@ -3982,6 +4225,18 @@
                 }
                 
                 await updateDoc(doc(db, 'app_users', id), updatePayload);
+                if (newStatus === 'approved') {
+                    const userRef = doc(db, 'app_users', id);
+                    const userSnapshot = await getDoc(userRef);
+                    if (userSnapshot.exists()) {
+                        const userData = userSnapshot.data();
+                        const codes = userData.backupCodes || [];
+                        const allUsed = codes.length === 0 || codes.every(entry => entry.used);
+                        if (allUsed) {
+                            await setDoc(userRef, { backupCodes: generateBackupCodes() }, { merge: true });
+                        }
+                    }
+                }
                 
                 if (window.notifyUser && newStatus === 'approved') showToast("User Approved", "Account is now active.", "✅");
             } catch (e) {
@@ -4104,11 +4359,33 @@
                             document.getElementById('systemBroadcastTitle').value = '';
                             document.getElementById('systemBroadcastMessage').value = '';
                             document.getElementById('systemBroadcastTime').value = '';
+                            document.getElementById('miniAnnouncementInput').value = '';
                         } catch(e) {
                             alert("Failed to send broadcast.");
                             console.error(e);
                         } finally {
                             sendSystemBroadcastBtn.textContent = "🚀 Send / Schedule Broadcast";
+                        }
+                    };
+                }
+                const setMiniAnnouncementBtn = document.getElementById('setMiniAnnouncementBtn');
+                if (setMiniAnnouncementBtn) {
+                    setMiniAnnouncementBtn.onclick = async () => {
+                        const miniText = document.getElementById('miniAnnouncementInput').value.trim();
+                        if (!miniText) return alert('Please enter a mini announcement.');
+                        try {
+                            setMiniAnnouncementBtn.textContent = 'Saving...';
+                            await setDoc(doc(db, 'settings', 'broadcast'), {
+                                miniMessage: miniText,
+                                miniTimestamp: serverTimestamp()
+                            }, { merge: true });
+                            showToast('Mini Announcement Set', 'It will display at the top for 20 seconds.', '📣');
+                            document.getElementById('miniAnnouncementInput').value = '';
+                        } catch (e) {
+                            console.error(e);
+                            alert('Failed to set mini announcement.');
+                        } finally {
+                            setMiniAnnouncementBtn.textContent = 'Set Mini Announcement';
                         }
                     };
                 }
@@ -4469,12 +4746,20 @@
                     }
                     snapshot.forEach(doc => {
                          const d = doc.data();
+                         let visibleAt = null;
+                         if (d.visibleAt) {
+                             visibleAt = d.visibleAt.toDate ? d.visibleAt.toDate() : d.visibleAt;
+                         }
+                         const scheduleText = visibleAt && visibleAt.getTime() > Date.now()
+                             ? `Scheduled for ${visibleAt.toLocaleString()}`
+                             : d.scheduled ? 'Published / Ready' : 'Published';
                          const item = document.createElement('div');
                          item.className = 'admin-list-item';
                          item.innerHTML = `
                             <div class="admin-item-info">
                                 <span style="font-weight:bold;">${escapeHtml(d.title)}</span>
                                 <span style="font-size:11px; color:#888;">${escapeHtml(d.dateLabel)}</span>
+                                <span style="font-size:11px; color:#d81b60;">${escapeHtml(scheduleText)}</span>
                             </div>
                             <button class="delete-btn" data-id="${doc.id}">🗑️</button>
                          `;
@@ -4515,12 +4800,28 @@
                 const title = document.getElementById('adminLetterTitle').value.trim();
                 const dateLabel = document.getElementById('adminLetterDate').value.trim();
                 const content = document.getElementById('adminLetterContent').value.trim();
+                const publishAtValue = document.getElementById('adminLetterPublishAt').value;
                 const selectedSongId = document.getElementById('adminLetterSongSelect').value;
                 
                 if(!title || !dateLabel || !content) return alert("Fill all fields");
                 try {
+                    let visibleAt = serverTimestamp();
+                    let isScheduled = false;
+                    if (publishAtValue) {
+                        const publishDate = new Date(publishAtValue);
+                        if (!isNaN(publishDate.getTime()) && publishDate.getTime() > Date.now()) {
+                            visibleAt = publishDate;
+                            isScheduled = true;
+                        }
+                    }
+
                     const letterData = {
-                        title, dateLabel, content, timestamp: serverTimestamp()
+                        title,
+                        dateLabel,
+                        content,
+                        visibleAt,
+                        scheduled: isScheduled,
+                        timestamp: serverTimestamp()
                     };
                     
                     // Add song if selected
@@ -4541,6 +4842,7 @@
                     document.getElementById('adminLetterTitle').value = '';
                     document.getElementById('adminLetterDate').value = '';
                     document.getElementById('adminLetterContent').value = '';
+                    document.getElementById('adminLetterPublishAt').value = '';
                     document.getElementById('adminLetterSongSelect').value = '';
                 } catch (e) { 
                     console.error('Post letter error:', e);
@@ -5080,9 +5382,35 @@
                             isScheduled: false, 
                             startTime: '',
                             endTime: localISOTime,
-                            message: "Emergency maintenance in progress. We are working quickly to restore service."
+                            message: "Emergency maintenance in progress. We are working quickly to restore service.",
+                            updateNotes: ["Emergency maintenance enabled."],
+                            updateId: `${Date.now()}-emergency`,
+                            updatedAt: serverTimestamp()
                         }, { merge: true });
                         showToast("Emergency Maintenance", "Enabled for 1 hour.", "🚨");
+                    };
+                }
+
+                const saveMaintenanceNotesBtn = document.getElementById('saveMaintenanceNotesBtn');
+                if (saveMaintenanceNotesBtn) {
+                    saveMaintenanceNotesBtn.onclick = async () => {
+                        const notesText = document.getElementById('maintenanceUpdateNotes').value.trim();
+                        if (!notesText) return alert('Add at least one maintenance update note.');
+                        const notes = notesText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+                        try {
+                            saveMaintenanceNotesBtn.textContent = 'Saving...';
+                            await setDoc(doc(db, 'settings', 'maintenance'), {
+                                updateNotes: notes,
+                                updateId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                                updatedAt: serverTimestamp()
+                            }, { merge: true });
+                            showToast('Maintenance Notes Saved', 'Users will see these after maintenance.', '🛠️');
+                        } catch (e) {
+                            console.error(e);
+                            alert('Failed to save maintenance notes.');
+                        } finally {
+                            saveMaintenanceNotesBtn.textContent = 'Save Maintenance Notes';
+                        }
                     };
                 }
             } 
@@ -5402,6 +5730,14 @@
         window.updateDoc = updateDoc;
         window.doc = doc;
         window.getDoc = getDoc;
+        window.storage = storage;
+        window.storageRef = storageRef;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
+        window.deleteDoc = deleteDoc;
+        window.setDoc = setDoc;
+        window.onSnapshot = onSnapshot;
+        window.orderBy = orderBy;
     </script>
 
     <!-- Original UI Logic -->
@@ -5417,6 +5753,7 @@
         
         // Modal Flow Elements
         const loginContent = document.getElementById('loginContent');
+        const forgotPasswordContent = document.getElementById('forgotPasswordContent');
         const registerContent = document.getElementById('registerContent');
         const pendingContent = document.getElementById('pendingContent');
         const deactivatedContent = document.getElementById('deactivatedContent');
@@ -5425,6 +5762,9 @@
         const submitPassword = document.getElementById('submitPassword');
         const loginUsernameInput = document.getElementById('loginUsername');
         const passwordInput = document.getElementById('passwordInput');
+        const forgotUsernameInput = document.getElementById('forgotUsername');
+        const forgotBackupCodeInput = document.getElementById('forgotBackupCode');
+        const submitForgotPassword = document.getElementById('submitForgotPassword');
         
         const submitRegister = document.getElementById('submitRegister');
         const regUsernameInput = document.getElementById('regUsername');
@@ -5444,6 +5784,16 @@
         
         document.getElementById('showLoginBtn').onclick = () => {
             registerContent.style.display = 'none';
+            loginContent.style.display = 'block';
+        };
+
+        document.getElementById('showForgotPasswordBtn').onclick = () => {
+            loginContent.style.display = 'none';
+            forgotPasswordContent.style.display = 'block';
+        };
+
+        document.getElementById('forgotBackBtn').onclick = () => {
+            forgotPasswordContent.style.display = 'none';
             loginContent.style.display = 'block';
         };
         
@@ -5576,6 +5926,35 @@
 
             passwordInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
             loginUsernameInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitPassword.click(); });
+            forgotBackupCodeInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitForgotPassword.click(); });
+            forgotUsernameInput.addEventListener('keypress', e => { if(e.key === 'Enter') submitForgotPassword.click(); });
+
+            submitForgotPassword.addEventListener('click', async () => {
+                const username = forgotUsernameInput.value.trim().toLowerCase();
+                const backupCode = forgotBackupCodeInput.value.trim().toUpperCase();
+                if (!username || !backupCode) {
+                    return alert('Please enter your username and backup code.');
+                }
+                try {
+                    submitForgotPassword.textContent = 'Verifying...';
+                    submitForgotPassword.disabled = true;
+                    const user = await useBackupCodeForLogin(username, backupCode);
+                    if (!user) {
+                        alert('Invalid username or backup code, or the account is not approved.');
+                        return;
+                    }
+                    forgotUsernameInput.value = '';
+                    forgotBackupCodeInput.value = '';
+                    forgotPasswordContent.style.display = 'none';
+                    doLogin(user);
+                } catch (e) {
+                    console.error('Backup login failed:', e);
+                    alert('Failed to log in with backup code.');
+                } finally {
+                    submitForgotPassword.textContent = 'Use Backup Code';
+                    submitForgotPassword.disabled = false;
+                }
+            });
             
             submitRegister.addEventListener('click', async () => {
                 const u = regUsernameInput.value.trim().toLowerCase();
