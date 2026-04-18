@@ -6074,20 +6074,17 @@
                 adminTransitionScreen.style.display = 'flex';
                 
                 setTimeout(() => {
-                    adminTransitionScreen.style.opacity = '0';
-                    setTimeout(() => {
-                        adminTransitionScreen.style.display = 'none';
-                        adminContainer.style.display = 'block';
-                        
-                        if(window.initAdminConsole) {
-                            try {
-                                window.initAdminConsole();
-                            } catch(e) {
-                                console.error('Error initializing admin console:', e);
-                            }
+                    adminTransitionScreen.style.display = 'none';
+                    adminContainer.style.display = 'block';
+                    
+                    if(window.initAdminConsole) {
+                        try {
+                            window.initAdminConsole();
+                        } catch(e) {
+                            console.error('Error initializing admin console:', e);
                         }
-                    }, 500);
-                }, 2500); 
+                    }
+                }, 3000);
             }, 500);
         }
 
