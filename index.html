@@ -2262,11 +2262,12 @@
     <div id="fireworksModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:9999; justify-content:center; align-items:center;">
         <div class="maintenance-content" style="background:white; text-align:center;">
             <h3 style="color:#d81b60; font-family:'Dancing Script', cursive; font-size: 28px;">🎆 Send Fireworks</h3>
-            <p style="font-size:12px; color:#666; margin-bottom:15px;">Select a song and cue time (seconds into fireworks to start music).</p>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">Send fireworks to <strong id="fireworksTargetDisplay">target user</strong>. Select a song and cue time.</p>
             <select id="fireworksSongSelect" class="repo-select" style="width:80%; margin:10px auto; display:block;">
                 <option value="">No music</option>
             </select>
-            <input type="number" id="fireworksCueTime" class="fw-input" placeholder="Cue time in seconds (0-20)" min="0" max="20" style="width:80%; margin:10px auto;">
+            <input type="text" id="fireworksCueTime" class="fw-input" placeholder="Cue time MM:SS (e.g., 00:05)" style="width:80%; margin:10px auto;">
+            <small style="display:block; color:#888; margin-top:5px; margin-bottom:10px;">Format: MM:SS (when to start music during 20 second fireworks)</small>
             <button class="submit-btn" id="confirmFireworksBtn" style="width:100%; margin-top: 15px;">Send Fireworks</button>
             <button class="submit-btn" style="background:#ccc; width:100%; margin-top:10px;" onclick="document.getElementById('fireworksModal').style.display='none';">Cancel</button>
         </div>
@@ -4710,7 +4711,31 @@
             loadSongsForSelect('scheduledLetterSongSelect');
 
             // ===== FIREWORKS SYSTEM =====
+            // Parse MM:SS time format to seconds
+            function parseTimeToSeconds(timeStr) {
+                const parts = timeStr.split(':');
+                if (parts.length === 2) {
+                    const minutes = parseInt(parts[0]) || 0;
+                    const seconds = parseInt(parts[1]) || 0;
+                    const totalSeconds = minutes * 60 + seconds;
+                    if (totalSeconds >= 0 && totalSeconds <= 20) {
+                        return totalSeconds;
+                    }
+                }
+                return 0;
+            }
+
+            // Update fireworks target display
+            function updateFireworksTargetDisplay() {
+                const display = document.getElementById('fireworksTargetDisplay');
+                if (display && adminTargetUser) {
+                    display.textContent = adminTargetUser;
+                }
+            }
+
             document.getElementById('sendFireworksBtn').onclick = () => {
+                if (!adminTargetUser) return alert('Please select a target user first');
+                updateFireworksTargetDisplay();
                 document.getElementById('fireworksModal').style.display = 'flex';
                 loadSongsForFireworks();
             };
@@ -4733,16 +4758,25 @@
             }
 
             document.getElementById('confirmFireworksBtn').onclick = async () => {
+                if (!adminTargetUser) return alert('No target user selected');
                 const songUrl = document.getElementById('fireworksSongSelect').value;
-                const cue = parseInt(document.getElementById('fireworksCueTime').value) || 0;
+                const cueTimeStr = document.getElementById('fireworksCueTime').value || '00:00';
+                const cueTime = parseTimeToSeconds(cueTimeStr);
+                
+                if (!cueTimeStr.match(/^\d{1,2}:\d{2}$/)) {
+                    return alert('Please use MM:SS format (e.g., 00:05)');
+                }
+                
                 try {
-                    await setDoc(doc(db, 'settings', 'fireworks_broadcast'), {
+                    // Send fireworks to specific target user
+                    await setDoc(doc(db, `users/${adminTargetUser}/fireworks`, 'current'), {
                         songUrl: songUrl,
-                        cueTime: cue,
+                        cueTime: cueTime,
                         timestamp: serverTimestamp()
                     });
                     document.getElementById('fireworksModal').style.display = 'none';
-                    showToast("Success", "Fireworks sent!", "🎆");
+                    document.getElementById('fireworksCueTime').value = '';
+                    showToast("Success", `Fireworks sent to ${adminTargetUser}!`, "🎆");
                 } catch (e) {
                     console.error('Send fireworks error:', e);
                     alert('Error sending fireworks');
@@ -4774,13 +4808,13 @@
                 }, 20000);
             }
 
-            // Listen for fireworks broadcast
-            onSnapshot(doc(db, 'settings', 'fireworks_broadcast'), (docSnap) => {
+            // Listen for fireworks targeted to current user
+            onSnapshot(doc(db, `users/${currentUser}/fireworks`, 'current'), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     startFireworks();
                     
-                    // Play music at cue time
+                    // Play music at cue time (in seconds)
                     if (data.songUrl && data.cueTime >= 0 && data.cueTime <= 20) {
                         setTimeout(() => {
                             const audio = new Audio(data.songUrl);
@@ -4788,6 +4822,9 @@
                         }, data.cueTime * 1000);
                     }
                 }
+            }, (error) => {
+                // Silently handle errors for new users without fireworks doc
+                console.debug('Fireworks listener note:', error.message);
             });
 
             // Timer to check and post scheduled letters
