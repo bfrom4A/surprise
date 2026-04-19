@@ -3517,6 +3517,61 @@
                     window.applyUserTheme(null);
                 }
             });
+            
+            // ===== REAL-TIME FIREWORKS LISTENER =====
+            // Listen for fireworks targeted to this user
+            try {
+                onSnapshot(doc(db, `users/${user}/fireworks`, 'current'), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        console.log('Fireworks received for:', user);
+                        // Start fireworks display
+                        const container = document.getElementById('fireworksContainer');
+                        if (container) {
+                            container.style.display = 'block';
+                            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493'];
+                            container.innerHTML = ''; // Clear previous particles
+                            for (let i = 0; i < 80; i++) {
+                                const particle = document.createElement('div');
+                                particle.className = 'firework-particle';
+                                particle.style.left = Math.random() * 100 + 'vw';
+                                particle.style.top = Math.random() * 100 + 'vh';
+                                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                                particle.style.animationDelay = Math.random() * 1.5 + 's';
+                                particle.style.boxShadow = `0 0 ${Math.random() * 20 + 5}px ${particle.style.background}`;
+                                container.appendChild(particle);
+                            }
+                            
+                            // Show notification
+                            if (window.notifyUser) window.notifyUser("🎆 Fireworks!", "Enjoy the show!", "🎆");
+                            
+                            // Play music at cue time (in seconds)
+                            if (data.songUrl && data.cueTime >= 0 && data.cueTime <= 20) {
+                                console.log('Playing music at cue time:', data.cueTime);
+                                setTimeout(() => {
+                                    const audio = new Audio(data.songUrl);
+                                    audio.play().catch(e => console.error('Play song error:', e));
+                                }, data.cueTime * 1000);
+                            }
+                            
+                            // Clear after 20 seconds
+                            setTimeout(() => {
+                                container.style.display = 'none';
+                                container.innerHTML = '';
+                            }, 20000);
+                        } else {
+                            console.error('Fireworks container not found');
+                        }
+                    }
+                }, (error) => {
+                    // Expected for new users - document doesn't exist yet
+                    if (error.code !== 'permission-denied') {
+                        console.debug('Fireworks listener active for user:', user);
+                    }
+                });
+            } catch (e) {
+                console.error('Fireworks listener setup error:', e);
+            }
         };
         
         function setupNotificationSystem() {
@@ -4768,6 +4823,7 @@
                 }
                 
                 try {
+                    console.log('Sending fireworks to:', adminTargetUser);
                     // Send fireworks to specific target user
                     await setDoc(doc(db, `users/${adminTargetUser}/fireworks`, 'current'), {
                         songUrl: songUrl,
@@ -4782,50 +4838,6 @@
                     alert('Error sending fireworks');
                 }
             };
-
-            // Fireworks display function
-            function startFireworks() {
-                const container = document.getElementById('fireworksContainer');
-                container.style.display = 'block';
-                
-                // Create colorful firework particles
-                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493'];
-                for (let i = 0; i < 80; i++) {
-                    const particle = document.createElement('div');
-                    particle.className = 'firework-particle';
-                    particle.style.left = Math.random() * 100 + 'vw';
-                    particle.style.top = Math.random() * 100 + 'vh';
-                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                    particle.style.animationDelay = Math.random() * 1.5 + 's';
-                    particle.style.boxShadow = `0 0 ${Math.random() * 20 + 5}px ${particle.style.background}`;
-                    container.appendChild(particle);
-                }
-                
-                // Clear after 20 seconds
-                setTimeout(() => {
-                    container.style.display = 'none';
-                    container.innerHTML = '';
-                }, 20000);
-            }
-
-            // Listen for fireworks targeted to current user
-            onSnapshot(doc(db, `users/${currentUser}/fireworks`, 'current'), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    startFireworks();
-                    
-                    // Play music at cue time (in seconds)
-                    if (data.songUrl && data.cueTime >= 0 && data.cueTime <= 20) {
-                        setTimeout(() => {
-                            const audio = new Audio(data.songUrl);
-                            audio.play().catch(e => console.error('Play song error:', e));
-                        }, data.cueTime * 1000);
-                    }
-                }
-            }, (error) => {
-                // Silently handle errors for new users without fireworks doc
-                console.debug('Fireworks listener note:', error.message);
-            });
 
             // Timer to check and post scheduled letters
             setInterval(async () => {
