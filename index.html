@@ -1611,6 +1611,32 @@
         }
         .chat-back-btn { background:none; border:none; cursor:pointer; font-size:16px; color:#d81b60; margin-right:10px; display:none; }
 
+        /* Fireworks Styles */
+        #fireworksContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+        }
+
+        .firework-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: explode 2s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -1780,6 +1806,7 @@
                         <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
                         <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
                         <button class="admin-tab-btn" data-target="admin-music-request">🎵 Request Music</button>
+                        <button class="admin-tab-btn" data-target="admin-scheduled-letters">📅 Scheduled Letters</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-customization">🎨 Customize</button>
                         
                         <!-- Superadmin exclusive tabs -->
@@ -1790,6 +1817,7 @@
                         <button class="admin-tab-btn superadmin-only" data-target="admin-security">🛡️ Security</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-maintenance">🚧 Maintenance</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-users">👥 Users</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-broadcasts">📢 Broadcasts</button>
                     </div>
 
                     <!-- Tab: Add Letters -->
@@ -1814,6 +1842,31 @@
                             </select>
                         </div>
                         <button class="submit-btn" id="postLetterBtn" style="width: 100%">Post Letter</button>
+                    </div>
+
+                    <!-- Tab: Scheduled Letters -->
+                    <div class="admin-panel" id="admin-scheduled-letters">
+                        <h4 class="admin-section-title">Scheduled Letters</h4>
+                        <div style="margin-bottom: 15px;">
+                            <button class="submit-btn" id="scanScheduledLettersBtn" style="width: 100%; background: #fff0f5; color: #d81b60; border: 1px solid #ffb7c5; margin-bottom: 10px;">Refresh List</button>
+                            <div id="adminScheduledLettersList" class="admin-list-container">
+                                <p style="text-align: center; color: #999; font-size: 12px;">Click refresh to load...</p>
+                            </div>
+                        </div>
+                        
+                        <h4 class="admin-section-title">Schedule New Letter</h4>
+                        <div class="admin-form-group">
+                            <input type="text" id="scheduledLetterTitle" class="fw-input" placeholder="Letter Title">
+                            <input type="text" id="scheduledLetterDate" class="fw-input" placeholder="Date Label">
+                            <textarea id="scheduledLetterContent" class="fw-textarea" style="height: 150px;" placeholder="Letter content..."></textarea>
+                            <input type="datetime-local" id="scheduledLetterTime" class="fw-input" placeholder="Schedule Time">
+                            
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:10px; margin-bottom:5px;">🎵 Pick a Song (Optional):</label>
+                            <select id="scheduledLetterSongSelect" class="repo-select">
+                                <option value="">No song</option>
+                            </select>
+                        </div>
+                        <button class="submit-btn" id="scheduleLetterBtn" style="width: 100%">Schedule Letter</button>
                     </div>
 
                     <!-- Tab: Manage Notes -->
@@ -2136,6 +2189,13 @@
                         </div>
                     </div>
 
+                    <!-- Tab: Broadcasts -->
+                    <div class="admin-panel" id="admin-broadcasts">
+                        <h4 class="admin-section-title">Broadcasts</h4>
+                        <button class="submit-btn" id="sendFireworksBtn" style="width: 100%; background: #ff6b6b; color: white; margin-bottom: 15px;">🎆 Send Fireworks</button>
+                        <p style="font-size: 12px; color: #666;">Send a spectacular fireworks display to all users with synchronized music playback.</p>
+                    </div>
+
                 </div>
             </div>
 
@@ -2195,6 +2255,20 @@
             <input type="password" id="newSubAdminPass" class="fw-input" placeholder="New Password">
             <button class="submit-btn" id="confirmChangePassBtn" style="width:100%;">Save Changes</button>
             <button class="submit-btn" id="cancelChangePassBtn" style="width:100%; background:#ccc; margin-top:10px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- FIREWORKS MODAL -->
+    <div id="fireworksModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:9999; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="background:white; text-align:center;">
+            <h3 style="color:#d81b60; font-family:'Dancing Script', cursive; font-size: 28px;">🎆 Send Fireworks</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">Select a song and cue time (seconds into fireworks to start music).</p>
+            <select id="fireworksSongSelect" class="repo-select" style="width:80%; margin:10px auto; display:block;">
+                <option value="">No music</option>
+            </select>
+            <input type="number" id="fireworksCueTime" class="fw-input" placeholder="Cue time in seconds (0-20)" min="0" max="20" style="width:80%; margin:10px auto;">
+            <button class="submit-btn" id="confirmFireworksBtn" style="width:100%; margin-top: 15px;">Send Fireworks</button>
+            <button class="submit-btn" style="background:#ccc; width:100%; margin-top:10px;" onclick="document.getElementById('fireworksModal').style.display='none';">Cancel</button>
         </div>
     </div>
 
@@ -2393,6 +2467,8 @@
             <circle class="circle-border" cx="500" cy="500" r="450"/>
         </svg>
     </div>
+
+    <div id="fireworksContainer"></div>
 
     <!-- Firebase SDKs -->
     <script type="module">
@@ -4547,6 +4623,212 @@
                     alert("Error posting letter"); 
                 }
             };
+
+            // ===== SCHEDULED LETTERS =====
+            document.getElementById('scanScheduledLettersBtn').onclick = loadScheduledLetters;
+            document.getElementById('scheduleLetterBtn').onclick = scheduleLetter;
+
+            async function loadScheduledLetters() {
+                const list = document.getElementById('adminScheduledLettersList');
+                list.innerHTML = '<p style="text-align: center; color: #999; font-size: 12px;">Loading...</p>';
+                try {
+                    const snapshot = await getDocs(query(collection(db, 'scheduledLetters'), orderBy('scheduleTime', 'asc')));
+                    list.innerHTML = '';
+                    if (snapshot.empty) {
+                        list.innerHTML = '<p style="text-align: center; color: #999; font-size: 12px;">No scheduled letters.</p>';
+                        return;
+                    }
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const item = document.createElement('div');
+                        item.className = 'admin-list-item';
+                        const schedTime = new Date(data.scheduleTime).toLocaleString();
+                        item.innerHTML = `
+                            <div class="admin-item-info">
+                                <strong>${escapeHtml(data.title)}</strong> - Scheduled for ${schedTime}
+                                <br><small>${escapeHtml(data.content.substring(0,100))}...</small>
+                            </div>
+                            <button class="delete-btn" data-id="${doc.id}">🗑️</button>
+                        `;
+                        item.querySelector('.delete-btn').onclick = async () => {
+                            if(confirm("Delete this scheduled letter?")) {
+                                await deleteDoc(doc(db, 'scheduledLetters', doc.id));
+                                loadScheduledLetters();
+                            }
+                        };
+                        list.appendChild(item);
+                    });
+                } catch (e) {
+                    console.error('Load scheduled letters error:', e);
+                    list.innerHTML = '<p style="text-align: center; color: #999; font-size: 12px;">Error loading.</p>';
+                }
+            }
+
+            async function scheduleLetter() {
+                const title = document.getElementById('scheduledLetterTitle').value.trim();
+                const date = document.getElementById('scheduledLetterDate').value.trim();
+                const content = document.getElementById('scheduledLetterContent').value.trim();
+                const time = document.getElementById('scheduledLetterTime').value;
+                const song = document.getElementById('scheduledLetterSongSelect').value;
+                if (!title || !content || !time) return alert('Fill all fields');
+                try {
+                    await addDoc(collection(db, 'scheduledLetters'), {
+                        title, date, content, scheduleTime: new Date(time).toISOString(), song, targetUser: adminTargetUser
+                    });
+                    alert('Letter scheduled!');
+                    document.getElementById('scheduledLetterTitle').value = '';
+                    document.getElementById('scheduledLetterDate').value = '';
+                    document.getElementById('scheduledLetterContent').value = '';
+                    document.getElementById('scheduledLetterTime').value = '';
+                    document.getElementById('scheduledLetterSongSelect').value = '';
+                    loadScheduledLetters();
+                } catch (e) {
+                    console.error('Schedule letter error:', e);
+                    alert('Error scheduling letter');
+                }
+            }
+
+            // Load songs for select dropdowns
+            async function loadSongsForSelect(selectId) {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                select.innerHTML = '<option value="">No song</option>';
+                try {
+                    const snapshot = await getDocs(collection(db, 'songs'));
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const option = document.createElement('option');
+                        option.value = doc.id;
+                        option.textContent = `${data.title} - ${data.artist}`;
+                        select.appendChild(option);
+                    });
+                } catch (e) {
+                    console.error('Load songs error:', e);
+                }
+            }
+
+            loadSongsForSelect('scheduledLetterSongSelect');
+
+            // ===== FIREWORKS SYSTEM =====
+            document.getElementById('sendFireworksBtn').onclick = () => {
+                document.getElementById('fireworksModal').style.display = 'flex';
+                loadSongsForFireworks();
+            };
+
+            async function loadSongsForFireworks() {
+                const select = document.getElementById('fireworksSongSelect');
+                select.innerHTML = '<option value="">No music</option>';
+                try {
+                    const snapshot = await getDocs(collection(db, 'songs'));
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const option = document.createElement('option');
+                        option.value = data.url || doc.id;
+                        option.textContent = `${data.title} - ${data.artist}`;
+                        select.appendChild(option);
+                    });
+                } catch (e) {
+                    console.error('Load songs error:', e);
+                }
+            }
+
+            document.getElementById('confirmFireworksBtn').onclick = async () => {
+                const songUrl = document.getElementById('fireworksSongSelect').value;
+                const cue = parseInt(document.getElementById('fireworksCueTime').value) || 0;
+                try {
+                    await setDoc(doc(db, 'settings', 'fireworks_broadcast'), {
+                        songUrl: songUrl,
+                        cueTime: cue,
+                        timestamp: serverTimestamp()
+                    });
+                    document.getElementById('fireworksModal').style.display = 'none';
+                    showToast("Success", "Fireworks sent!", "🎆");
+                } catch (e) {
+                    console.error('Send fireworks error:', e);
+                    alert('Error sending fireworks');
+                }
+            };
+
+            // Fireworks display function
+            function startFireworks() {
+                const container = document.getElementById('fireworksContainer');
+                container.style.display = 'block';
+                
+                // Create colorful firework particles
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493'];
+                for (let i = 0; i < 80; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'firework-particle';
+                    particle.style.left = Math.random() * 100 + 'vw';
+                    particle.style.top = Math.random() * 100 + 'vh';
+                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.animationDelay = Math.random() * 1.5 + 's';
+                    particle.style.boxShadow = `0 0 ${Math.random() * 20 + 5}px ${particle.style.background}`;
+                    container.appendChild(particle);
+                }
+                
+                // Clear after 20 seconds
+                setTimeout(() => {
+                    container.style.display = 'none';
+                    container.innerHTML = '';
+                }, 20000);
+            }
+
+            // Listen for fireworks broadcast
+            onSnapshot(doc(db, 'settings', 'fireworks_broadcast'), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    startFireworks();
+                    
+                    // Play music at cue time
+                    if (data.songUrl && data.cueTime >= 0 && data.cueTime <= 20) {
+                        setTimeout(() => {
+                            const audio = new Audio(data.songUrl);
+                            audio.play().catch(e => console.error('Play song error:', e));
+                        }, data.cueTime * 1000);
+                    }
+                }
+            });
+
+            // Timer to check and post scheduled letters
+            setInterval(async () => {
+                try {
+                    const now = new Date();
+                    const snapshot = await getDocs(query(collection(db, 'scheduledLetters'), where('scheduleTime', '<=', now.toISOString())));
+                    for (const docSnap of snapshot.docs) {
+                        const data = docSnap.data();
+                        const target = data.targetUser;
+                        
+                        const letterData = {
+                            title: data.title,
+                            dateLabel: data.date,
+                            content: data.content,
+                            timestamp: serverTimestamp()
+                        };
+                        
+                        // Add song if selected
+                        if (data.song) {
+                            try {
+                                const songDoc = await getDoc(doc(db, 'songs', data.song));
+                                if (songDoc.exists()) {
+                                    const song = songDoc.data();
+                                    letterData.songId = data.song;
+                                    letterData.songTitle = song.title;
+                                    letterData.songArtist = song.artist;
+                                    letterData.songUrl = song.url;
+                                }
+                            } catch (e) {
+                                console.error('Get song error:', e);
+                            }
+                        }
+                        
+                        await addDoc(collection(db, `${target}_love_letters`), letterData);
+                        await deleteDoc(docSnap.ref);
+                    }
+                } catch (e) {
+                    console.error('Scheduled post error:', e);
+                }
+            }, 60000); // Check every minute
 
             document.getElementById('scanNotesBtn').onclick = async () => {
                 if(!adminTargetUser) return;
