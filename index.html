@@ -1625,16 +1625,50 @@
 
         .firework-particle {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            animation: explode 2s ease-out forwards;
+            bottom: 0;
+            left: 50%;
+            filter: blur(0.5px);
+            box-shadow: 0 0 10px currentColor;
         }
 
-        @keyframes explode {
-            0% { transform: scale(0); opacity: 1; }
-            50% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0); opacity: 0; }
+        @keyframes shoot-up {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-500px) scale(0.8);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes explode-scatter {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .firework-particle.shoot {
+            animation: shoot-up 0.8s ease-in forwards;
+        }
+
+        .firework-particle.burst {
+            animation: explode-scatter 19.2s ease-out forwards !important;
+            --tx: 0px;
+            --ty: 0px;
+        }
+
+        .firework-particle.burst::after {
+            content: '';
         }
 
     </style>
@@ -3525,32 +3559,104 @@
                     if (docSnap.exists()) {
                         const data = docSnap.data();
                         console.log('Fireworks received for:', user);
+                        console.log('Music URL:', data.songUrl, '| Cue time:', data.cueTime, 'seconds');
                         // Start fireworks display
                         const container = document.getElementById('fireworksContainer');
                         if (container) {
                             container.style.display = 'block';
-                            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493'];
+                            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493', '#ff69b4', '#32cd32'];
                             container.innerHTML = ''; // Clear previous particles
-                            for (let i = 0; i < 80; i++) {
+                            
+                            // Create 200 particles for more dramatic effect
+                            for (let i = 0; i < 200; i++) {
                                 const particle = document.createElement('div');
-                                particle.className = 'firework-particle';
-                                particle.style.left = Math.random() * 100 + 'vw';
-                                particle.style.top = Math.random() * 100 + 'vh';
-                                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-                                particle.style.animationDelay = Math.random() * 1.5 + 's';
-                                particle.style.boxShadow = `0 0 ${Math.random() * 20 + 5}px ${particle.style.background}`;
+                                particle.className = 'firework-particle shoot';
+                                
+                                // Random starting position - particles shoot up from their starting X position
+                                const startX = Math.random() * 100;
+                                const startY = 95; // Start from bottom
+                                
+                                particle.style.left = startX + 'vw';
+                                particle.style.top = startY + 'vh';
+                                
+                                const color = colors[Math.floor(Math.random() * colors.length)];
+                                particle.style.background = color;
+                                particle.style.color = color;
+                                
+                                // Random glow effect
+                                const glowSize = Math.random() * 15 + 5;
+                                particle.style.boxShadow = `0 0 ${glowSize}px ${color}, 0 0 ${glowSize * 2}px ${color}`;
+                                
+                                // Stagger the animations for continuous burst effect
+                                const shootDelay = (i % 40) * 0.05;
+                                particle.style.animationDelay = shootDelay + 's';
+                                
                                 container.appendChild(particle);
+                                
+                                // After shoot animation completes, apply burst fade
+                                setTimeout(() => {
+                                    particle.classList.remove('shoot');
+                                    particle.classList.add('burst');
+                                    
+                                    // Random scatter direction with velocity
+                                    const angle = Math.random() * Math.PI * 2;
+                                    const velocity = Math.random() * 300 + 100;
+                                    const xVel = Math.cos(angle) * velocity;
+                                    const yVel = (Math.sin(angle) - 1) * velocity;
+                                    
+                                    particle.style.setProperty('--tx', xVel + 'px');
+                                    particle.style.setProperty('--ty', yVel + 'px');
+                                    particle.style.transform = `translate(calc(-50% + var(--tx, 0)), var(--ty, 0))`;
+                                }, (shootDelay + 0.8) * 1000);
                             }
                             
+                            console.log('✅ Fireworks display created with 200 particles');
                             // Show notification
                             if (window.notifyUser) window.notifyUser("🎆 Fireworks!", "Enjoy the show!", "🎆");
                             
-                            // Play music at cue time (in seconds)
+                            // Play music at cue time (in seconds) - with proper audio initialization
                             if (data.songUrl && data.cueTime >= 0 && data.cueTime <= 20) {
-                                console.log('Playing music at cue time:', data.cueTime);
+                                console.log('Music will play at:', data.cueTime, 'seconds');
                                 setTimeout(() => {
-                                    const audio = new Audio(data.songUrl);
-                                    audio.play().catch(e => console.error('Play song error:', e));
+                                    try {
+                                        // Create audio with proper initialization
+                                        const audio = new Audio();
+                                        audio.crossOrigin = 'anonymous';
+                                        audio.src = data.songUrl;
+                                        audio.volume = 0.8; // Increased volume
+                                        audio.preload = 'auto';
+                                        
+                                        // Log for debugging
+                                        audio.addEventListener('playing', () => {
+                                            console.log('✅ Audio is now playing');
+                                        });
+                                        
+                                        audio.addEventListener('error', (e) => {
+                                            console.error('❌ Audio error:', e);
+                                        });
+                                        
+                                        // Attempt to play
+                                        const playPromise = audio.play();
+                                        if (playPromise !== undefined) {
+                                            playPromise
+                                                .then(() => {
+                                                    console.log('✅ Music playing successfully');
+                                                })
+                                                .catch(error => {
+                                                    console.warn('⚠️ Music playback blocked by browser (autoplay policy):', error.name);
+                                                    // Browser blocked autoplay - show notification
+                                                    if (window.notifyUser) {
+                                                        window.notifyUser('♪ Audio Blocked', 'Browser autoplay policy prevents audio. Click anywhere to enable sound.', '🔊');
+                                                    }
+                                                    // Try again on next user interaction
+                                                    document.addEventListener('click', () => {
+                                                        audio.play().catch(e => console.error('Retry failed:', e));
+                                                    }, { once: true });
+                                                });
+                                        }
+                                    } catch (e) {
+                                        console.error('Audio initialization error:', e);
+                                    }
                                 }, data.cueTime * 1000);
                             }
                             
