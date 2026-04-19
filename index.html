@@ -2226,8 +2226,8 @@
                     <!-- Tab: Broadcasts -->
                     <div class="admin-panel" id="admin-broadcasts">
                         <h4 class="admin-section-title">Broadcasts</h4>
-                        <button class="submit-btn" id="sendFireworksBtn" style="width: 100%; background: #ff6b6b; color: white; margin-bottom: 15px;">🎆 Send Fireworks</button>
-                        <p style="font-size: 12px; color: #666;">Send a spectacular fireworks display to all users with synchronized music playback.</p>
+                        <button class="submit-btn" id="sendVideoBtn" style="width: 100%; background: #4CAF50; color: white; margin-bottom: 15px;">📹 Broadcast Video</button>
+                        <p style="font-size: 12px; color: #666;">Send a video (1-2 minutes) to a selected user. Video plays automatically with no refresh needed.</p>
                     </div>
 
                 </div>
@@ -2292,18 +2292,19 @@
         </div>
     </div>
 
-    <!-- FIREWORKS MODAL -->
-    <div id="fireworksModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:9999; justify-content:center; align-items:center;">
-        <div class="maintenance-content" style="background:white; text-align:center;">
-            <h3 style="color:#d81b60; font-family:'Dancing Script', cursive; font-size: 28px;">🎆 Send Fireworks</h3>
-            <p style="font-size:12px; color:#666; margin-bottom:15px;">Send fireworks to <strong id="fireworksTargetDisplay">target user</strong>. Select a song and cue time.</p>
-            <select id="fireworksSongSelect" class="repo-select" style="width:80%; margin:10px auto; display:block;">
-                <option value="">No music</option>
-            </select>
-            <input type="text" id="fireworksCueTime" class="fw-input" placeholder="Cue time MM:SS (e.g., 00:05)" style="width:80%; margin:10px auto;">
-            <small style="display:block; color:#888; margin-top:5px; margin-bottom:10px;">Format: MM:SS (when to start music during 20 second fireworks)</small>
-            <button class="submit-btn" id="confirmFireworksBtn" style="width:100%; margin-top: 15px;">Send Fireworks</button>
-            <button class="submit-btn" style="background:#ccc; width:100%; margin-top:10px;" onclick="document.getElementById('fireworksModal').style.display='none';">Cancel</button>
+    <!-- VIDEO BROADCAST MODAL -->
+    <div id="videoBroadcastModal" style="display:none; position:fixed; top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:9999; justify-content:center; align-items:center;">
+        <div class="maintenance-content" style="background:white; text-align:center; max-width:600px;">
+            <h3 style="color:#4CAF50; font-family:'Dancing Script', cursive; font-size: 28px;">📹 Broadcast Video</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">Send video to <strong id="videoBroadcastTargetDisplay">target user</strong></p>
+            
+            <div style="margin:15px 0; padding:15px; background:#f5f5f5; border-radius:8px; border:2px dashed #4CAF50;">
+                <input type="text" id="videoUrlInput" class="fw-input" placeholder="Paste GitHub video URL (1-2 min)" style="width:100%; margin-bottom:10px;">
+                <small style="display:block; color:#888; margin-top:5px;">Supported: GitHub raw video URL (e.g., https://raw.githubusercontent.com/.../video.mp4)</small>
+            </div>
+            
+            <button class="submit-btn" id="confirmVideoBroadcastBtn" style="width:100%; margin-top: 15px; background:#4CAF50; color:white;">Send Video</button>
+            <button class="submit-btn" style="background:#ccc; width:100%; margin-top:10px;" onclick="document.getElementById('videoBroadcastModal').style.display='none';">Cancel</button>
         </div>
     </div>
 
@@ -3552,131 +3553,134 @@
                 }
             });
             
-            // ===== REAL-TIME FIREWORKS LISTENER =====
-            // Listen for fireworks targeted to this user
+            // ===== REAL-TIME VIDEO BROADCAST LISTENER =====
+            // Listen for video broadcasts targeted to this user
             try {
-                onSnapshot(doc(db, `users/${user}/fireworks`, 'current'), (docSnap) => {
+                onSnapshot(doc(db, `users/${user}/broadcast`, 'video'), (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        console.log('Fireworks received for:', user);
-                        console.log('Music URL:', data.songUrl, '| Cue time:', data.cueTime, 'seconds');
-                        // Start fireworks display
-                        const container = document.getElementById('fireworksContainer');
-                        if (container) {
-                            container.style.display = 'block';
-                            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493', '#ff69b4', '#32cd32'];
-                            container.innerHTML = ''; // Clear previous particles
-                            
-                            // Create 200 particles for more dramatic effect
-                            for (let i = 0; i < 200; i++) {
-                                const particle = document.createElement('div');
-                                particle.className = 'firework-particle shoot';
-                                
-                                // Random starting position - particles shoot up from their starting X position
-                                const startX = Math.random() * 100;
-                                const startY = 95; // Start from bottom
-                                
-                                particle.style.left = startX + 'vw';
-                                particle.style.top = startY + 'vh';
-                                
-                                const color = colors[Math.floor(Math.random() * colors.length)];
-                                particle.style.background = color;
-                                particle.style.color = color;
-                                
-                                // Random glow effect
-                                const glowSize = Math.random() * 15 + 5;
-                                particle.style.boxShadow = `0 0 ${glowSize}px ${color}, 0 0 ${glowSize * 2}px ${color}`;
-                                
-                                // Stagger the animations for continuous burst effect
-                                const shootDelay = (i % 40) * 0.05;
-                                particle.style.animationDelay = shootDelay + 's';
-                                
-                                container.appendChild(particle);
-                                
-                                // After shoot animation completes, apply burst fade
-                                setTimeout(() => {
-                                    particle.classList.remove('shoot');
-                                    particle.classList.add('burst');
-                                    
-                                    // Random scatter direction with velocity
-                                    const angle = Math.random() * Math.PI * 2;
-                                    const velocity = Math.random() * 300 + 100;
-                                    const xVel = Math.cos(angle) * velocity;
-                                    const yVel = (Math.sin(angle) - 1) * velocity;
-                                    
-                                    particle.style.setProperty('--tx', xVel + 'px');
-                                    particle.style.setProperty('--ty', yVel + 'px');
-                                    particle.style.transform = `translate(calc(-50% + var(--tx, 0)), var(--ty, 0))`;
-                                }, (shootDelay + 0.8) * 1000);
-                            }
-                            
-                            console.log('✅ Fireworks display created with 200 particles');
-                            // Show notification
-                            if (window.notifyUser) window.notifyUser("🎆 Fireworks!", "Enjoy the show!", "🎆");
-                            
-                            // Play music at cue time (in seconds) - with proper audio initialization
-                            if (data.songUrl && data.cueTime >= 0 && data.cueTime <= 20) {
-                                console.log('Music will play at:', data.cueTime, 'seconds');
-                                setTimeout(() => {
-                                    try {
-                                        // Create audio with proper initialization
-                                        const audio = new Audio();
-                                        audio.crossOrigin = 'anonymous';
-                                        audio.src = data.songUrl;
-                                        audio.volume = 0.8; // Increased volume
-                                        audio.preload = 'auto';
-                                        
-                                        // Log for debugging
-                                        audio.addEventListener('playing', () => {
-                                            console.log('✅ Audio is now playing');
-                                        });
-                                        
-                                        audio.addEventListener('error', (e) => {
-                                            console.error('❌ Audio error:', e);
-                                        });
-                                        
-                                        // Attempt to play
-                                        const playPromise = audio.play();
-                                        if (playPromise !== undefined) {
-                                            playPromise
-                                                .then(() => {
-                                                    console.log('✅ Music playing successfully');
-                                                })
-                                                .catch(error => {
-                                                    console.warn('⚠️ Music playback blocked by browser (autoplay policy):', error.name);
-                                                    // Browser blocked autoplay - show notification
-                                                    if (window.notifyUser) {
-                                                        window.notifyUser('♪ Audio Blocked', 'Browser autoplay policy prevents audio. Click anywhere to enable sound.', '🔊');
-                                                    }
-                                                    // Try again on next user interaction
-                                                    document.addEventListener('click', () => {
-                                                        audio.play().catch(e => console.error('Retry failed:', e));
-                                                    }, { once: true });
-                                                });
-                                        }
-                                    } catch (e) {
-                                        console.error('Audio initialization error:', e);
-                                    }
-                                }, data.cueTime * 1000);
-                            }
-                            
-                            // Clear after 20 seconds
-                            setTimeout(() => {
-                                container.style.display = 'none';
-                                container.innerHTML = '';
-                            }, 20000);
-                        } else {
-                            console.error('Fireworks container not found');
+                        console.log('Video broadcast received for:', user);
+                        console.log('Video URL:', data.videoUrl);
+                        
+                        // Create and display video prompt modal (auto-shows on top of everything)
+                        const modal = document.createElement('div');
+                        modal.id = 'videoBroadcastPromptModal';
+                        modal.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100vw;
+                            height: 100vh;
+                            background: rgba(0, 0, 0, 0.98);
+                            z-index: 11111;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            padding: 20px;
+                            animation: fadeIn 0.3s ease-in;
+                        `;
+                        
+                        const videoContainer = document.createElement('div');
+                        videoContainer.style.cssText = `
+                            width: 95%;
+                            max-width: 1000px;
+                            height: 85vh;
+                            background: #000;
+                            border-radius: 20px;
+                            overflow: hidden;
+                            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.9);
+                            display: flex;
+                            flex-direction: column;
+                            position: relative;
+                        `;
+                        
+                        const video = document.createElement('video');
+                        video.src = data.videoUrl;
+                        video.autoplay = true;
+                        video.controls = true;
+                        video.style.cssText = `
+                            width: 100%;
+                            height: 100%;
+                            object-fit: contain;
+                            display: block;
+                        `;
+                        
+                        // Add close button
+                        const closeBtn = document.createElement('button');
+                        closeBtn.innerHTML = '✕';
+                        closeBtn.style.cssText = `
+                            position: absolute;
+                            top: 15px;
+                            right: 15px;
+                            background: rgba(255, 255, 255, 0.8);
+                            border: none;
+                            width: 50px;
+                            height: 50px;
+                            border-radius: 50%;
+                            font-size: 28px;
+                            cursor: pointer;
+                            z-index: 11112;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            transition: all 0.2s;
+                        `;
+                        closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255, 255, 255, 1)';
+                        closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255, 255, 255, 0.8)';
+                        closeBtn.onclick = () => {
+                            console.log('Modal closed by user');
+                            modal.remove();
+                        };
+                        
+                        videoContainer.appendChild(video);
+                        videoContainer.appendChild(closeBtn);
+                        modal.appendChild(videoContainer);
+                        document.body.appendChild(modal);
+                        
+                        // Add animation keyframe
+                        if (!document.getElementById('videoPromptStyles')) {
+                            const style = document.createElement('style');
+                            style.id = 'videoPromptStyles';
+                            style.textContent = `
+                                @keyframes fadeIn {
+                                    from { opacity: 0; }
+                                    to { opacity: 1; }
+                                }
+                            `;
+                            document.head.appendChild(style);
                         }
+                        
+                        console.log('📹 Video prompt displayed');
+                        
+                        // Show notification
+                        if (window.notifyUser) {
+                            window.notifyUser('📹 Video Broadcast', 'Video playing...', '📺');
+                        }
+                        
+                        // Close modal when video ends
+                        video.addEventListener('ended', () => {
+                            console.log('✅ Video ended - closing prompt');
+                            setTimeout(() => {
+                                modal.remove();
+                            }, 500);
+                        });
+                        
+                        // Allow closing by clicking outside video (on the black background)
+                        modal.addEventListener('click', (e) => {
+                            if (e.target === modal) {
+                                console.log('Prompt closed by clicking background');
+                                modal.remove();
+                            }
+                        });
                     }
                 }, (error) => {
                     // Expected for new users - document doesn't exist yet
                     if (error.code !== 'permission-denied') {
-                        console.debug('Fireworks listener active for user:', user);
+                        console.debug('Video broadcast listener active for user:', user);
                     }
                 });
             } catch (e) {
-                console.error('Fireworks listener setup error:', e);
+                console.error('Video broadcast listener setup error:', e);
             }
         };
         
@@ -4894,56 +4898,67 @@
                 }
             }
 
-            document.getElementById('sendFireworksBtn').onclick = () => {
+            document.getElementById('sendVideoBtn').onclick = () => {
                 if (!adminTargetUser) return alert('Please select a target user first');
-                updateFireworksTargetDisplay();
-                document.getElementById('fireworksModal').style.display = 'flex';
-                loadSongsForFireworks();
+                updateVideoBroadcastTargetDisplay();
+                document.getElementById('videoBroadcastModal').style.display = 'flex';
             };
 
-            async function loadSongsForFireworks() {
-                const select = document.getElementById('fireworksSongSelect');
-                select.innerHTML = '<option value="">No music</option>';
-                try {
-                    const snapshot = await getDocs(collection(db, 'songs'));
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const option = document.createElement('option');
-                        option.value = data.url || doc.id;
-                        option.textContent = `${data.title} - ${data.artist}`;
-                        select.appendChild(option);
-                    });
-                } catch (e) {
-                    console.error('Load songs error:', e);
-                }
-            }
-
-            document.getElementById('confirmFireworksBtn').onclick = async () => {
-                if (!adminTargetUser) return alert('No target user selected');
-                const songUrl = document.getElementById('fireworksSongSelect').value;
-                const cueTimeStr = document.getElementById('fireworksCueTime').value || '00:00';
-                const cueTime = parseTimeToSeconds(cueTimeStr);
+            // Video broadcast URL handling
+            let videoUrlForBroadcast = null;
+            
+            // Send video broadcast
+            document.getElementById('confirmVideoBroadcastBtn').onclick = async () => {
+                const videoUrl = document.getElementById('videoUrlInput').value.trim();
+                if (!videoUrl) return alert('Please paste a GitHub video URL');
+                if (!adminTargetUser) return alert('Please select a target user');
                 
-                if (!cueTimeStr.match(/^\d{1,2}:\d{2}$/)) {
-                    return alert('Please use MM:SS format (e.g., 00:05)');
+                // Validate URL
+                if (!videoUrl.includes('github') && !videoUrl.includes('raw.githubusercontent')) {
+                    return alert('Please use a GitHub raw content URL');
                 }
                 
                 try {
-                    console.log('Sending fireworks to:', adminTargetUser);
-                    // Send fireworks to specific target user
-                    await setDoc(doc(db, `users/${adminTargetUser}/fireworks`, 'current'), {
-                        songUrl: songUrl,
-                        cueTime: cueTime,
+                    // Show loading state
+                    const btn = document.getElementById('confirmVideoBroadcastBtn');
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Sending...';
+                    btn.disabled = true;
+                    
+                    console.log('Sending video URL to:', adminTargetUser);
+                    
+                    // Send video URL to user via Firestore
+                    await setDoc(doc(db, `users/${adminTargetUser}/broadcast`, 'video'), {
+                        videoUrl: videoUrl,
                         timestamp: serverTimestamp()
                     });
-                    document.getElementById('fireworksModal').style.display = 'none';
-                    document.getElementById('fireworksCueTime').value = '';
-                    showToast("Success", `Fireworks sent to ${adminTargetUser}!`, "🎆");
-                } catch (e) {
-                    console.error('Send fireworks error:', e);
-                    alert('Error sending fireworks');
+                    
+                    console.log('Video broadcast sent to:', adminTargetUser);
+                    
+                    // Reset and close modal
+                    document.getElementById('videoBroadcastModal').style.display = 'none';
+                    document.getElementById('videoUrlInput').value = '';
+                    
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    
+                    showToast('Success', `Video sent to ${adminTargetUser}!`, '✅');
+                } catch (error) {
+                    console.error('Video broadcast error:', error);
+                    alert('Error sending video: ' + error.message);
+                    const btn = document.getElementById('confirmVideoBroadcastBtn');
+                    btn.textContent = 'Send Video';
+                    btn.disabled = false;
                 }
             };
+            
+            // Update video broadcast target display
+            function updateVideoBroadcastTargetDisplay() {
+                const display = document.getElementById('videoBroadcastTargetDisplay');
+                if (display && adminTargetUser) {
+                    display.textContent = adminTargetUser;
+                }
+            }
 
             // Timer to check and post scheduled letters
             setInterval(async () => {
