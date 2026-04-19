@@ -3627,10 +3627,6 @@
                         `;
                         closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255, 255, 255, 1)';
                         closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255, 255, 255, 0.8)';
-                        closeBtn.onclick = () => {
-                            console.log('Modal closed by user');
-                            modal.remove();
-                        };
                         
                         videoContainer.appendChild(video);
                         videoContainer.appendChild(closeBtn);
@@ -3657,11 +3653,29 @@
                             window.notifyUser('📹 Video Broadcast', 'Video playing...', '📺');
                         }
                         
+                        // Function to close and delete video from Firestore
+                        const closeAndDeleteVideo = async () => {
+                            console.log('Removing video broadcast from Firestore');
+                            try {
+                                await deleteDoc(doc(db, `users/${user}/broadcast`, 'video'));
+                                console.log('✅ Video broadcast deleted');
+                            } catch (e) {
+                                console.error('Error deleting video broadcast:', e);
+                            }
+                            if (modal.parentNode) modal.remove();
+                        };
+                        
+                        // Close button handler
+                        closeBtn.onclick = () => {
+                            console.log('Modal closed by user');
+                            closeAndDeleteVideo();
+                        };
+                        
                         // Close modal when video ends
                         video.addEventListener('ended', () => {
                             console.log('✅ Video ended - closing prompt');
                             setTimeout(() => {
-                                modal.remove();
+                                closeAndDeleteVideo();
                             }, 500);
                         });
                         
@@ -3669,7 +3683,7 @@
                         modal.addEventListener('click', (e) => {
                             if (e.target === modal) {
                                 console.log('Prompt closed by clicking background');
-                                modal.remove();
+                                closeAndDeleteVideo();
                             }
                         });
                     }
