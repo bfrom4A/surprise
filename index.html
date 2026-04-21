@@ -2227,6 +2227,7 @@
                     <div class="admin-panel" id="admin-broadcasts">
                         <h4 class="admin-section-title">Broadcasts</h4>
                         <button class="submit-btn" id="sendVideoBtn" style="width: 100%; background: #4CAF50; color: white; margin-bottom: 15px;">📹 Broadcast Video</button>
+                        <button class="submit-btn" id="deleteVideoBtn" style="width: 100%; background: #ff6b6b; color: white; margin-bottom: 15px;">🗑️ Delete Video (Stop Broadcast)</button>
                         <p style="font-size: 12px; color: #666;">Send a video (1-2 minutes) to a selected user. Video plays automatically with no refresh needed.</p>
                     </div>
 
@@ -3834,7 +3835,12 @@
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added" && lettersLoaded) {
                         const data = change.doc.data();
-                        if (window.notifyUser) window.notifyUser("New Love Letter 💌", `"${data.title}" has been added!`, "💌");
+                        const notificationTitle = data.isScheduled ? "📅 Scheduled Letter Published" : "New Love Letter 💌";
+                        const notificationMsg = data.isScheduled 
+                            ? `"${data.title}" has been automatically published!`
+                            : `"${data.title}" has been added!`;
+                        if (window.notifyUser) window.notifyUser(notificationTitle, notificationMsg, "💌");
+                        console.log('[Real-time] Letter notification shown:', notificationTitle, notificationMsg);
                     }
                 });
 
@@ -3844,15 +3850,17 @@
                 }
                 
                 let html = '';
-                snapshot.forEach(doc => {
+                snapshot.docs.forEach((doc) => {
                     const data = doc.data();
-                    const letterId = 'letter-' + doc.id;
-                    const formattedContent = data.content ? data.content.replace(/\n/g, '<br>') : '';
+                    const letterId = `letter_${doc.id}`;
+                    const formattedContent = data.content.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
                     const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
+                    const scheduledBadge = data.isScheduled ? ` <span style="color:#ff9800; font-size:12px; font-weight: bold;">📅 Scheduled</span>` : "";
+                    const adminCredit = data.scheduledBy ? ` <span style="color:#999; font-size:11px; font-style: italic;">(by ${escapeHtml(data.scheduledBy)})</span>` : "";
                     html += `
                         <div class="letter" id="${letterId}" ${songDataAttrs}>
                             <div class="letter-header">
-                                <h3>${escapeHtml(data.title)} (${escapeHtml(data.dateLabel)})</h3>
+                                <h3>${escapeHtml(data.title)} (${escapeHtml(data.dateLabel)})${scheduledBadge}${adminCredit}</h3>
                                 <span>Click to open</span>
                             </div>
                             <div class="letter-content" style="text-align: justify"><p>${formattedContent}</p></div>
@@ -4837,10 +4845,27 @@
                 const song = document.getElementById('scheduledLetterSongSelect').value;
                 if (!title || !content || !time) return alert('Fill all fields');
                 try {
-                    await addDoc(collection(db, 'scheduledLetters'), {
-                        title, date, content, scheduleTime: new Date(time).toISOString(), song, targetUser: adminTargetUser
-                    });
-                    alert('Letter scheduled!');
+                    // Determine admin type
+                    const isSuperAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+                    const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
+                    const adminType = isSuperAdmin ? 'SuperAdmin' : (isSubAdmin ? 'SubAdmin' : 'Admin');
+                    const scheduledBy = isSuperAdmin ? 'SuperAdmin' : sessionStorage.getItem('subAdminTarget');
+                    
+                    const scheduleData = {
+                        title, 
+                        date, 
+                        content, 
+                        scheduleTime: new Date(time).toISOString(), 
+                        song, 
+                        targetUser: adminTargetUser,
+                        scheduledBy: scheduledBy,
+                        adminType: adminType,
+                        createdAt: serverTimestamp(),
+                        published: false
+                    };
+                    
+                    await addDoc(collection(db, 'scheduledLetters'), scheduleData);
+                    showToast('Letter Scheduled! 📅', `Will be published at ${new Date(time).toLocaleString()}`, '✅');
                     document.getElementById('scheduledLetterTitle').value = '';
                     document.getElementById('scheduledLetterDate').value = '';
                     document.getElementById('scheduledLetterContent').value = '';
@@ -4983,19 +5008,13 @@
                 }
             };
             
-            // Update video broadcast target display
-            function updateVideoBroadcastTargetDisplay() {
-                const display = document.getElementById('videoBroadcastTargetDisplay');
-                if (display && adminTargetUser) {
-                    display.textContent = adminTargetUser;
-                }
-            }
-
-            // Timer to check and post scheduled letters
+            // Timer to check and post scheduled letters - Real-time publishing (every 2 seconds)
             setInterval(async () => {
                 try {
                     const now = new Date();
-                    const snapshot = await getDocs(query(collection(db, 'scheduledLetters'), where('scheduleTime', '<=', now.toISOString())));
+                    const isoNow = now.toISOString();
+                    const snapshot = await getDocs(query(collection(db, 'scheduledLetters'), where('scheduleTime', '<=', isoNow)));
+                    
                     for (const docSnap of snapshot.docs) {
                         const data = docSnap.data();
                         const target = data.targetUser;
@@ -5004,7 +5023,10 @@
                             title: data.title,
                             dateLabel: data.date,
                             content: data.content,
-                            timestamp: serverTimestamp()
+                            timestamp: serverTimestamp(),
+                            isScheduled: true,
+                            scheduledBy: data.scheduledBy || 'Admin',
+                            scheduledAt: data.scheduleTime
                         };
                         
                         // Add song if selected
@@ -5025,11 +5047,12 @@
                         
                         await addDoc(collection(db, `${target}_love_letters`), letterData);
                         await deleteDoc(docSnap.ref);
+                        console.log(`[Real-time] Scheduled letter published for ${target}:`, letterData.title);
                     }
                 } catch (e) {
                     console.error('Scheduled post error:', e);
                 }
-            }, 60000); // Check every minute
+            }, 2000); // Check every 2 seconds for real-time publishing
 
             document.getElementById('scanNotesBtn').onclick = async () => {
                 if(!adminTargetUser) return;
