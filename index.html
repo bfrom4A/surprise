@@ -822,6 +822,14 @@
             overflow-y: auto; 
             padding-right: 10px;
         }
+
+        .letter-content p {
+            margin-bottom: 12px;
+        }
+
+        .letter-content p:last-child {
+            margin-bottom: 0;
+        }
         
         /* Custom Scrollbar */
         .letter-content::-webkit-scrollbar,
@@ -3857,7 +3865,7 @@
                 snapshot.docs.forEach((doc) => {
                     const data = doc.data();
                     const letterId = `letter_${doc.id}`;
-                    const formattedContent = data.content.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
+                    const formattedContent = data.content.split('\n').map(line => line.trim()).map(line => line.length > 0 ? `<p>${escapeHtml(line)}</p>` : '<br>').join('');
                     const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
                     const scheduledBadge = data.isScheduled ? ` <span style="color:#ff9800; font-size:12px; font-weight: bold;">📅 Scheduled</span>` : "";
                     const adminCredit = data.scheduledBy ? ` <span style="color:#999; font-size:11px; font-style: italic;">(by ${escapeHtml(data.scheduledBy)})</span>` : "";
@@ -3867,7 +3875,7 @@
                                 <h3>${escapeHtml(data.title)} (${escapeHtml(data.dateLabel)})${scheduledBadge}${adminCredit}</h3>
                                 <span>Click to open</span>
                             </div>
-                            <div class="letter-content" style="text-align: justify"><p>${formattedContent}</p></div>
+                            <div class="letter-content" style="text-align: justify">${formattedContent}</div>
                         </div>
                     `;
                 });
