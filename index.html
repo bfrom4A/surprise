@@ -2061,6 +2061,139 @@
             }
         }
 
+
+        /* ── GIF NOTIFICATION FLOAT (bottom-right) ── */
+        #gifNotifFloat {
+            position: fixed;
+            bottom: 24px;
+            right: 20px;
+            z-index: 200001;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,105,180,0.12);
+            padding: 12px 14px 14px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 280px;
+            width: calc(100vw - 40px);
+            border-top: 4px solid #ff69b4;
+            animation: notifSlideInRight 0.45s cubic-bezier(0.22,1,0.36,1) forwards;
+        }
+        @keyframes notifSlideInRight {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);     opacity: 1; }
+        }
+        #gifNotifFloat .gif-notif-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #gifNotifFloat .gif-notif-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.1px;
+            color: #ff69b4;
+            text-transform: uppercase;
+        }
+        #gifNotifFloat .gif-notif-dismiss {
+            background: none;
+            border: none;
+            color: #bbb;
+            font-size: 15px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        #gifNotifFloat .gif-notif-img {
+            width: 100%;
+            border-radius: 12px;
+            max-height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+        #gifNotifFloat .gif-notif-caption {
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* ── CONFETTI ── */
+        #confettiContainer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 200002;
+            display: none;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            top: -12px;
+            width: 10px;
+            height: 10px;
+            opacity: 1;
+            animation: confettiFall linear forwards;
+        }
+        .confetti-circle { border-radius: 50%; }
+        .confetti-rect   { border-radius: 2px; }
+        @keyframes confettiFall {
+            0%   { transform: translateY(0) rotate(0deg);   opacity: 1; }
+            80%  { opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ── SLEEP TIME BANNER ── */
+        #sleepTimeBanner {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #9ba4b5;
+            text-align: center;
+            padding: 13px 20px;
+            font-size: 14px;
+            z-index: 99996;
+            display: none;
+            font-family: 'Montserrat', sans-serif;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            animation: slideInDown 0.5s ease-out forwards;
+            border-bottom: 2px solid #0f3460;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        #sleepTimeBanner .sleep-dismiss-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #9ba4b5;
+            padding: 4px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-left: 10px;
+            transition: background 0.2s;
+        }
+        #sleepTimeBanner .sleep-dismiss-btn:hover { background: rgba(255,255,255,0.2); }
+
+        /* ── SLEEP / DARK MODE ── */
+        body.sleep-mode {
+            background: linear-gradient(135deg, #0d0d1a, #111120) !important;
+            transition: background 2s ease;
+        }
+        body.sleep-mode #mainContent {
+            filter: brightness(0.35) saturate(0.4);
+            transition: filter 2s ease;
+        }
+        body.sleep-mode .container,
+        body.sleep-mode .content-area {
+            background: #1a1a2e !important;
+            color: #888 !important;
+            transition: background 2s, color 2s;
+        }
+
     </style>
 </head>
 <body>
@@ -2083,6 +2216,13 @@
     <!-- SCHEDULED MAINTENANCE BANNER (1 Day Warning) -->
     <div id="scheduled-maint-banner">
         ⚠️ Scheduled Maintenance starts in: <span id="scheduled-maint-countdown">00:00:00</span>
+    </div>
+
+    <!-- SLEEP TIME BANNER -->
+    <div id="sleepTimeBanner">
+        <span style="font-size:22px;">🌙</span>
+        <span id="sleepTimeBannerText">It's time to rest, sweetheart. Good night! 🌙</span>
+        <button class="sleep-dismiss-btn" id="sleepTimeDismissBtn">Dismiss</button>
     </div>
 
     <!-- GLOBAL BROADCAST MODAL -->
@@ -2147,6 +2287,9 @@
 
     <!-- TULIP RAIN CONTAINER -->
     <div id="tulipRainContainer"></div>
+
+    <!-- CONFETTI CONTAINER -->
+    <div id="confettiContainer"></div>
 
     <!-- Password Modal with Dynamic Flow -->
     <div class="password-modal" id="passwordModal">
@@ -2242,6 +2385,9 @@
                         <button class="admin-tab-btn superadmin-only" data-target="admin-maintenance">🚧 Maintenance</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-users">👥 Users</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-broadcasts">📢 Broadcasts</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-confetti">🎊 Confetti</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-gif">🎀 GIF</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-sleep">🌙 Sleep Time</button>
                     </div>
 
                     <!-- Tab: Add Letters -->
@@ -2736,6 +2882,101 @@
                         </div><!-- end ghVideoAuthorizedUI -->
                     </div>
 
+                    <!-- Tab: Confetti (SuperAdmin only) -->
+                    <div class="admin-panel" id="admin-confetti">
+                        <h4 class="admin-section-title">🎊 Blast Confetti</h4>
+                        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Instantly blast a colorful confetti shower on the target user's screen in real-time!</p>
+
+                        <div style="background: linear-gradient(135deg,#fff0f7,#f3e8ff); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px; border: 2px dashed #f0abfc;">
+                            <div style="font-size: 56px; margin-bottom: 12px; animation: float 3s ease-in-out infinite;">🎊</div>
+                            <p style="font-size: 13px; color: #7c3aed; font-weight: 600; margin-bottom: 4px;">Select a target and fire the confetti!</p>
+                            <p style="font-size: 11px; color: #999;">The animation will appear immediately on their screen.</p>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button id="adminSendConfettiKate" class="submit-btn" style="width:100%; padding:16px; font-size:15px; background: linear-gradient(135deg,#ff69b4,#ff1493); border-radius:14px; letter-spacing:1px;">
+                                🎊 Confetti → Kate
+                            </button>
+                            <button id="adminSendConfettiBaby" class="submit-btn" style="width:100%; padding:16px; font-size:15px; background: linear-gradient(135deg,#a78bfa,#7c3aed); border-radius:14px; letter-spacing:1px;">
+                                🎊 Confetti → Baby
+                            </button>
+                            <button id="adminSendConfettiAll" class="submit-btn" style="width:100%; padding:16px; font-size:15px; background: linear-gradient(135deg,#f97316,#dc2626); border-radius:14px; letter-spacing:1px;">
+                                🎊 Confetti → Everyone
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tab: GIF Notification (SuperAdmin only) -->
+                    <div class="admin-panel" id="admin-gif">
+                        <h4 class="admin-section-title">🎀 Send GIF Notification</h4>
+                        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Send a floating GIF popup that appears on the user's screen. Paste any direct GIF URL (Tenor, Giphy, etc.).</p>
+
+                        <div class="admin-form-group">
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:6px;">🔗 GIF URL:</label>
+                            <input type="text" id="adminGifUrl" class="fw-input" placeholder="https://media.tenor.com/... or any direct .gif link">
+
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-top:12px; margin-bottom:6px;">💬 Caption (optional):</label>
+                            <input type="text" id="adminGifCaption" class="fw-input" placeholder="e.g. Thinking of you! 💕">
+                        </div>
+
+                        <!-- Preview -->
+                        <div id="gifPreviewBox" style="display:none; margin-bottom:18px; text-align:center; background:#fff0f5; padding:12px; border-radius:12px; border:2px dashed #ffb7c5;">
+                            <img id="gifPreviewImg" src="" alt="Preview" style="max-width:100%; max-height:160px; border-radius:8px; object-fit:cover;">
+                            <p style="font-size:11px; color:#888; margin-top:6px;">Preview</p>
+                        </div>
+
+                        <button id="adminPreviewGifBtn" class="submit-btn" style="width:100%; background:#fff0f5; color:#d81b60; border:1px solid #ffb7c5; margin-bottom:16px;">👁️ Preview GIF</button>
+
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button id="adminSendGifKate" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#d81b60; border-radius:14px;">
+                                🎀 Send to Kate
+                            </button>
+                            <button id="adminSendGifBaby" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#a78bfa; border-radius:14px;">
+                                🎀 Send to Baby
+                            </button>
+                            <button id="adminSendGifAll" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#f97316; border-radius:14px;">
+                                🎀 Send to Everyone
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Sleep Time Notification (SuperAdmin only) -->
+                    <div class="admin-panel" id="admin-sleep">
+                        <h4 class="admin-section-title">🌙 Sleep Time Notification</h4>
+                        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Send a sleep-time alert to a user. A dark banner appears on their screen and the background dims into night mode.</p>
+
+                        <div style="background: linear-gradient(135deg,#1a1a2e,#16213e); border-radius: 16px; padding: 20px; margin-bottom: 22px; text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">🌙</div>
+                            <p style="color:#9ba4b5; font-size: 13px; font-weight:600;">Preview: Dark banner appears at top of their screen</p>
+                            <p style="color:#555966; font-size: 11px; margin-top:4px;">Background fades to night mode automatically</p>
+                        </div>
+
+                        <div class="admin-form-group">
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:6px;">💬 Sleep Message:</label>
+                            <input type="text" id="adminSleepMessage" class="fw-input" placeholder="e.g. It's time to rest, sweetheart. Good night! 🌙" value="It's time to rest, sweetheart. Good night! 🌙">
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                            <button id="adminSleepKate" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#1a1a2e; border-radius:14px; letter-spacing:1px;">
+                                🌙 Sleep Time → Kate
+                            </button>
+                            <button id="adminSleepBaby" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#0f3460; border-radius:14px; letter-spacing:1px;">
+                                🌙 Sleep Time → Baby
+                            </button>
+                            <button id="adminSleepAll" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#16213e; border-radius:14px; letter-spacing:1px;">
+                                🌙 Sleep Time → Everyone
+                            </button>
+                        </div>
+
+                        <div style="border-top: 2px dashed #ffb7c5; padding-top: 16px; margin-top: 8px;">
+                            <h4 class="admin-section-title" style="color:#28a745; border-bottom-color:#28a745;">☀️ Wake Up / Cancel</h4>
+                            <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Remove the sleep notification and restore normal mode for everyone.</p>
+                            <button id="adminCancelSleep" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background: linear-gradient(135deg,#28a745,#20c997); border-radius:14px; letter-spacing:1px;">
+                                ☀️ Cancel Sleep — Wake Everyone Up
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -2750,7 +2991,46 @@
                         <li>✅ <span style="font-weight: bold; color: #333;">Auth:</span> Verified Admin</li>
                     </ul>
                 </div>
-                
+
+                <!-- Superadmin Fun Controls -->
+                <div class="admin-widget superadmin-only" id="superAdminFunWidget" style="display:none;">
+                    <h4 style="color: #d81b60; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid #ffe4e9; padding-bottom: 8px;">🎉 Fun Controls</h4>
+
+                    <!-- Confetti Button -->
+                    <div style="margin-bottom: 18px;">
+                        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">Blast confetti on the target user's screen!</p>
+                        <div style="display:flex; gap:8px; flex-wrap: wrap;">
+                            <button id="adminSendConfettiKate" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#ff69b4,#ff1493); font-size:13px; padding:10px 8px;">🎊 Kate</button>
+                            <button id="adminSendConfettiBaby" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#a78bfa,#7c3aed); font-size:13px; padding:10px 8px;">🎊 Baby</button>
+                            <button id="adminSendConfettiAll" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#f97316,#dc2626); font-size:13px; padding:10px 8px;">🎊 All</button>
+                        </div>
+                    </div>
+
+                    <!-- GIF Sender -->
+                    <div style="margin-bottom: 18px; border-top: 1px dashed #ffe4e9; padding-top: 15px;">
+                        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">Send a GIF notification to a user:</p>
+                        <input type="text" id="adminGifUrl" class="fw-input" placeholder="GIF URL (e.g. from tenor.com/...)" style="font-size:12px; padding:8px; margin-bottom:8px;">
+                        <input type="text" id="adminGifCaption" class="fw-input" placeholder="Caption (optional)" style="font-size:12px; padding:8px; margin-bottom:10px;">
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button id="adminSendGifKate" class="submit-btn" style="flex:1; font-size:12px; padding:8px;">🎀 → Kate</button>
+                            <button id="adminSendGifBaby" class="submit-btn" style="flex:1; font-size:12px; padding:8px; background:#a78bfa;">🎀 → Baby</button>
+                            <button id="adminSendGifAll" class="submit-btn" style="flex:1; font-size:12px; padding:8px; background:#f97316;">🎀 → All</button>
+                        </div>
+                    </div>
+
+                    <!-- Sleep Time Notifier -->
+                    <div style="border-top: 1px dashed #ffe4e9; padding-top: 15px;">
+                        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">Send sleep time notification (dims their screen 🌙):</p>
+                        <input type="text" id="adminSleepMessage" class="fw-input" placeholder="Sleep message (optional)" style="font-size:12px; padding:8px; margin-bottom:10px;" value="It's time to rest, sweetheart. Good night! 🌙">
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                            <button id="adminSleepKate" class="submit-btn" style="flex:1; background:#1a1a2e; font-size:12px; padding:8px;">🌙 Kate</button>
+                            <button id="adminSleepBaby" class="submit-btn" style="flex:1; background:#0f3460; font-size:12px; padding:8px;">🌙 Baby</button>
+                            <button id="adminSleepAll" class="submit-btn" style="flex:1; background:#16213e; font-size:12px; padding:8px;">🌙 All</button>
+                        </div>
+                        <button id="adminCancelSleep" class="submit-btn" style="width:100%; background:#888; font-size:12px; padding:8px;">☀️ Cancel Sleep (All)</button>
+                    </div>
+                </div>
+
                 <div class="admin-widget" style="flex-grow: 1;">
                     <h4 style="color: #007bff; margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px;">📊 Live Scanner</h4>
                     <div id="liveScannerData" style="font-size: 12px; color: #666;">
@@ -4051,6 +4331,11 @@
             setupDynamicContent(user); 
             setupGallery(user); 
             setupDeletionMonitor(user); // Start account deletion monitor
+
+            // Start new notification listeners
+            startGifListener(user);
+            startConfettiListener(user);
+            startSleepListener(user);
             
             // Listen for user customization updates
             onSnapshot(doc(db, 'preferences', user), (docSnap) => {
@@ -4196,6 +4481,130 @@
                     new Notification(title, { body: body, icon: icon || "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/2764.png" });
                 }
             };
+        }
+
+        // ===== GIF NOTIFICATION LISTENER (user-side) =====
+        function startGifListener(user) {
+            if (!window.db || !window.onSnapshot || !window.doc) { setTimeout(() => startGifListener(user), 400); return; }
+            try {
+                onSnapshot(doc(db, `users/${user}/gifNotifs`, 'current'), (snap) => {
+                    if (!snap.exists()) return;
+                    const data = snap.data();
+                    if (!data.gifUrl || data.dismissed) return;
+
+                    const float = document.getElementById('gifNotifFloat');
+                    const img   = document.getElementById('gifNotifImg');
+                    const cap   = document.getElementById('gifNotifCaption');
+                    if (!float || !img) return;
+
+                    img.src = data.gifUrl;
+                    cap.textContent = data.caption || '😊';
+                    float.style.display = 'flex';
+
+                    // Auto-dismiss after 12 seconds
+                    clearTimeout(window._gifDismissTimer);
+                    window._gifDismissTimer = setTimeout(() => { float.style.display = 'none'; }, 12000);
+                });
+            } catch(e) { console.error('GIF listener error:', e); }
+
+            // Dismiss button
+            const dismissBtn = document.getElementById('gifNotifDismissBtn');
+            if (dismissBtn) {
+                dismissBtn.onclick = () => { document.getElementById('gifNotifFloat').style.display = 'none'; };
+            }
+        }
+
+        // ===== CONFETTI LISTENER (user-side) =====
+        function startConfettiListener(user) {
+            if (!window.db || !window.onSnapshot || !window.doc) { setTimeout(() => startConfettiListener(user), 400); return; }
+            try {
+                onSnapshot(doc(db, `users/${user}/confetti`, 'current'), (snap) => {
+                    if (!snap.exists()) return;
+                    const data = snap.data();
+                    if (!data.active || data.seenAt === data.sentAt) return;
+                    launchConfetti();
+                    if (window.notifyUser) window.notifyUser('🎊 Surprise!', 'You got a confetti blast!', '🎊');
+                    // Mark as seen
+                    try { window.setDoc(window.doc(window.db, `users/${user}/confetti`, 'current'), { seenAt: data.sentAt }, { merge: true }); } catch(e){}
+                });
+            } catch(e) { console.error('Confetti listener error:', e); }
+        }
+
+        function launchConfetti() {
+            const container = document.getElementById('confettiContainer');
+            if (!container) return;
+            container.style.display = 'block';
+            container.innerHTML = '';
+            const colors = ['#ff69b4','#ff1493','#a78bfa','#60a5fa','#34d399','#fbbf24','#f87171','#fb923c','#fff'];
+            const shapes = ['confetti-circle','confetti-rect'];
+            const count = 180;
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = `confetti-piece ${shapes[Math.floor(Math.random() * shapes.length)]}`;
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.width = (Math.random() * 8 + 6) + 'px';
+                el.style.height = (Math.random() * 8 + 6) + 'px';
+                el.style.background = colors[Math.floor(Math.random() * colors.length)];
+                const dur = Math.random() * 2.5 + 2;
+                const delay = Math.random() * 1.8;
+                el.style.animationDuration = dur + 's';
+                el.style.animationDelay = delay + 's';
+                container.appendChild(el);
+            }
+            // Second wave
+            setTimeout(() => {
+                for (let i = 0; i < 80; i++) {
+                    const el = document.createElement('div');
+                    el.className = `confetti-piece ${shapes[Math.floor(Math.random() * shapes.length)]}`;
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.width = (Math.random() * 8 + 5) + 'px';
+                    el.style.height = (Math.random() * 8 + 5) + 'px';
+                    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    const dur = Math.random() * 2 + 2;
+                    el.style.animationDuration = dur + 's';
+                    el.style.animationDelay = '0s';
+                    container.appendChild(el);
+                }
+            }, 800);
+            setTimeout(() => { container.style.display = 'none'; container.innerHTML = ''; }, 6000);
+        }
+        window.launchConfetti = launchConfetti;
+
+        // ===== SLEEP TIME LISTENER (user-side) =====
+        function startSleepListener(user) {
+            if (!window.db || !window.onSnapshot || !window.doc) { setTimeout(() => startSleepListener(user), 400); return; }
+            try {
+                onSnapshot(doc(db, 'settings', 'sleepTime'), (snap) => {
+                    if (!snap.exists()) return;
+                    const data = snap.data();
+                    const banner = document.getElementById('sleepTimeBanner');
+                    const bannerText = document.getElementById('sleepTimeBannerText');
+                    if (!banner) return;
+
+                    const isTargeted = data.active && (data.targetUser === user || data.targetUser === 'all');
+                    if (isTargeted) {
+                        bannerText.textContent = data.message || "It's time to rest, sweetheart. Good night! 🌙";
+                        banner.style.display = 'flex';
+                        document.body.classList.add('sleep-mode');
+                        // Push content down so banner doesn't overlap
+                        document.body.style.paddingTop = '50px';
+                    } else {
+                        banner.style.display = 'none';
+                        document.body.classList.remove('sleep-mode');
+                        document.body.style.paddingTop = '';
+                    }
+                });
+            } catch(e) { console.error('Sleep listener error:', e); }
+
+            // Dismiss button
+            const dismissBtn = document.getElementById('sleepTimeDismissBtn');
+            if (dismissBtn) {
+                dismissBtn.onclick = () => {
+                    document.getElementById('sleepTimeBanner').style.display = 'none';
+                    document.body.classList.remove('sleep-mode');
+                    document.body.style.paddingTop = '';
+                };
+            }
         }
 
         window.logDeviceLogin = async function(user) {
@@ -4789,6 +5198,71 @@
                 setupChatSystem('SuperAdmin');
                 
                 targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
+
+                // Show fun controls widget for superadmin
+                const funWidget = document.getElementById('superAdminFunWidget');
+                if (funWidget) funWidget.style.display = 'block';
+
+                // ── CONFETTI BUTTONS ──
+                const sendConfetti = async (targetUser) => {
+                    const users = targetUser === 'all' ? ['kate', 'baby'] : [targetUser];
+                    const ts = Date.now();
+                    for (const u of users) {
+                        try {
+                            await setDoc(doc(db, `users/${u}/confetti`, 'current'), { active: true, sentAt: ts, seenAt: null });
+                        } catch(e) { console.error('Confetti send error:', e); }
+                    }
+                    showToast('🎊 Confetti Sent!', `Blasted to ${targetUser}!`, '🎊');
+                };
+                document.getElementById('adminSendConfettiKate')?.addEventListener('click', () => sendConfetti('kate'));
+                document.getElementById('adminSendConfettiBaby')?.addEventListener('click', () => sendConfetti('baby'));
+                document.getElementById('adminSendConfettiAll')?.addEventListener('click',  () => sendConfetti('all'));
+
+                // ── GIF SENDER ──
+                const sendGif = async (targetUser) => {
+                    const url     = document.getElementById('adminGifUrl')?.value.trim();
+                    const caption = document.getElementById('adminGifCaption')?.value.trim() || '😊';
+                    if (!url) return alert('Please enter a GIF URL first.');
+                    const users = targetUser === 'all' ? ['kate', 'baby'] : [targetUser];
+                    const ts = Date.now();
+                    for (const u of users) {
+                        try {
+                            await setDoc(doc(db, `users/${u}/gifNotifs`, 'current'), { gifUrl: url, caption, dismissed: false, sentAt: ts });
+                        } catch(e) { console.error('GIF send error:', e); }
+                    }
+                    showToast('🎀 GIF Sent!', `Delivered to ${targetUser}!`, '🎀');
+                };
+                document.getElementById('adminSendGifKate')?.addEventListener('click', () => sendGif('kate'));
+                document.getElementById('adminSendGifBaby')?.addEventListener('click', () => sendGif('baby'));
+                document.getElementById('adminSendGifAll')?.addEventListener('click',  () => sendGif('all'));
+
+                // GIF Preview
+                document.getElementById('adminPreviewGifBtn')?.addEventListener('click', () => {
+                    const url = document.getElementById('adminGifUrl')?.value.trim();
+                    const previewBox = document.getElementById('gifPreviewBox');
+                    const previewImg = document.getElementById('gifPreviewImg');
+                    if (!url) return alert('Enter a GIF URL first.');
+                    if (previewImg) previewImg.src = url;
+                    if (previewBox) previewBox.style.display = 'block';
+                });
+
+                // ── SLEEP TIME BUTTONS ──
+                const sendSleep = async (targetUser) => {
+                    const msg = document.getElementById('adminSleepMessage')?.value.trim() || "It's time to rest, sweetheart. Good night! 🌙";
+                    try {
+                        await setDoc(doc(db, 'settings', 'sleepTime'), { active: true, targetUser, message: msg, sentAt: Date.now() });
+                        showToast('🌙 Sleep Notification Sent!', `Sent to ${targetUser}`, '🌙');
+                    } catch(e) { console.error('Sleep send error:', e); alert('Failed to send sleep notification.'); }
+                };
+                document.getElementById('adminSleepKate')?.addEventListener('click', () => sendSleep('kate'));
+                document.getElementById('adminSleepBaby')?.addEventListener('click', () => sendSleep('baby'));
+                document.getElementById('adminSleepAll')?.addEventListener('click',  () => sendSleep('all'));
+                document.getElementById('adminCancelSleep')?.addEventListener('click', async () => {
+                    try {
+                        await setDoc(doc(db, 'settings', 'sleepTime'), { active: false, targetUser: '', message: '', sentAt: Date.now() });
+                        showToast('☀️ Sleep Cancelled', 'All users returned to normal.', '☀️');
+                    } catch(e) { console.error('Cancel sleep error:', e); }
+                });
             }
 
             // Setup Security Panel Sync (Superadmin only)
@@ -7848,6 +8322,16 @@
             <button class="notif-watch-btn" id="videoNotifWatchBtn">▶ Watch Now</button>
         </div>
         <button class="notif-dismiss" id="videoNotifDismissBtn" title="Remind me next time">✕</button>
+    </div>
+
+    <!-- GIF NOTIFICATION FLOAT (bottom-right, for users) -->
+    <div id="gifNotifFloat">
+        <div class="gif-notif-header">
+            <span class="gif-notif-label">🎀 A GIF for You!</span>
+            <button class="gif-notif-dismiss" id="gifNotifDismissBtn" title="Dismiss">✕</button>
+        </div>
+        <img class="gif-notif-img" id="gifNotifImg" src="" alt="GIF">
+        <div class="gif-notif-caption" id="gifNotifCaption"></div>
     </div>
 
     <!-- VIDEO BROADCAST PLAYER MODAL (For Users) — YouTube Edition -->
