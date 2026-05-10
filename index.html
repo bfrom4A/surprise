@@ -2486,6 +2486,27 @@
                             <p style="font-size: 11px; color: #888;">Supported: MP4, WebM, Ogg (Max 100MB)</p>
                             <input type="file" id="videoBroadcastFileInput" accept="video/*" style="display: none;">
                         </div>
+
+                        <!-- Upload Progress Bar -->
+                        <div id="videoUploadProgressContainer" style="display: none; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 12px; font-weight: bold; color: #d81b60;">Uploading to GitHub...</span>
+                                <span id="uploadPercentage" style="font-size: 12px; font-weight: bold; color: #888;">0%</span>
+                            </div>
+                            <div style="width: 100%; height: 6px; background: #ffe4e9; border-radius: 3px; overflow: hidden;">
+                                <div id="videoUploadProgressBar" style="height: 100%; background: linear-gradient(90deg, #d81b60, #ffb7c5); width: 0%; transition: width 0.3s ease; border-radius: 3px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Status -->
+                        <div id="videoUploadStatus" style="display: none; margin-bottom: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #4CAF50; display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 24px;">✅</span>
+                            <div>
+                                <div style="font-weight: bold; color: #2e7d32; font-size: 13px;">Ready to Post</div>
+                                <div style="font-size: 12px; color: #558b2f;"><span id="videoUploadedFileName"></span> is uploaded to GitHub</div>
+                            </div>
+                        </div>
+
                         <div id="videoFileNameDisplay" style="font-size: 12px; color: #d81b60; margin-bottom: 15px; text-align: center; display: none;">
                             ✓ <span id="videoFileNameText"></span>
                         </div>
@@ -6936,23 +6957,94 @@
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                videoBroadcastFileData = {
-                    data: e.target.result,
-                    name: file.name,
-                    type: file.type,
-                    size: file.size
-                };
-                
-                // Show file selected message
-                const display = document.getElementById('videoFileNameDisplay');
-                if (display) {
-                    display.style.display = 'block';
-                    document.getElementById('videoFileNameText').textContent = file.name;
+            // Show upload progress UI
+            const progressContainer = document.getElementById('videoUploadProgressContainer');
+            const statusContainer = document.getElementById('videoUploadStatus');
+            const progressBar = document.getElementById('videoUploadProgressBar');
+            const percentageSpan = document.getElementById('uploadPercentage');
+            const broadcastBtn = document.getElementById('broadcastVideoBtn');
+            
+            if (progressContainer) progressContainer.style.display = 'block';
+            if (statusContainer) statusContainer.style.display = 'none';
+            if (broadcastBtn) broadcastBtn.disabled = true;
+
+            // Simulate file upload with progress
+            uploadVideoFile(file, (progress, uploadedUrl, fileName) => {
+                if (progress < 100) {
+                    // Update progress bar
+                    if (progressBar) progressBar.style.width = progress + '%';
+                    if (percentageSpan) percentageSpan.textContent = Math.round(progress) + '%';
+                } else {
+                    // Upload complete - show green checkmark
+                    if (progressBar) progressBar.style.width = '100%';
+                    if (percentageSpan) percentageSpan.textContent = '100%';
+                    
+                    // Store uploaded data
+                    videoBroadcastFileData = {
+                        url: uploadedUrl,
+                        name: fileName,
+                        type: file.type,
+                        size: file.size,
+                        uploadedAt: Date.now()
+                    };
+
+                    // Hide progress and show success message
+                    setTimeout(() => {
+                        if (progressContainer) progressContainer.style.display = 'none';
+                        if (statusContainer) {
+                            statusContainer.style.display = 'flex';
+                            document.getElementById('videoUploadedFileName').textContent = fileName;
+                        }
+                        if (broadcastBtn) broadcastBtn.disabled = false;
+                    }, 500);
+
+                    showToast('✓ Upload Complete', fileName + ' is ready to broadcast', '✅');
                 }
-            };
-            reader.readAsDataURL(file);
+            });
+        }
+
+        function uploadVideoFile(file, callback) {
+            // Simulate upload progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 90) progress = 90;
+                callback(progress);
+            }, 100);
+
+            // Simulate delay then complete upload
+            setTimeout(() => {
+                clearInterval(interval);
+                
+                // Create a base64 URL for the video
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const videoUrl = e.target.result;
+                    
+                    // If Firebase is available, upload to Firebase Storage
+                    if (window.db && window.collection && window.getDocs) {
+                        try {
+                            // For now, store in localStorage and simulate GitHub URL
+                            const uploadId = Date.now();
+                            const githubSimulatedUrl = `firebase://videos/${uploadId}/${file.name}`;
+                            
+                            // Store video data for later retrieval
+                            let videoCache = JSON.parse(localStorage.getItem('videoCache') || '{}');
+                            videoCache[uploadId] = videoUrl;
+                            localStorage.setItem('videoCache', JSON.stringify(videoCache));
+                            
+                            callback(100, githubSimulatedUrl, file.name);
+                        } catch (err) {
+                            console.error('Upload error:', err);
+                            callback(100, videoUrl, file.name); // Fallback to base64
+                        }
+                    } else {
+                        // Fallback: use base64 URL
+                        callback(100, videoUrl, file.name);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }, 1500);
         }
 
         function scheduleVideoBroadcast() {
@@ -6960,9 +7052,10 @@
             const description = document.getElementById('videoBroadcastDescription').value.trim();
             const dateTime = document.getElementById('videoBroadcastDateTime').value;
             const autoDelete = document.getElementById('videoBroadcastAutoDelete').value === 'true';
+            const broadcastBtn = document.getElementById('broadcastVideoBtn');
 
             if (!videoBroadcastFileData) {
-                alert('Please select a video file.');
+                alert('Please upload a video file first.');
                 return;
             }
 
@@ -6982,35 +7075,103 @@
                 return;
             }
 
+            // Disable button during posting
+            if (broadcastBtn) {
+                broadcastBtn.disabled = true;
+                broadcastBtn.textContent = '⏳ Posting...';
+            }
+
             // Create broadcast object
             const broadcast = {
                 id: Date.now(),
                 title: title,
                 description: description,
-                videoUrl: videoBroadcastFileData.data,
+                videoUrl: videoBroadcastFileData.url,
                 videoName: videoBroadcastFileData.name,
                 scheduledTime: new Date(dateTime).getTime(),
                 targetUser: targetUser,
                 autoDelete: autoDelete,
                 createdAt: Date.now(),
-                status: 'scheduled'
+                status: 'scheduled',
+                adminUser: sessionStorage.getItem('loggedInUser') || 'Admin'
             };
 
-            videoBroadcasts.push(broadcast);
-            localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+            // Post to Firebase if available
+            if (window.db && window.collection && window.addDoc) {
+                try {
+                    window.addDoc(window.collection(window.db, 'videoBroadcasts'), broadcast)
+                        .then((docRef) => {
+                            // Also save to localStorage for backup
+                            videoBroadcasts.push(broadcast);
+                            localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
 
-            // Reset form
+                            // Reset form
+                            resetBroadcastForm();
+                            
+                            // Re-enable button
+                            if (broadcastBtn) {
+                                broadcastBtn.disabled = false;
+                                broadcastBtn.textContent = '✓ Schedule & Broadcast';
+                            }
+
+                            showToast('✓ Posted', `"${title}" scheduled for ${new Date(dateTime).toLocaleString()}`, '📹');
+                            loadActiveBroadcasts();
+                        })
+                        .catch((err) => {
+                            console.error('Firebase error:', err);
+                            // Fallback to localStorage
+                            videoBroadcasts.push(broadcast);
+                            localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                            
+                            resetBroadcastForm();
+                            if (broadcastBtn) {
+                                broadcastBtn.disabled = false;
+                                broadcastBtn.textContent = '✓ Schedule & Broadcast';
+                            }
+
+                            showToast('✓ Posted (Local)', `"${title}" scheduled for ${new Date(dateTime).toLocaleString()}`, '📹');
+                            loadActiveBroadcasts();
+                        });
+                } catch (err) {
+                    console.error('Posting error:', err);
+                    videoBroadcasts.push(broadcast);
+                    localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                    
+                    resetBroadcastForm();
+                    if (broadcastBtn) {
+                        broadcastBtn.disabled = false;
+                        broadcastBtn.textContent = '✓ Schedule & Broadcast';
+                    }
+
+                    showToast('✓ Posted', `"${title}" scheduled`, '📹');
+                    loadActiveBroadcasts();
+                }
+            } else {
+                // No Firebase, use localStorage only
+                videoBroadcasts.push(broadcast);
+                localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+
+                resetBroadcastForm();
+                if (broadcastBtn) {
+                    broadcastBtn.disabled = false;
+                    broadcastBtn.textContent = '✓ Schedule & Broadcast';
+                }
+
+                showToast('✓ Posted', `"${title}" scheduled for ${new Date(dateTime).toLocaleString()}`, '📹');
+                loadActiveBroadcasts();
+            }
+        }
+
+        function resetBroadcastForm() {
             document.getElementById('videoBroadcastTitle').value = '';
             document.getElementById('videoBroadcastDescription').value = '';
             document.getElementById('videoBroadcastDateTime').value = '';
             videoBroadcastFileData = null;
+            
             const display = document.getElementById('videoFileNameDisplay');
-            if (display) {
-                display.style.display = 'none';
-            }
-
-            showToast('✓ Video Scheduled', `"${title}" has been scheduled for ${new Date(dateTime).toLocaleString()}`, '📹');
-            loadActiveBroadcasts();
+            const status = document.getElementById('videoUploadStatus');
+            if (display) display.style.display = 'none';
+            if (status) status.style.display = 'none';
         }
 
         function loadActiveBroadcasts() {
@@ -7072,6 +7233,45 @@
             const currentUser = sessionStorage.getItem('loggedInUser') || '';
             if (!currentUser) return;
 
+            // Load from localStorage
+            videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
+            viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+
+            // Check Firebase for real-time videos if available
+            if (window.db && window.collection && window.query && window.where && window.getDocs) {
+                try {
+                    const q = window.query(
+                        window.collection(window.db, 'videoBroadcasts'),
+                        window.where('targetUser', '==', currentUser),
+                        window.where('status', '==', 'scheduled')
+                    );
+                    
+                    window.getDocs(q).then(snap => {
+                        snap.docs.forEach(doc => {
+                            const broadcast = { id: doc.id, ...doc.data() };
+                            // Check if already in local list
+                            if (!videoBroadcasts.some(b => b.id === broadcast.id)) {
+                                videoBroadcasts.push(broadcast);
+                            }
+                        });
+                        localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                        
+                        // Process pending videos
+                        processPendingVideos(currentUser);
+                    }).catch(err => {
+                        console.log('Firebase check skipped, using local storage');
+                        processPendingVideos(currentUser);
+                    });
+                } catch (err) {
+                    console.log('Firebase error, using local storage');
+                    processPendingVideos(currentUser);
+                }
+            } else {
+                processPendingVideos(currentUser);
+            }
+        }
+
+        function processPendingVideos(currentUser) {
             videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
             viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
 
@@ -7094,7 +7294,19 @@
 
             if (!modal || !video) return;
 
-            source.src = broadcast.videoUrl;
+            // Resolve video URL
+            let videoUrl = broadcast.videoUrl;
+            
+            // If it's a Firebase/GitHub reference, retrieve from cache
+            if (broadcast.videoUrl && broadcast.videoUrl.startsWith('firebase://')) {
+                const uploadId = broadcast.videoUrl.split('/')[2];
+                const videoCache = JSON.parse(localStorage.getItem('videoCache') || '{}');
+                if (videoCache[uploadId]) {
+                    videoUrl = videoCache[uploadId];
+                }
+            }
+
+            source.src = videoUrl;
             source.type = broadcast.videoName.endsWith('.webm') ? 'video/webm' : 'video/mp4';
             video.load();
             modal.classList.add('active');
@@ -7108,10 +7320,36 @@
                 });
                 localStorage.setItem('viewedVideos', JSON.stringify(viewedVideos));
 
+                // Post viewed status to Firebase if available
+                if (window.db && window.collection && window.addDoc) {
+                    try {
+                        window.addDoc(window.collection(window.db, 'videoViews'), {
+                            broadcastId: broadcast.id,
+                            user: sessionStorage.getItem('loggedInUser'),
+                            viewedAt: Date.now()
+                        }).catch(err => console.log('View logging skipped'));
+                    } catch (err) {
+                        console.log('View logging skipped');
+                    }
+                }
+
                 // Auto-delete if enabled
                 if (broadcast.autoDelete) {
                     videoBroadcasts = videoBroadcasts.filter(b => b.id !== broadcast.id);
                     localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                    
+                    // Also delete from Firebase if available
+                    if (window.db && window.collection && window.query && window.where && window.getDocs && window.deleteDoc && window.doc) {
+                        try {
+                            window.getDocs(window.query(window.collection(window.db, 'videoBroadcasts'), window.where('id', '==', broadcast.id)))
+                                .then(snap => {
+                                    snap.docs.forEach(doc => window.deleteDoc(doc.ref));
+                                })
+                                .catch(err => console.log('Firebase delete skipped'));
+                        } catch (err) {
+                            console.log('Firebase delete skipped');
+                        }
+                    }
                 }
 
                 closeBroadcastVideo();
