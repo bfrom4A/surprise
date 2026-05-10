@@ -7152,8 +7152,9 @@
                 try {
                     window.addDoc(window.collection(window.db, 'videoBroadcasts'), broadcast)
                         .then((docRef) => {
-                            // Also save to localStorage for backup
-                            videoBroadcasts.push(broadcast);
+                            // Also save to localStorage for backup, storing Firestore doc id
+                            const broadcastWithFsId = { ...broadcast, firestoreId: docRef.id };
+                            videoBroadcasts.push(broadcastWithFsId);
                             localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
 
                             // Reset form
@@ -7257,7 +7258,7 @@
                         </div>
                     </div>
                     <div class="video-item-status ${status}">${statusText}</div>
-                    <button class="video-delete-btn" onclick="deleteBroadcast(${broadcast.id})">Delete</button>
+                    <button class="video-delete-btn" onclick="deleteBroadcast('${broadcast.firestoreId || broadcast.id}')">Delete</button>
                 `;
                 container.appendChild(item);
             });
@@ -7265,8 +7266,32 @@
 
         function deleteBroadcast(broadcastId) {
             if (confirm('Are you sure you want to delete this broadcast?')) {
-                videoBroadcasts = videoBroadcasts.filter(b => b.id !== broadcastId);
+                // broadcastId may be a number (localStorage) or string (Firebase doc id)
+                // Remove from local array — compare as both types
+                videoBroadcasts = videoBroadcasts.filter(b => b.id != broadcastId && b.firestoreId !== broadcastId);
                 localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+
+                // Delete from Firebase if available — find matching doc
+                if (window.db && window.collection && window.getDocs && window.deleteDoc && window.doc) {
+                    try {
+                        // If broadcastId looks like a Firestore doc id (string), delete directly
+                        const firestoreRef = window.doc(window.db, 'videoBroadcasts', String(broadcastId));
+                        window.deleteDoc(firestoreRef).catch(() => {
+                            // Fallback: query by numeric id field
+                            window.getDocs(
+                                window.query(
+                                    window.collection(window.db, 'videoBroadcasts'),
+                                    window.where('id', '==', Number(broadcastId))
+                                )
+                            ).then(snap => {
+                                snap.docs.forEach(d => window.deleteDoc(d.ref));
+                            }).catch(err => console.log('Firebase delete fallback skipped', err));
+                        });
+                    } catch (err) {
+                        console.log('Firebase delete skipped', err);
+                    }
+                }
+
                 loadActiveBroadcasts();
                 showToast('✓ Deleted', 'Video broadcast has been removed', '🗑️');
             }
@@ -7288,43 +7313,9 @@
         function checkAndPlayScheduledVideos() {
             const currentUser = sessionStorage.getItem('loggedInUser') || '';
             if (!currentUser) return;
-
-            // Load from localStorage
             videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
             viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
-
-            // Check Firebase for real-time videos if available
-            if (window.db && window.collection && window.query && window.where && window.getDocs) {
-                try {
-                    const q = window.query(
-                        window.collection(window.db, 'videoBroadcasts'),
-                        window.where('targetUser', '==', currentUser),
-                        window.where('status', '==', 'scheduled')
-                    );
-                    
-                    window.getDocs(q).then(snap => {
-                        snap.docs.forEach(doc => {
-                            const broadcast = { id: doc.id, ...doc.data() };
-                            // Check if already in local list
-                            if (!videoBroadcasts.some(b => b.id === broadcast.id)) {
-                                videoBroadcasts.push(broadcast);
-                            }
-                        });
-                        localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
-                        
-                        // Process pending videos
-                        processPendingVideos(currentUser);
-                    }).catch(err => {
-                        console.log('Firebase check skipped, using local storage');
-                        processPendingVideos(currentUser);
-                    });
-                } catch (err) {
-                    console.log('Firebase error, using local storage');
-                    processPendingVideos(currentUser);
-                }
-            } else {
-                processPendingVideos(currentUser);
-            }
+            processPendingVideos(currentUser);
         }
 
         function processPendingVideos(currentUser) {
@@ -7332,13 +7323,16 @@
             viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
 
             const now = Date.now();
-            const pendingVideos = videoBroadcasts.filter(b => 
-                b.targetUser === currentUser && 
-                b.scheduledTime <= now &&
-                !viewedVideos.some(v => v.id === b.id && v.user === currentUser)
-            );
+            const pendingVideos = videoBroadcasts.filter(b => {
+                const uid = b.firestoreId || String(b.id);
+                return b.targetUser === currentUser &&
+                    b.scheduledTime <= now &&
+                    !viewedVideos.some(v => v.id === uid && v.user === currentUser);
+            });
 
             if (pendingVideos.length > 0) {
+                const modal = document.getElementById('videoBroadcastModal');
+                if (!modal || modal.classList.contains('active')) return;
                 playNextBroadcastVideo(pendingVideos[0]);
             }
         }
@@ -7365,46 +7359,51 @@
             const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
             if (bgBlur) bgBlur.style.backgroundImage = `url('${thumbUrl}')`;
 
-            // Load YouTube embed with autoplay
-            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+            // Load YouTube embed with autoplay + enablejsapi for end detection
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
 
             modal.classList.add('active');
 
-            // Mark as viewed when user closes
+            // Unified ID — prefer Firestore doc id for reliable view-once tracking
+            const uid = broadcast.firestoreId || String(broadcast.id);
+
             const markAsViewed = () => {
-                viewedVideos.push({
-                    id: broadcast.id,
-                    user: sessionStorage.getItem('loggedInUser'),
-                    viewedAt: Date.now()
-                });
+                // Prevent double-marking
+                viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                const currentUser = sessionStorage.getItem('loggedInUser') || '';
+                if (viewedVideos.some(v => v.id === uid && v.user === currentUser)) return;
+
+                viewedVideos.push({ id: uid, user: currentUser, viewedAt: Date.now() });
                 localStorage.setItem('viewedVideos', JSON.stringify(viewedVideos));
 
+                // Log to Firebase
                 if (window.db && window.collection && window.addDoc) {
                     try {
                         window.addDoc(window.collection(window.db, 'videoViews'), {
-                            broadcastId: broadcast.id,
-                            user: sessionStorage.getItem('loggedInUser'),
+                            broadcastId: uid,
+                            user: currentUser,
                             viewedAt: Date.now()
-                        }).catch(err => console.log('View logging skipped'));
-                    } catch (err) {
-                        console.log('View logging skipped');
-                    }
+                        }).catch(() => {});
+                    } catch (e) {}
                 }
 
+                // Auto-delete from local + Firebase
                 if (broadcast.autoDelete) {
-                    videoBroadcasts = videoBroadcasts.filter(b => b.id !== broadcast.id);
+                    videoBroadcasts = videoBroadcasts.filter(b => (b.firestoreId || String(b.id)) !== uid);
                     localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
 
-                    if (window.db && window.collection && window.query && window.where && window.getDocs && window.deleteDoc && window.doc) {
+                    if (window.db && window.deleteDoc && window.doc) {
                         try {
-                            window.getDocs(window.query(window.collection(window.db, 'videoBroadcasts'), window.where('id', '==', broadcast.id)))
-                                .then(snap => {
-                                    snap.docs.forEach(doc => window.deleteDoc(doc.ref));
-                                })
-                                .catch(err => console.log('Firebase delete skipped'));
-                        } catch (err) {
-                            console.log('Firebase delete skipped');
-                        }
+                            // Delete by Firestore doc id if available
+                            if (broadcast.firestoreId) {
+                                window.deleteDoc(window.doc(window.db, 'videoBroadcasts', broadcast.firestoreId)).catch(() => {});
+                            } else if (window.getDocs && window.query && window.where) {
+                                window.getDocs(window.query(
+                                    window.collection(window.db, 'videoBroadcasts'),
+                                    window.where('id', '==', broadcast.id)
+                                )).then(snap => snap.docs.forEach(d => window.deleteDoc(d.ref))).catch(() => {});
+                            }
+                        } catch (e) {}
                     }
                 }
 
@@ -7412,17 +7411,75 @@
                 showToast('✓ Video Viewed', 'Thank you for watching!', '💌');
             };
 
-            // Close button triggers markAsViewed
+            // Close button
             const closeBtn = modal.querySelector('.video-control-btn');
-            if (closeBtn) {
-                closeBtn.onclick = () => markAsViewed();
-            }
+            if (closeBtn) closeBtn.onclick = () => markAsViewed();
+
+            // YouTube postMessage end detection
+            const ytEndHandler = (event) => {
+                try {
+                    const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                    // YouTube state: 0 = ended
+                    if (data && data.event === 'onStateChange' && data.info === 0) {
+                        window.removeEventListener('message', ytEndHandler);
+                        markAsViewed();
+                    }
+                } catch (e) {}
+            };
+            window.addEventListener('message', ytEndHandler);
         }
 
-        // Check for scheduled videos periodically
+        // Real-time Firebase listener — instant video flash to user
+        let videoBroadcastUnsubscribe = null;
+
         function startVideoBroadcastChecker() {
+            const currentUser = sessionStorage.getItem('loggedInUser') || '';
+            if (!currentUser) return;
+
+            // Immediate local check first
             checkAndPlayScheduledVideos();
-            setInterval(checkAndPlayScheduledVideos, 5000); // Check every 5 seconds
+
+            // Try Firebase real-time listener
+            if (window.db && window.collection && window.query && window.where && window.onSnapshot) {
+                try {
+                    const q = window.query(
+                        window.collection(window.db, 'videoBroadcasts'),
+                        window.where('targetUser', '==', currentUser),
+                        window.where('status', '==', 'scheduled')
+                    );
+                    videoBroadcastUnsubscribe = window.onSnapshot(q, (snap) => {
+                        viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                        const now = Date.now();
+
+                        snap.docs.forEach(d => {
+                            const broadcast = { firestoreId: d.id, ...d.data() };
+                            const uid = d.id; // Firestore doc id is the canonical uid
+
+                            // Merge into local cache
+                            const exists = videoBroadcasts.some(b => b.firestoreId === d.id);
+                            if (!exists) videoBroadcasts.push(broadcast);
+
+                            const alreadyViewed = viewedVideos.some(v => v.id === uid && v.user === currentUser);
+                            if (broadcast.scheduledTime <= now && !alreadyViewed) {
+                                const modal = document.getElementById('videoBroadcastModal');
+                                if (!modal || modal.classList.contains('active')) return;
+                                playNextBroadcastVideo(broadcast);
+                            }
+                        });
+
+                        localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                    }, err => {
+                        console.log('onSnapshot error, polling fallback', err);
+                        setInterval(checkAndPlayScheduledVideos, 5000);
+                    });
+                } catch (err) {
+                    console.log('Listener setup failed, polling fallback', err);
+                    setInterval(checkAndPlayScheduledVideos, 5000);
+                }
+            } else {
+                // No Firebase — poll every 5s
+                setInterval(checkAndPlayScheduledVideos, 5000);
+            }
         }
 
         // Initialize on page load if admin panel is active
