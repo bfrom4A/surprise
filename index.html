@@ -1731,6 +1731,17 @@
             z-index: 1;
         }
 
+        /* YT Player API injects an iframe — make it fill the aspect-ratio container */
+        #broadcastYoutubeIframe,
+        #broadcastYoutubeIframe iframe {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+        }
+
         .video-broadcast-modal.active {
             display: flex;
         }
@@ -7233,82 +7244,79 @@
         function loadActiveBroadcasts() {
             videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
             const container = document.getElementById('activeBroadcastsList');
-            
             if (!container) return;
 
             if (videoBroadcasts.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999; font-size: 12px; padding: 20px;">No active broadcasts yet. Upload and schedule one!</p>';
+                container.innerHTML = '<p style="text-align:center;color:#999;font-size:12px;padding:20px;">No active broadcasts yet.</p>';
                 return;
             }
 
             container.innerHTML = '';
             videoBroadcasts.forEach(broadcast => {
                 const scheduledDate = new Date(broadcast.scheduledTime);
-                const isViewed = viewedVideos.some(v => v.id === broadcast.id && v.user === broadcast.targetUser);
-                const status = isViewed ? 'viewed' : 'scheduled';
-                const statusText = isViewed ? '✓ Viewed' : '⏱ Scheduled';
+                const uid = broadcast.firestoreId || String(broadcast.id);
+                const isViewed = viewedVideos.some(v => v.id === uid && v.user === broadcast.targetUser);
+                const isPast = broadcast.scheduledTime <= Date.now();
 
                 const item = document.createElement('div');
-                item.className = 'video-item';
+                item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:white;border-radius:10px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid #ffe4e9;';
                 item.innerHTML = `
-                    <div class="video-item-info">
-                        <div class="video-item-title">${broadcast.title}</div>
-                        <div class="video-item-schedule">
-                            🕐 ${scheduledDate.toLocaleString()} for ${broadcast.targetUser}
+                    <div style="flex:1;overflow:hidden;">
+                        <div style="font-weight:bold;color:#333;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${broadcast.title}</div>
+                        <div style="font-size:11px;color:#888;margin-top:2px;">👤 ${broadcast.targetUser} &nbsp;•&nbsp; 🕐 ${scheduledDate.toLocaleString()}</div>
+                        <div style="font-size:11px;margin-top:2px;color:${isViewed ? '#4CAF50' : isPast ? '#ff9800' : '#2196F3'};">
+                            ${isViewed ? '✓ Viewed' : isPast ? '⏳ Pending' : '📅 Scheduled'}
                         </div>
                     </div>
-                    <div class="video-item-status ${status}">${statusText}</div>
-                    <button class="video-delete-btn" onclick="deleteBroadcast('${broadcast.firestoreId || broadcast.id}')">Delete</button>
+                    <button onclick="deleteBroadcast('${uid}')" style="background:#ff4d4d;color:white;border:none;border-radius:8px;padding:7px 13px;cursor:pointer;font-size:12px;font-weight:bold;flex-shrink:0;">🗑 Delete</button>
                 `;
                 container.appendChild(item);
             });
         }
 
         function deleteBroadcast(broadcastId) {
-            if (confirm('Are you sure you want to delete this broadcast?')) {
-                // broadcastId may be a number (localStorage) or string (Firebase doc id)
-                // Remove from local array — compare as both types
-                videoBroadcasts = videoBroadcasts.filter(b => b.id != broadcastId && b.firestoreId !== broadcastId);
-                localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+            if (!confirm('Delete this broadcast?')) return;
 
-                // Delete from Firebase if available — find matching doc
-                if (window.db && window.collection && window.getDocs && window.deleteDoc && window.doc) {
-                    try {
-                        // If broadcastId looks like a Firestore doc id (string), delete directly
-                        const firestoreRef = window.doc(window.db, 'videoBroadcasts', String(broadcastId));
-                        window.deleteDoc(firestoreRef).catch(() => {
-                            // Fallback: query by numeric id field
-                            window.getDocs(
-                                window.query(
+            videoBroadcasts = videoBroadcasts.filter(b => {
+                const uid = b.firestoreId || String(b.id);
+                return uid !== String(broadcastId);
+            });
+            localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+
+            // Delete from Firestore — try direct doc ref first
+            const tryDelete = () => {
+                if (!window.db || !window.deleteDoc || !window.doc) return;
+                try {
+                    window.deleteDoc(window.doc(window.db, 'videoBroadcasts', String(broadcastId)))
+                        .catch(() => {
+                            // If doc id doesn't match, query by numeric id field
+                            if (window.getDocs && window.query && window.collection && window.where) {
+                                window.getDocs(window.query(
                                     window.collection(window.db, 'videoBroadcasts'),
                                     window.where('id', '==', Number(broadcastId))
-                                )
-                            ).then(snap => {
-                                snap.docs.forEach(d => window.deleteDoc(d.ref));
-                            }).catch(err => console.log('Firebase delete fallback skipped', err));
+                                )).then(snap => snap.docs.forEach(d => window.deleteDoc(d.ref))).catch(() => {});
+                            }
                         });
-                    } catch (err) {
-                        console.log('Firebase delete skipped', err);
-                    }
-                }
+                } catch(e) {}
+            };
+            tryDelete();
 
-                loadActiveBroadcasts();
-                showToast('✓ Deleted', 'Video broadcast has been removed', '🗑️');
-            }
+            loadActiveBroadcasts();
+            showToast('✓ Deleted', 'Broadcast removed', '🗑️');
         }
         window.deleteBroadcast = deleteBroadcast;
 
         function closeBroadcastVideo() {
             const modal = document.getElementById('videoBroadcastModal');
-            if (modal) {
-                modal.classList.remove('active');
-                // Stop YouTube video by clearing iframe src
-                const iframe = document.getElementById('broadcastYoutubeIframe');
-                if (iframe) iframe.src = '';
-                // Clear blur background
-                const bgBlur = document.getElementById('videoBroadcastBgBlur');
-                if (bgBlur) bgBlur.style.backgroundImage = '';
+            if (!modal) return;
+            modal.classList.remove('active');
+            // Destroy YT player to fully stop audio+video
+            if (window._ytBroadcastPlayer) {
+                try { window._ytBroadcastPlayer.destroy(); } catch(e) {}
+                window._ytBroadcastPlayer = null;
             }
+            const bgBlur = document.getElementById('videoBroadcastBgBlur');
+            if (bgBlur) bgBlur.style.backgroundImage = '';
         }
         window.closeBroadcastVideo = closeBroadcastVideo;
 
@@ -7323,126 +7331,144 @@
         function processPendingVideos(currentUser) {
             videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
             viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
-
             const now = Date.now();
-            const pendingVideos = videoBroadcasts.filter(b => {
+            const pending = videoBroadcasts.filter(b => {
                 const uid = b.firestoreId || String(b.id);
                 return b.targetUser === currentUser &&
                     b.scheduledTime <= now &&
                     !viewedVideos.some(v => v.id === uid && v.user === currentUser);
             });
-
-            if (pendingVideos.length > 0) {
+            if (pending.length > 0) {
                 const modal = document.getElementById('videoBroadcastModal');
-                if (!modal || modal.classList.contains('active')) return;
-                playNextBroadcastVideo(pendingVideos[0]);
+                if (modal && modal.classList.contains('active')) return;
+                playNextBroadcastVideo(pending[0]);
             }
+        }
+
+        // Load YouTube IFrame API once
+        function ensureYTApiLoaded(cb) {
+            if (window.YT && window.YT.Player) { cb(); return; }
+            // If already loading, queue callback
+            if (window._ytApiCallbacks) { window._ytApiCallbacks.push(cb); return; }
+            window._ytApiCallbacks = [cb];
+            const tag = document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            document.head.appendChild(tag);
+            window.onYouTubeIframeAPIReady = () => {
+                (window._ytApiCallbacks || []).forEach(fn => fn());
+                window._ytApiCallbacks = [];
+            };
         }
 
         function playNextBroadcastVideo(broadcast) {
             const modal = document.getElementById('videoBroadcastModal');
-            const iframe = document.getElementById('broadcastYoutubeIframe');
             const bgBlur = document.getElementById('videoBroadcastBgBlur');
+            if (!modal) return;
 
-            if (!modal || !iframe) return;
-
-            // Extract YouTube video ID from URL
-            let videoId = '';
             const url = broadcast.videoUrl || '';
             const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-            if (ytMatch) videoId = ytMatch[1];
+            if (!ytMatch) { console.warn('Invalid YouTube URL:', url); return; }
+            const videoId = ytMatch[1];
 
-            if (!videoId) {
-                console.warn('Invalid YouTube URL:', url);
-                return;
-            }
-
-            // Set blurred background using YouTube thumbnail
-            const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-            if (bgBlur) bgBlur.style.backgroundImage = `url('${thumbUrl}')`;
-
-            // Load YouTube embed with autoplay + enablejsapi for end detection
-            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
+            // Set blur background from thumbnail
+            if (bgBlur) bgBlur.style.backgroundImage = `url('https://img.youtube.com/vi/${videoId}/maxresdefault.jpg')`;
 
             modal.classList.add('active');
 
-            // Unified ID — prefer Firestore doc id for reliable view-once tracking
             const uid = broadcast.firestoreId || String(broadcast.id);
 
-            const markAsViewed = () => {
-                // Prevent double-marking
-                viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
-                const currentUser = sessionStorage.getItem('loggedInUser') || '';
-                if (viewedVideos.some(v => v.id === uid && v.user === currentUser)) return;
-
-                viewedVideos.push({ id: uid, user: currentUser, viewedAt: Date.now() });
-                localStorage.setItem('viewedVideos', JSON.stringify(viewedVideos));
-
-                // Log to Firebase
-                if (window.db && window.collection && window.addDoc) {
-                    try {
-                        window.addDoc(window.collection(window.db, 'videoViews'), {
-                            broadcastId: uid,
-                            user: currentUser,
-                            viewedAt: Date.now()
-                        }).catch(() => {});
-                    } catch (e) {}
-                }
-
-                // Auto-delete from local + Firebase
-                if (broadcast.autoDelete) {
-                    videoBroadcasts = videoBroadcasts.filter(b => (b.firestoreId || String(b.id)) !== uid);
-                    localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
-
-                    if (window.db && window.deleteDoc && window.doc) {
-                        try {
-                            // Delete by Firestore doc id if available
-                            if (broadcast.firestoreId) {
-                                window.deleteDoc(window.doc(window.db, 'videoBroadcasts', broadcast.firestoreId)).catch(() => {});
-                            } else if (window.getDocs && window.query && window.where) {
-                                window.getDocs(window.query(
-                                    window.collection(window.db, 'videoBroadcasts'),
-                                    window.where('id', '==', broadcast.id)
-                                )).then(snap => snap.docs.forEach(d => window.deleteDoc(d.ref))).catch(() => {});
-                            }
-                        } catch (e) {}
+            const markAsViewed = (() => {
+                let called = false;
+                return () => {
+                    if (called) return; called = true;
+                    viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                    const cu = sessionStorage.getItem('loggedInUser') || '';
+                    if (viewedVideos.some(v => v.id === uid && v.user === cu)) { closeBroadcastVideo(); return; }
+                    viewedVideos.push({ id: uid, user: cu, viewedAt: Date.now() });
+                    localStorage.setItem('viewedVideos', JSON.stringify(viewedVideos));
+                    // Log to Firestore
+                    if (window.db && window.collection && window.addDoc) {
+                        try { window.addDoc(window.collection(window.db, 'videoViews'), { broadcastId: uid, user: cu, viewedAt: Date.now() }).catch(()=>{}); } catch(e) {}
                     }
+                    // Auto-delete broadcast
+                    if (broadcast.autoDelete) {
+                        videoBroadcasts = videoBroadcasts.filter(b => (b.firestoreId || String(b.id)) !== uid);
+                        localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                        if (window.db && window.deleteDoc && window.doc) {
+                            try {
+                                const ref = broadcast.firestoreId
+                                    ? window.doc(window.db, 'videoBroadcasts', broadcast.firestoreId)
+                                    : null;
+                                if (ref) window.deleteDoc(ref).catch(()=>{});
+                            } catch(e) {}
+                        }
+                    }
+                    closeBroadcastVideo();
+                    showToast('✓ Video Viewed', 'Thank you for watching!', '💌');
+                };
+            })();
+
+            // Ensure the iframe placeholder exists fresh
+            const container = document.getElementById('broadcastYoutubeContainer');
+            if (!container) return;
+            container.innerHTML = '<div id="broadcastYoutubeIframe"></div>';
+
+            ensureYTApiLoaded(() => {
+                // Destroy any previous player
+                if (window._ytBroadcastPlayer) {
+                    try { window._ytBroadcastPlayer.destroy(); } catch(e) {}
+                    window._ytBroadcastPlayer = null;
                 }
+                window._ytBroadcastPlayer = new YT.Player('broadcastYoutubeIframe', {
+                    videoId: videoId,
+                    playerVars: {
+                        autoplay: 1,
+                        mute: 1,          // muted = browser allows autoplay
+                        controls: 1,
+                        rel: 0,
+                        modestbranding: 1,
+                        playsinline: 1,
+                    },
+                    events: {
+                        onReady: (e) => {
+                            e.target.playVideo();
+                            // Unmute after 800ms — video is already playing by then
+                            setTimeout(() => {
+                                try { e.target.unMute(); e.target.setVolume(100); } catch(err) {}
+                            }, 800);
+                        },
+                        onStateChange: (e) => {
+                            if (e.data === YT.PlayerState.ENDED) markAsViewed();
+                        },
+                        onError: () => {
+                            console.warn('YT player error');
+                        }
+                    }
+                });
+            });
 
-                closeBroadcastVideo();
-                showToast('✓ Video Viewed', 'Thank you for watching!', '💌');
-            };
-
-            // Close button
+            // Wire close button
             const closeBtn = modal.querySelector('.video-control-btn');
             if (closeBtn) closeBtn.onclick = () => markAsViewed();
-
-            // YouTube postMessage end detection
-            const ytEndHandler = (event) => {
-                try {
-                    const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-                    // YouTube state: 0 = ended
-                    if (data && data.event === 'onStateChange' && data.info === 0) {
-                        window.removeEventListener('message', ytEndHandler);
-                        markAsViewed();
-                    }
-                } catch (e) {}
-            };
-            window.addEventListener('message', ytEndHandler);
         }
 
-        // Real-time Firebase listener — instant video flash to user
+        // Real-time Firebase listener — instant video delivery
         let videoBroadcastUnsubscribe = null;
 
         function startVideoBroadcastChecker() {
             const currentUser = sessionStorage.getItem('loggedInUser') || '';
             if (!currentUser) return;
 
-            // Immediate local check first
+            // Immediate local check
             checkAndPlayScheduledVideos();
 
-            // Try Firebase real-time listener
-            if (window.db && window.collection && window.query && window.where && window.onSnapshot) {
+            // Wait for Firebase to be ready, then set up real-time listener
+            const setupListener = () => {
+                if (!window.db || !window.collection || !window.query || !window.where || !window.onSnapshot) {
+                    // Not ready yet — retry shortly
+                    setTimeout(setupListener, 300);
+                    return;
+                }
                 try {
                     const q = window.query(
                         window.collection(window.db, 'videoBroadcasts'),
@@ -7452,36 +7478,29 @@
                     videoBroadcastUnsubscribe = window.onSnapshot(q, (snap) => {
                         viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
                         const now = Date.now();
-
                         snap.docs.forEach(d => {
                             const broadcast = { firestoreId: d.id, ...d.data() };
-                            const uid = d.id; // Firestore doc id is the canonical uid
-
-                            // Merge into local cache
-                            const exists = videoBroadcasts.some(b => b.firestoreId === d.id);
+                            const uid = d.id;
+                            const exists = videoBroadcasts.some(b => b.firestoreId === uid);
                             if (!exists) videoBroadcasts.push(broadcast);
-
                             const alreadyViewed = viewedVideos.some(v => v.id === uid && v.user === currentUser);
                             if (broadcast.scheduledTime <= now && !alreadyViewed) {
                                 const modal = document.getElementById('videoBroadcastModal');
-                                if (!modal || modal.classList.contains('active')) return;
+                                if (modal && modal.classList.contains('active')) return;
                                 playNextBroadcastVideo(broadcast);
                             }
                         });
-
                         localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
                     }, err => {
-                        console.log('onSnapshot error, polling fallback', err);
+                        console.log('onSnapshot failed, polling fallback', err);
                         setInterval(checkAndPlayScheduledVideos, 5000);
                     });
-                } catch (err) {
+                } catch(err) {
                     console.log('Listener setup failed, polling fallback', err);
                     setInterval(checkAndPlayScheduledVideos, 5000);
                 }
-            } else {
-                // No Firebase — poll every 5s
-                setInterval(checkAndPlayScheduledVideos, 5000);
-            }
+            };
+            setupListener();
         }
 
         // Initialize on page load if admin panel is active
@@ -7522,21 +7541,14 @@
 
     <!-- VIDEO BROADCAST MODAL (For Users) — YouTube Edition -->
     <div id="videoBroadcastModal" class="video-broadcast-modal">
-        <!-- Blurred background clone -->
         <div id="videoBroadcastBgBlur"></div>
-        <div class="video-player-container" style="position:relative; z-index:2; overflow:visible; background:transparent; box-shadow:none;">
-            <div id="broadcastYoutubeContainer" style="position:relative; width:100%; padding-bottom:56.25%; background:#000; border-radius:15px; overflow:hidden; box-shadow: 0 0 50px rgba(216,27,96,0.5);">
-                <iframe
-                    id="broadcastYoutubeIframe"
-                    src=""
-                    style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; border-radius:15px;"
-                    allow="autoplay; encrypted-media; picture-in-picture"
-                    allowfullscreen="false"
-                    title="Broadcast Video"
-                ></iframe>
+        <div style="position:relative; z-index:2; width:90%; max-width:860px;">
+            <div id="broadcastYoutubeContainer" style="position:relative; width:100%; padding-bottom:56.25%; background:#000; border-radius:15px; overflow:hidden; box-shadow:0 0 50px rgba(216,27,96,0.5);">
+                <!-- YT.Player will inject the iframe here -->
+                <div id="broadcastYoutubeIframe"></div>
             </div>
-            <div style="position:absolute; bottom:10px; right:10px; z-index:10;">
-                <button class="video-control-btn" onclick="closeBroadcastVideo()" style="opacity:0.85;">✕ Close</button>
+            <div style="position:absolute; top:10px; right:10px; z-index:10;">
+                <button class="video-control-btn" onclick="closeBroadcastVideo()">✕ Close</button>
             </div>
         </div>
     </div>
