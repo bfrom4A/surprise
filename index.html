@@ -2478,28 +2478,20 @@
                         <h4 class="admin-section-title">📹 Video Broadcasts</h4>
                         <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Upload and schedule video broadcasts for the target user. User can see each video only once. After viewing, the video is automatically deleted from their system.</p>
 
-                        <!-- GitHub Login for Video Uploads -->
-                        <div class="gh-status-box" id="ghVideoAuthStatus">
-                            <p style="font-size: 13px; margin-bottom: 12px; color: #555;">🔐 Connect to GitHub to upload & store videos in your repository</p>
-                            <button id="ghVideoLoginBtn" class="gh-btn">
-                                <svg height="20" viewBox="0 0 16 16" width="20" fill="white" style="margin-right:8px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-                                Login with GitHub
-                            </button>
+                        <!-- GitHub Auth Status (mirrors Music tab) -->
+                        <div class="gh-status-box" id="ghVideoAuthStatus" style="background: #fff5f7; border-color: #ffb7c5;">
+                            <p style="font-size: 13px; color: #d81b60;">⚠️ Please authorize GitHub in the Music tab first to upload videos.</p>
                         </div>
 
-                        <!-- Authorized UI for Video Uploads -->
+                        <!-- Authorized UI (shown when GitHub is logged in via Music tab) -->
                         <div id="ghVideoAuthorizedUI" style="display: none;">
-                            <div style="background: #e8f5e9; border-radius: 8px; padding: 10px 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid #4CAF50;">
-                                <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">✅ GitHub Connected: <span id="ghVideoUserLabel" style="font-family: monospace;"></span></span>
-                                <button id="ghVideoLogoutBtn" style="background: none; border: 1px solid #c8e6c9; border-radius: 6px; padding: 4px 10px; font-size: 11px; color: #558b2f; cursor: pointer;">Disconnect</button>
-                            </div>
 
-                            <div class="admin-form-group" style="margin-bottom: 15px;">
-                                <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:5px;">Select Repository for Video Storage:</label>
-                                <select id="ghRepoSelectVideo" class="repo-select">
-                                    <option value="">Loading repositories...</option>
-                                </select>
-                            </div>
+                        <div class="admin-form-group" style="margin-bottom: 15px;">
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:5px;">Select Repository for Video Storage:</label>
+                            <select id="ghRepoSelectVideo" class="repo-select">
+                                <option value="">-- Select Repository --</option>
+                            </select>
+                        </div>
 
                         <!-- Upload Video Section -->
                         <h4 class="admin-section-title" style="margin-top: 20px; font-size: 14px;">Upload Video File</h4>
@@ -2513,7 +2505,7 @@
                         <!-- Upload Progress Bar -->
                         <div id="videoUploadProgressContainer" style="display: none; margin-bottom: 15px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 12px; font-weight: bold; color: #d81b60;" id="uploadProgressLabel">Uploading to GitHub...</span>
+                                <span style="font-size: 12px; font-weight: bold; color: #d81b60;">Uploading to GitHub...</span>
                                 <span id="uploadPercentage" style="font-size: 12px; font-weight: bold; color: #888;">0%</span>
                             </div>
                             <div style="width: 100%; height: 6px; background: #ffe4e9; border-radius: 3px; overflow: hidden;">
@@ -4349,23 +4341,28 @@
             const musicUI = document.getElementById('ghMusicAuthorizedUI');
             const galleryUI = document.getElementById('ghGalleryAuthorizedUI');
             const systemUI = document.getElementById('ghSystemAuthorizedUI');
+            const videoUI = document.getElementById('ghVideoAuthorizedUI');
             
             const musicStatus = document.getElementById('ghStatusBox');
             const galleryStatus = document.getElementById('ghGalleryAuthStatus');
             const systemStatus = document.getElementById('ghSystemAuthStatus');
+            const videoStatus = document.getElementById('ghVideoAuthStatus');
             
             musicUI.style.display = isAuthorized ? 'block' : 'none';
             galleryUI.style.display = isAuthorized ? 'block' : 'none';
             systemUI.style.display = isAuthorized ? 'block' : 'none';
+            if (videoUI) videoUI.style.display = isAuthorized ? 'block' : 'none';
             
             musicStatus.style.display = isAuthorized ? 'none' : 'block';
             galleryStatus.style.display = isAuthorized ? 'none' : 'block';
             systemStatus.style.display = isAuthorized ? 'none' : 'block';
+            if (videoStatus) videoStatus.style.display = isAuthorized ? 'none' : 'block';
 
             if (isAuthorized) {
                  fetchRepositories('music');
                  fetchRepositories('gallery');
                  fetchRepositories('system');
+                 fetchRepositories('video');
             }
         }
         
@@ -4374,6 +4371,7 @@
             let selectId = 'ghRepoSelectMusic';
             if(type === 'gallery') selectId = 'ghRepoSelectGallery';
             if(type === 'system') selectId = 'ghRepoSelectSystem';
+            if(type === 'video') selectId = 'ghRepoSelectVideo';
             
             const repoSelect = document.getElementById(selectId);
             
@@ -6928,97 +6926,6 @@
             const broadcastBtn = document.getElementById('broadcastVideoBtn');
             const refreshBtn = document.getElementById('refreshBroadcastsListBtn');
 
-            // --- GitHub Auth for Video Tab ---
-            const ghVideoLoginBtn = document.getElementById('ghVideoLoginBtn');
-            const ghVideoLogoutBtn = document.getElementById('ghVideoLogoutBtn');
-            const ghVideoAuthStatus = document.getElementById('ghVideoAuthStatus');
-            const ghVideoAuthorizedUI = document.getElementById('ghVideoAuthorizedUI');
-            const ghVideoUserLabel = document.getElementById('ghVideoUserLabel');
-            const ghRepoSelectVideo = document.getElementById('ghRepoSelectVideo');
-
-            function checkVideoGhAuth() {
-                const token = sessionStorage.getItem('ghToken');
-                const user = sessionStorage.getItem('ghUser');
-                if (token && user) {
-                    ghVideoAuthStatus.style.display = 'none';
-                    ghVideoAuthorizedUI.style.display = 'block';
-                    if (ghVideoUserLabel) ghVideoUserLabel.textContent = user;
-                    loadVideoRepos(token);
-                } else {
-                    ghVideoAuthStatus.style.display = 'block';
-                    ghVideoAuthorizedUI.style.display = 'none';
-                }
-            }
-
-            async function loadVideoRepos(token) {
-                if (!ghRepoSelectVideo) return;
-                ghRepoSelectVideo.innerHTML = '<option value="">Loading repositories...</option>';
-                try {
-                    const resp = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
-                        headers: { 'Authorization': `token ${token}` }
-                    });
-                    if (!resp.ok) throw new Error('Failed to load repos');
-                    const repos = await resp.json();
-                    ghRepoSelectVideo.innerHTML = '<option value="">Select a repository...</option>';
-                    repos.forEach(r => {
-                        const opt = document.createElement('option');
-                        opt.value = r.full_name;
-                        opt.textContent = r.full_name;
-                        ghRepoSelectVideo.appendChild(opt);
-                    });
-                    // Restore last selected repo
-                    const saved = sessionStorage.getItem('ghVideoRepo');
-                    if (saved) ghRepoSelectVideo.value = saved;
-                } catch (e) {
-                    ghRepoSelectVideo.innerHTML = '<option value="">Error loading repos</option>';
-                }
-            }
-
-            if (ghRepoSelectVideo) {
-                ghRepoSelectVideo.addEventListener('change', () => {
-                    sessionStorage.setItem('ghVideoRepo', ghRepoSelectVideo.value);
-                });
-            }
-
-            if (ghVideoLoginBtn) {
-                ghVideoLoginBtn.addEventListener('click', async () => {
-                    const token = prompt('Enter your GitHub Personal Access Token (needs "repo" scope):');
-                    if (!token || !token.trim()) return;
-                    try {
-                        ghVideoLoginBtn.textContent = 'Verifying...';
-                        ghVideoLoginBtn.disabled = true;
-                        const resp = await fetch('https://api.github.com/user', {
-                            headers: { 'Authorization': `token ${token.trim()}` }
-                        });
-                        if (!resp.ok) throw new Error('Invalid token');
-                        const userData = await resp.json();
-                        sessionStorage.setItem('ghToken', token.trim());
-                        sessionStorage.setItem('ghUser', userData.login);
-                        checkVideoGhAuth();
-                        showToast('GitHub Connected', `Logged in as ${userData.login}`, '✅');
-                    } catch (e) {
-                        alert('GitHub login failed: ' + e.message);
-                    } finally {
-                        ghVideoLoginBtn.textContent = 'Login with GitHub';
-                        ghVideoLoginBtn.disabled = false;
-                    }
-                });
-            }
-
-            if (ghVideoLogoutBtn) {
-                ghVideoLogoutBtn.addEventListener('click', () => {
-                    sessionStorage.removeItem('ghToken');
-                    sessionStorage.removeItem('ghUser');
-                    sessionStorage.removeItem('ghVideoRepo');
-                    checkVideoGhAuth();
-                    showToast('GitHub Disconnected', 'Logged out of GitHub', '🔓');
-                });
-            }
-
-            // Check auth state immediately
-            checkVideoGhAuth();
-            // --- End GitHub Auth ---
-
             // Drag and drop functionality
             if (dragDropArea) {
                 dragDropArea.addEventListener('click', () => fileInput.click());
@@ -7073,15 +6980,14 @@
                 return;
             }
 
-            // Require GitHub login and repo selection
-            const token = sessionStorage.getItem('ghToken');
-            const repo = document.getElementById('ghRepoSelectVideo') ? document.getElementById('ghRepoSelectVideo').value : '';
-            if (!token) {
-                alert('Please login with GitHub first before uploading a video.');
+            // Require GitHub login (from Music tab) and repo selection
+            if (!githubToken) {
+                alert('Please login with GitHub in the Music tab first before uploading a video.');
                 return;
             }
-            if (!repo) {
-                alert('Please select a GitHub repository before uploading a video.');
+            const videoRepo = document.getElementById('ghRepoSelectVideo');
+            if (!videoRepo || !videoRepo.value) {
+                alert('Please select a GitHub repository for video storage before uploading.');
                 return;
             }
 
@@ -7096,19 +7002,19 @@
             if (statusContainer) statusContainer.style.display = 'none';
             if (broadcastBtn) broadcastBtn.disabled = true;
 
-            // Upload file (real GitHub upload if token is set)
+            // Upload to GitHub using shared githubToken
             uploadVideoFile(file, (progress, uploadedUrl, fileName) => {
                 if (progress < 100) {
                     // Update progress bar
                     if (progressBar) progressBar.style.width = progress + '%';
                     if (percentageSpan) percentageSpan.textContent = Math.round(progress) + '%';
                 } else {
-                    // Upload complete - show green checkmark
+                    // Upload complete
                     if (progressBar) progressBar.style.width = '100%';
                     if (percentageSpan) percentageSpan.textContent = '100%';
 
+                    // Handle upload failure
                     if (!uploadedUrl) {
-                        // Upload failed
                         if (progressContainer) progressContainer.style.display = 'none';
                         if (broadcastBtn) broadcastBtn.disabled = false;
                         return;
@@ -7139,41 +7045,21 @@
         }
 
         async function uploadVideoFile(file, callback) {
-            const token = sessionStorage.getItem('ghToken');
             const repo = document.getElementById('ghRepoSelectVideo') ? document.getElementById('ghRepoSelectVideo').value : '';
 
-            if (!token || !repo) {
-                // Fallback: no GitHub token, use base64
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += Math.random() * 30;
-                    if (progress > 90) progress = 90;
-                    callback(progress);
-                }, 100);
-                setTimeout(() => {
-                    clearInterval(interval);
-                    const reader = new FileReader();
-                    reader.onload = (e) => callback(100, e.target.result, file.name);
-                    reader.readAsDataURL(file);
-                }, 1500);
+            if (!githubToken || !repo) {
+                callback(100, null, file.name);
+                alert(!githubToken
+                    ? 'Please login with GitHub in the Music tab first.'
+                    : 'Please select a repository for video storage.');
                 return;
             }
 
-            // Real GitHub upload
             try {
                 // Read file as base64
-                const base64Content = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        // e.target.result is "data:video/mp4;base64,XXXXXX"
-                        const base64 = e.target.result.split(',')[1];
-                        resolve(base64);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
+                const base64Content = await toBase64(file);
 
-                // Animate progress while uploading (real upload, but fake the bar for UX)
+                // Animate progress bar while uploading
                 let progress = 0;
                 const progressInterval = setInterval(() => {
                     progress += Math.random() * 10;
@@ -7183,18 +7069,19 @@
 
                 const [owner, repoName] = repo.split('/');
                 const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9-_.]/g, '_');
-                const path = `videos/${safeName}`;
-                const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/${path}`;
+                const filePath = `videos/${safeName}`;
+                const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/${filePath}`;
 
                 const response = await fetch(apiUrl, {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `token ${token}`,
+                        'Authorization': `token ${githubToken}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         message: `Upload video: ${file.name}`,
-                        content: base64Content
+                        content: base64Content,
+                        branch: 'main'
                     })
                 });
 
@@ -7205,15 +7092,13 @@
                     throw new Error(errData.message || 'GitHub upload failed');
                 }
 
-                const data = await response.json();
-                // Build raw GitHub URL
-                const rawUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/${path}`;
-
+                const rawUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/${filePath}`;
                 callback(100, rawUrl, file.name);
+
             } catch (err) {
                 console.error('GitHub video upload error:', err);
-                alert('GitHub upload failed: ' + err.message + '\n\nPlease check your token and repository settings.');
-                callback(100, null, file.name); // signal failure
+                alert('Video upload to GitHub failed: ' + err.message);
+                callback(100, null, file.name);
             }
         }
 
