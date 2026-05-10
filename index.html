@@ -6514,6 +6514,11 @@
             if(window.loadUserContent) window.loadUserContent(user);
             if(window.logDeviceLogin) window.logDeviceLogin(user);
 
+            // Start real-time video broadcast listener now that we have a logged-in user
+            if (typeof startVideoBroadcastChecker === 'function') {
+                startVideoBroadcastChecker();
+            }
+
             passwordModal.style.opacity = '0';
             setTimeout(() => {
                 passwordModal.style.display = 'none';
@@ -7386,24 +7391,34 @@
                     if (viewedVideos.some(v => v.id === uid && v.user === cu)) { closeBroadcastVideo(); return; }
                     viewedVideos.push({ id: uid, user: cu, viewedAt: Date.now() });
                     localStorage.setItem('viewedVideos', JSON.stringify(viewedVideos));
+
                     // Log to Firestore
                     if (window.db && window.collection && window.addDoc) {
                         try { window.addDoc(window.collection(window.db, 'videoViews'), { broadcastId: uid, user: cu, viewedAt: Date.now() }).catch(()=>{}); } catch(e) {}
                     }
-                    // Auto-delete broadcast
-                    if (broadcast.autoDelete) {
-                        videoBroadcasts = videoBroadcasts.filter(b => (b.firestoreId || String(b.id)) !== uid);
-                        localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
-                        if (window.db && window.deleteDoc && window.doc) {
-                            try {
-                                const ref = broadcast.firestoreId
-                                    ? window.doc(window.db, 'videoBroadcasts', broadcast.firestoreId)
-                                    : null;
-                                if (ref) window.deleteDoc(ref).catch(()=>{});
-                            } catch(e) {}
-                        }
+
+                    // Always remove from active list after viewed (view-once policy)
+                    videoBroadcasts = videoBroadcasts.filter(b => (b.firestoreId || String(b.id)) !== uid);
+                    localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+
+                    // Delete from Firestore so it never shows again — regardless of autoDelete setting
+                    if (window.db && window.deleteDoc && window.doc) {
+                        try {
+                            const fsId = broadcast.firestoreId;
+                            if (fsId) {
+                                window.deleteDoc(window.doc(window.db, 'videoBroadcasts', fsId)).catch(()=>{});
+                            } else if (window.getDocs && window.query && window.where && window.collection) {
+                                window.getDocs(window.query(
+                                    window.collection(window.db, 'videoBroadcasts'),
+                                    window.where('id', '==', broadcast.id)
+                                )).then(snap => snap.docs.forEach(d => window.deleteDoc(d.ref))).catch(()=>{});
+                            }
+                        } catch(e) {}
                     }
+
                     closeBroadcastVideo();
+                    // Refresh active broadcasts list if admin panel is open
+                    if (typeof loadActiveBroadcasts === 'function') loadActiveBroadcasts();
                     showToast('✓ Video Viewed', 'Thank you for watching!', '💌');
                 };
             })();
@@ -7454,10 +7469,13 @@
 
         // Real-time Firebase listener — instant video delivery
         let videoBroadcastUnsubscribe = null;
+        let videoBroadcastCheckerStarted = false;
 
         function startVideoBroadcastChecker() {
             const currentUser = sessionStorage.getItem('loggedInUser') || '';
             if (!currentUser) return;
+            if (videoBroadcastCheckerStarted) return; // don't start twice
+            videoBroadcastCheckerStarted = true;
 
             // Immediate local check
             checkAndPlayScheduledVideos();
