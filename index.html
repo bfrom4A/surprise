@@ -1713,13 +1713,22 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.95);
+            background: transparent;
             z-index: 100001;
             display: none;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+        }
+
+        #videoBroadcastBgBlur {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            filter: blur(22px) brightness(0.45) saturate(1.4);
+            -webkit-filter: blur(22px) brightness(0.45) saturate(1.4);
+            transform: scale(1.08);
+            z-index: 1;
         }
 
         .video-broadcast-modal.active {
@@ -2493,32 +2502,24 @@
                             </select>
                         </div>
 
-                        <!-- Upload Video Section -->
-                        <h4 class="admin-section-title" style="margin-top: 20px; font-size: 14px;">Upload Video File</h4>
-                        <div class="video-drag-drop-area" id="videoDragDropArea">
-                            <div style="font-size: 40px; margin-bottom: 10px;">📹</div>
-                            <p style="color: #d81b60; font-weight: bold; margin: 10px 0;">Drag video here or click to upload</p>
-                            <p style="font-size: 11px; color: #888;">Supported: MP4, WebM, Ogg (Max 100MB)</p>
-                            <input type="file" id="videoBroadcastFileInput" accept="video/*" style="display: none;">
-                        </div>
-
-                        <!-- Upload Progress Bar -->
-                        <div id="videoUploadProgressContainer" style="display: none; margin-bottom: 15px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 12px; font-weight: bold; color: #d81b60;">Uploading to GitHub...</span>
-                                <span id="uploadPercentage" style="font-size: 12px; font-weight: bold; color: #888;">0%</span>
-                            </div>
-                            <div style="width: 100%; height: 6px; background: #ffe4e9; border-radius: 3px; overflow: hidden;">
-                                <div id="videoUploadProgressBar" style="height: 100%; background: linear-gradient(90deg, #d81b60, #ffb7c5); width: 0%; transition: width 0.3s ease; border-radius: 3px;"></div>
+                        <!-- YouTube URL Input Section -->
+                        <h4 class="admin-section-title" style="margin-top: 20px; font-size: 14px;">🎬 YouTube Video Link</h4>
+                        <div style="background: #fff5f7; border: 2px dashed #ffb7c5; border-radius: 12px; padding: 20px; margin-bottom: 15px;">
+                            <div style="font-size: 36px; text-align: center; margin-bottom: 10px;">▶️</div>
+                            <p style="color: #d81b60; font-weight: bold; margin-bottom: 10px; text-align: center; font-size: 13px;">Paste a YouTube video link below</p>
+                            <input type="text" id="videoBroadcastYoutubeUrl" class="fw-input" placeholder="e.g. https://www.youtube.com/watch?v=..." style="margin-bottom: 8px;">
+                            <div id="youtubePreviewThumb" style="display:none; margin-top: 10px; text-align: center;">
+                                <img id="youtubeThumbImg" src="" alt="Video Thumbnail" style="width: 100%; max-width: 280px; border-radius: 8px; border: 2px solid #ffb7c5;">
+                                <p id="youtubeVideoTitle" style="font-size: 12px; color: #d81b60; font-weight: bold; margin-top: 6px;"></p>
                             </div>
                         </div>
 
-                        <!-- Upload Status -->
-                        <div id="videoUploadStatus" style="display: none; margin-bottom: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #4CAF50; display: flex; align-items: center; gap: 10px;">
+                        <!-- YouTube Link Status -->
+                        <div id="videoUploadStatus" style="display: none; margin-bottom: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #4CAF50; align-items: center; gap: 10px;">
                             <span style="font-size: 24px;">✅</span>
                             <div>
                                 <div style="font-weight: bold; color: #2e7d32; font-size: 13px;">Ready to Post</div>
-                                <div style="font-size: 12px; color: #558b2f;"><span id="videoUploadedFileName"></span> is uploaded to GitHub</div>
+                                <div style="font-size: 12px; color: #558b2f;">YouTube link is valid and ready to broadcast</div>
                             </div>
                         </div>
 
@@ -6921,41 +6922,36 @@
 
         // Initialize video broadcast listeners
         function initVideoBroadcastFeature() {
-            const dragDropArea = document.getElementById('videoDragDropArea');
-            const fileInput = document.getElementById('videoBroadcastFileInput');
             const broadcastBtn = document.getElementById('broadcastVideoBtn');
             const refreshBtn = document.getElementById('refreshBroadcastsListBtn');
+            const ytInput = document.getElementById('videoBroadcastYoutubeUrl');
 
-            // Drag and drop functionality
-            if (dragDropArea) {
-                dragDropArea.addEventListener('click', () => fileInput.click());
-                
-                dragDropArea.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    dragDropArea.classList.add('dragover');
-                });
-                
-                dragDropArea.addEventListener('dragleave', () => {
-                    dragDropArea.classList.remove('dragover');
-                });
-                
-                dragDropArea.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    dragDropArea.classList.remove('dragover');
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0 && files[0].type.startsWith('video/')) {
-                        handleVideoFileSelect(files[0]);
+            // Live YouTube URL preview
+            if (ytInput) {
+                ytInput.addEventListener('input', () => {
+                    const url = ytInput.value.trim();
+                    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                    const preview = document.getElementById('youtubePreviewThumb');
+                    const thumbImg = document.getElementById('youtubeThumbImg');
+                    const statusContainer = document.getElementById('videoUploadStatus');
+
+                    if (ytMatch) {
+                        const videoId = ytMatch[1];
+                        if (thumbImg) thumbImg.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                        if (preview) preview.style.display = 'block';
+                        if (statusContainer) statusContainer.style.display = 'flex';
+                        // Store as videoBroadcastFileData equivalent
+                        videoBroadcastFileData = {
+                            url: url,
+                            name: 'YouTube Video',
+                            videoId: videoId,
+                            type: 'youtube',
+                            uploadedAt: Date.now()
+                        };
                     } else {
-                        alert('Please drop a valid video file.');
-                    }
-                });
-            }
-
-            // File input change
-            if (fileInput) {
-                fileInput.addEventListener('change', (e) => {
-                    if (e.target.files.length > 0) {
-                        handleVideoFileSelect(e.target.files[0]);
+                        if (preview) preview.style.display = 'none';
+                        if (statusContainer) statusContainer.style.display = 'none';
+                        videoBroadcastFileData = null;
                     }
                 });
             }
@@ -7142,7 +7138,7 @@
                 title: title,
                 description: description,
                 videoUrl: videoBroadcastFileData.url,
-                videoName: videoBroadcastFileData.name,
+                videoName: videoBroadcastFileData.name || 'YouTube Video',
                 scheduledTime: new Date(dateTime).getTime(),
                 targetUser: targetUser,
                 autoDelete: autoDelete,
@@ -7223,6 +7219,10 @@
             document.getElementById('videoBroadcastDateTime').value = '';
             videoBroadcastFileData = null;
             
+            const ytInput = document.getElementById('videoBroadcastYoutubeUrl');
+            if (ytInput) ytInput.value = '';
+            const preview = document.getElementById('youtubePreviewThumb');
+            if (preview) preview.style.display = 'none';
             const display = document.getElementById('videoFileNameDisplay');
             const status = document.getElementById('videoUploadStatus');
             if (display) display.style.display = 'none';
@@ -7276,11 +7276,12 @@
             const modal = document.getElementById('videoBroadcastModal');
             if (modal) {
                 modal.classList.remove('active');
-                const video = document.getElementById('broadcastVideo');
-                if (video) {
-                    video.pause();
-                    video.currentTime = 0;
-                }
+                // Stop YouTube video by clearing iframe src
+                const iframe = document.getElementById('broadcastYoutubeIframe');
+                if (iframe) iframe.src = '';
+                // Clear blur background
+                const bgBlur = document.getElementById('videoBroadcastBgBlur');
+                if (bgBlur) bgBlur.style.backgroundImage = '';
             }
         }
 
@@ -7344,29 +7345,32 @@
 
         function playNextBroadcastVideo(broadcast) {
             const modal = document.getElementById('videoBroadcastModal');
-            const video = document.getElementById('broadcastVideo');
-            const source = document.getElementById('broadcastVideoSource');
+            const iframe = document.getElementById('broadcastYoutubeIframe');
+            const bgBlur = document.getElementById('videoBroadcastBgBlur');
 
-            if (!modal || !video) return;
+            if (!modal || !iframe) return;
 
-            // Resolve video URL
-            let videoUrl = broadcast.videoUrl;
-            
-            // If it's a Firebase/GitHub reference, retrieve from cache
-            if (broadcast.videoUrl && broadcast.videoUrl.startsWith('firebase://')) {
-                const uploadId = broadcast.videoUrl.split('/')[2];
-                const videoCache = JSON.parse(localStorage.getItem('videoCache') || '{}');
-                if (videoCache[uploadId]) {
-                    videoUrl = videoCache[uploadId];
-                }
+            // Extract YouTube video ID from URL
+            let videoId = '';
+            const url = broadcast.videoUrl || '';
+            const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+            if (ytMatch) videoId = ytMatch[1];
+
+            if (!videoId) {
+                console.warn('Invalid YouTube URL:', url);
+                return;
             }
 
-            source.src = videoUrl;
-            source.type = broadcast.videoName.endsWith('.webm') ? 'video/webm' : 'video/mp4';
-            video.load();
+            // Set blurred background using YouTube thumbnail
+            const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            if (bgBlur) bgBlur.style.backgroundImage = `url('${thumbUrl}')`;
+
+            // Load YouTube embed with autoplay
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+
             modal.classList.add('active');
 
-            // Mark as viewed after video ends or user closes
+            // Mark as viewed when user closes
             const markAsViewed = () => {
                 viewedVideos.push({
                     id: broadcast.id,
@@ -7375,7 +7379,6 @@
                 });
                 localStorage.setItem('viewedVideos', JSON.stringify(viewedVideos));
 
-                // Post viewed status to Firebase if available
                 if (window.db && window.collection && window.addDoc) {
                     try {
                         window.addDoc(window.collection(window.db, 'videoViews'), {
@@ -7388,12 +7391,10 @@
                     }
                 }
 
-                // Auto-delete if enabled
                 if (broadcast.autoDelete) {
                     videoBroadcasts = videoBroadcasts.filter(b => b.id !== broadcast.id);
                     localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
-                    
-                    // Also delete from Firebase if available
+
                     if (window.db && window.collection && window.query && window.where && window.getDocs && window.deleteDoc && window.doc) {
                         try {
                             window.getDocs(window.query(window.collection(window.db, 'videoBroadcasts'), window.where('id', '==', broadcast.id)))
@@ -7411,14 +7412,10 @@
                 showToast('✓ Video Viewed', 'Thank you for watching!', '💌');
             };
 
-            video.onended = markAsViewed;
-            
-            // Also mark as viewed if user closes manually
-            const closeBtn = modal.querySelector('.video-control-btn:last-child');
+            // Close button triggers markAsViewed
+            const closeBtn = modal.querySelector('.video-control-btn');
             if (closeBtn) {
-                closeBtn.onclick = () => {
-                    markAsViewed();
-                };
+                closeBtn.onclick = () => markAsViewed();
             }
         }
 
@@ -7464,17 +7461,23 @@
     });
     </script>
 
-    <!-- VIDEO BROADCAST MODAL (For Users) -->
+    <!-- VIDEO BROADCAST MODAL (For Users) — YouTube Edition -->
     <div id="videoBroadcastModal" class="video-broadcast-modal">
-        <div class="video-player-container">
-            <video id="broadcastVideo" class="video-broadcast-video" controls>
-                <source id="broadcastVideoSource" src="" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-            <div class="video-player-overlay">
+        <!-- Blurred background clone -->
+        <div id="videoBroadcastBgBlur"></div>
+        <div class="video-player-container" style="position:relative; z-index:2;">
+            <div id="broadcastYoutubeContainer" style="position:relative; width:100%; padding-bottom:56.25%; background:#000; border-radius:15px; overflow:hidden;">
+                <iframe
+                    id="broadcastYoutubeIframe"
+                    src=""
+                    style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    allowfullscreen="false"
+                    title="Broadcast Video"
+                ></iframe>
+            </div>
+            <div class="video-player-overlay" style="border-radius:15px;">
                 <div class="video-player-controls">
-                    <button class="video-control-btn" onclick="document.getElementById('broadcastVideo').play()">▶ Play</button>
-                    <button class="video-control-btn" onclick="document.getElementById('broadcastVideo').pause()">⏸ Pause</button>
                     <button class="video-control-btn" onclick="closeBroadcastVideo()">✕ Close</button>
                 </div>
             </div>
