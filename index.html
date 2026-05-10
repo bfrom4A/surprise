@@ -7529,7 +7529,7 @@
         window.deleteBroadcast = deleteBroadcast;
 
         function closeBroadcastVideo() {
-            const modal = document.getElementById('videoBroadcastModal');
+            const modal = document.getElementById('videoBroadcastPlayerModal');
             if (!modal) return;
             modal.classList.remove('active');
             // Destroy YT player to fully stop audio+video
@@ -7550,22 +7550,38 @@
             processPendingVideos(currentUser);
         }
 
+        // Track scheduled timeouts so we never double-fire
+        const _scheduledNotifTimers = {};
+
         function processPendingVideos(currentUser) {
             videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
             viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
             const now = Date.now();
-            const pending = videoBroadcasts.filter(b => {
+
+            videoBroadcasts.forEach(b => {
                 const uid = b.firestoreId || String(b.id);
-                return b.targetUser === currentUser &&
-                    b.scheduledTime <= now &&
-                    !viewedVideos.some(v => v.id === uid && v.user === currentUser);
+                if (b.targetUser !== currentUser) return;
+                if (viewedVideos.some(v => v.id === uid && v.user === currentUser)) return;
+                if (_scheduledNotifTimers[uid]) return; // already scheduled
+
+                const delay = b.scheduledTime - now;
+
+                if (delay > 0) {
+                    // Schedule notification to fire exactly at the right time
+                    _scheduledNotifTimers[uid] = setTimeout(() => {
+                        delete _scheduledNotifTimers[uid];
+                        // Re-check not viewed in case user watched via another path
+                        const viewed = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                        if (viewed.some(v => v.id === uid && v.user === currentUser)) return;
+                        const playerModal = document.getElementById('videoBroadcastPlayerModal');
+                        if (playerModal && playerModal.classList.contains('active')) return;
+                        const notif = document.getElementById('videoNotifFloat');
+                        if (notif && notif.style.display === 'flex') return;
+                        showVideoNotification(b);
+                    }, delay);
+                }
+                // If delay <= 0 (past) — do NOT show. User missed it.
             });
-            if (pending.length > 0) {
-                const modal = document.getElementById('videoBroadcastModal');
-                if (modal && modal.classList.contains('active')) return;
-                // Show floating notification instead of auto-playing
-                showVideoNotification(pending[0]);
-            }
         }
 
         // Floating notification — user must click to watch (view-once applied only on watch)
@@ -7618,7 +7634,7 @@
         }
 
         function playNextBroadcastVideo(broadcast) {
-            const modal = document.getElementById('videoBroadcastModal');
+            const modal = document.getElementById('videoBroadcastPlayerModal');
             const bgBlur = document.getElementById('videoBroadcastBgBlur');
             if (!modal) return;
 
@@ -7754,23 +7770,34 @@
                             const exists = videoBroadcasts.some(b => b.firestoreId === uid);
                             if (!exists) videoBroadcasts.push(broadcast);
                             const alreadyViewed = viewedVideos.some(v => v.id === uid && v.user === currentUser);
-                            if (broadcast.scheduledTime <= now && !alreadyViewed) {
-                                const modal = document.getElementById('videoBroadcastModal');
-                                if (modal && modal.classList.contains('active')) return;
-                                // Show floating notification — do not auto-play
-                                const notif = document.getElementById('videoNotifFloat');
-                                if (notif && notif.style.display === 'flex') return; // already shown
-                                showVideoNotification(broadcast);
+                            if (alreadyViewed) return;
+                            if (_scheduledNotifTimers[uid]) return; // already queued
+
+                            const delay = broadcast.scheduledTime - now;
+                            if (delay > 0) {
+                                // Fire notification at exact scheduled moment
+                                _scheduledNotifTimers[uid] = setTimeout(() => {
+                                    delete _scheduledNotifTimers[uid];
+                                    const viewed = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                                    if (viewed.some(v => v.id === uid && v.user === currentUser)) return;
+                                    const playerModal = document.getElementById('videoBroadcastPlayerModal');
+                                    if (playerModal && playerModal.classList.contains('active')) return;
+                                    const notif = document.getElementById('videoNotifFloat');
+                                    if (notif && notif.style.display === 'flex') return;
+                                    showVideoNotification(broadcast);
+                                }, delay);
                             }
+                            // If delay <= 0 (past schedule) — skip, user missed it
                         });
                         localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
                     }, err => {
                         console.log('onSnapshot failed, polling fallback', err);
-                        setInterval(checkAndPlayScheduledVideos, 5000);
+                        // Poll every 30s; processPendingVideos schedules exact-time timeouts
+                        setInterval(checkAndPlayScheduledVideos, 30000);
                     });
                 } catch(err) {
                     console.log('Listener setup failed, polling fallback', err);
-                    setInterval(checkAndPlayScheduledVideos, 5000);
+                    setInterval(checkAndPlayScheduledVideos, 30000);
                 }
             };
             setupListener();
@@ -7823,8 +7850,8 @@
         <button class="notif-dismiss" id="videoNotifDismissBtn" title="Remind me next time">✕</button>
     </div>
 
-    <!-- VIDEO BROADCAST MODAL (For Users) — YouTube Edition -->
-    <div id="videoBroadcastModal" class="video-broadcast-modal">
+    <!-- VIDEO BROADCAST PLAYER MODAL (For Users) — YouTube Edition -->
+    <div id="videoBroadcastPlayerModal" class="video-broadcast-modal">
         <div id="videoBroadcastBgBlur"></div>
         <div style="position:relative; z-index:2; width:90%; max-width:860px;">
             <div id="broadcastYoutubeContainer" style="position:relative; width:100%; padding-bottom:56.25%; background:#000; border-radius:15px; overflow:hidden; box-shadow:0 0 50px rgba(216,27,96,0.5);">
