@@ -1866,6 +1866,126 @@
             margin-bottom: 0;
         }
 
+        /* ── FLOATING VIDEO NOTIFICATION (bottom-left) ── */
+        #videoNotifFloat {
+            position: fixed;
+            bottom: 24px;
+            left: 20px;
+            z-index: 200000;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.22), 0 0 0 1px rgba(216,27,96,0.08);
+            padding: 14px 16px;
+            display: none;
+            align-items: center;
+            gap: 13px;
+            max-width: 310px;
+            width: calc(100vw - 40px);
+            border-left: 5px solid #d81b60;
+            animation: notifSlideIn 0.45s cubic-bezier(0.22,1,0.36,1) forwards;
+        }
+
+        @keyframes notifSlideIn {
+            from { transform: translateX(-120%); opacity: 0; }
+            to   { transform: translateX(0);     opacity: 1; }
+        }
+
+        #videoNotifFloat .notif-icon {
+            font-size: 34px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        #videoNotifFloat .notif-body {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #videoNotifFloat .notif-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            color: #d81b60;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        #videoNotifFloat .notif-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #222;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 7px;
+        }
+
+        #videoNotifFloat .notif-watch-btn {
+            background: linear-gradient(135deg, #d81b60, #f06292);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #videoNotifFloat .notif-watch-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(216,27,96,0.35);
+        }
+
+        #videoNotifFloat .notif-dismiss {
+            background: none;
+            border: none;
+            color: #bbb;
+            font-size: 16px;
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 4px;
+            line-height: 1;
+            border-radius: 50%;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        #videoNotifFloat .notif-dismiss:hover {
+            color: #888;
+            background: #f5f5f5;
+        }
+
+        /* Upload source toggle in admin panel */
+        .upload-source-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .upload-source-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border: 2px solid #ffb7c5;
+            border-radius: 12px;
+            background: #fff5f7;
+            color: #d81b60;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .upload-source-btn.active {
+            background: #d81b60;
+            color: white;
+            border-color: #d81b60;
+            box-shadow: 0 4px 12px rgba(216,27,96,0.25);
+        }
+
         .video-item-info {
             flex: 1;
             display: flex;
@@ -2506,14 +2626,21 @@
                         <!-- Authorized UI (shown when GitHub is logged in via Music tab) -->
                         <div id="ghVideoAuthorizedUI" style="display: none;">
 
+                        <!-- Upload Source Toggle -->
+                        <h4 class="admin-section-title" style="font-size: 14px;">📤 Upload Source</h4>
+                        <div class="upload-source-toggle" style="margin-bottom: 18px;">
+                            <button class="upload-source-btn active" id="srcBtnLink" onclick="setVideoUploadSource('link')">🔗 YouTube Link</button>
+                            <button class="upload-source-btn" id="srcBtnGithub" onclick="setVideoUploadSource('github')">📁 GitHub File Upload</button>
+                        </div>
+
+                        <!-- SECTION A: YouTube URL Input -->
+                        <div id="videoSrcLinkSection">
                         <div class="admin-form-group" style="margin-bottom: 15px;">
                             <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:5px;">Select Repository for Video Storage:</label>
                             <select id="ghRepoSelectVideo" class="repo-select">
                                 <option value="">-- Select Repository --</option>
                             </select>
                         </div>
-
-                        <!-- YouTube URL Input Section -->
                         <h4 class="admin-section-title" style="margin-top: 20px; font-size: 14px;">🎬 YouTube Video Link</h4>
                         <div style="background: #fff5f7; border: 2px dashed #ffb7c5; border-radius: 12px; padding: 20px; margin-bottom: 15px;">
                             <div style="font-size: 36px; text-align: center; margin-bottom: 10px;">▶️</div>
@@ -2524,7 +2651,6 @@
                                 <p id="youtubeVideoTitle" style="font-size: 12px; color: #d81b60; font-weight: bold; margin-top: 6px;"></p>
                             </div>
                         </div>
-
                         <!-- YouTube Link Status -->
                         <div id="videoUploadStatus" style="display: none; margin-bottom: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #4CAF50; align-items: center; gap: 10px;">
                             <span style="font-size: 24px;">✅</span>
@@ -2533,10 +2659,44 @@
                                 <div style="font-size: 12px; color: #558b2f;">YouTube link is valid and ready to broadcast</div>
                             </div>
                         </div>
-
                         <div id="videoFileNameDisplay" style="font-size: 12px; color: #d81b60; margin-bottom: 15px; text-align: center; display: none;">
                             ✓ <span id="videoFileNameText"></span>
                         </div>
+                        </div><!-- end videoSrcLinkSection -->
+
+                        <!-- SECTION B: GitHub File Upload -->
+                        <div id="videoSrcGithubSection" style="display:none;">
+                        <div class="admin-form-group" style="margin-bottom: 15px;">
+                            <label style="font-size: 12px; font-weight: bold; color: #d81b60; display:block; margin-bottom:5px;">Select Repository for Video Storage:</label>
+                            <select id="ghRepoSelectVideoGh" class="repo-select">
+                                <option value="">-- Select Repository --</option>
+                            </select>
+                        </div>
+                        <h4 class="admin-section-title" style="font-size: 14px;">📁 Upload Video File to GitHub</h4>
+                        <div class="file-input-wrapper" id="ghVideoDropZone" style="margin-bottom:12px;" onclick="document.getElementById('ghVideoFileInput').click()">
+                            <div style="font-size: 36px; margin-bottom: 8px;">📁</div>
+                            <p style="color: #d81b60; font-weight: bold; font-size: 13px;">Click to select a video file</p>
+                            <p style="font-size: 11px; color: #888; margin-top: 4px;">MP4, WebM, MOV · Max 100 MB</p>
+                            <input type="file" id="ghVideoFileInput" accept="video/*" style="display:none;">
+                        </div>
+                        <!-- Upload progress -->
+                        <div id="videoUploadProgressContainer" style="display:none; margin-bottom:12px;">
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:4px;">
+                                <span>Uploading to GitHub…</span><span id="uploadPercentage">0%</span>
+                            </div>
+                            <div style="background:#ffe4e9;border-radius:6px;height:8px;overflow:hidden;">
+                                <div id="videoUploadProgressBar" style="height:100%;width:0%;background:#d81b60;transition:width 0.3s;border-radius:6px;"></div>
+                            </div>
+                        </div>
+                        <!-- GitHub upload success -->
+                        <div id="ghVideoUploadSuccess" style="display:none; margin-bottom:15px; padding:12px; background:#e8f5e9; border-radius:8px; border-left:4px solid #4CAF50; align-items:center; gap:10px;">
+                            <span style="font-size:24px;">✅</span>
+                            <div>
+                                <div style="font-weight:bold; color:#2e7d32; font-size:13px;">File Uploaded</div>
+                                <div id="ghVideoUploadedFileName" style="font-size:12px;color:#558b2f;"></div>
+                            </div>
+                        </div>
+                        </div><!-- end videoSrcGithubSection -->
 
                         <!-- Video Schedule Form -->
                         <h4 class="admin-section-title" style="margin-top: 20px; font-size: 14px;">Schedule Broadcast</h4>
@@ -6936,6 +7096,29 @@
         let videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
         let viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
 
+        // ── Upload source toggle (admin) ──
+        let _videoUploadSource = 'link'; // 'link' | 'github'
+        function setVideoUploadSource(src) {
+            _videoUploadSource = src;
+            document.getElementById('srcBtnLink').classList.toggle('active', src === 'link');
+            document.getElementById('srcBtnGithub').classList.toggle('active', src === 'github');
+            document.getElementById('videoSrcLinkSection').style.display = src === 'link' ? '' : 'none';
+            document.getElementById('videoSrcGithubSection').style.display = src === 'github' ? '' : 'none';
+            // Reset file data on switch
+            videoBroadcastFileData = null;
+            const ytInput = document.getElementById('videoBroadcastYoutubeUrl');
+            if (ytInput) ytInput.value = '';
+            const preview = document.getElementById('youtubePreviewThumb');
+            if (preview) preview.style.display = 'none';
+            const status = document.getElementById('videoUploadStatus');
+            if (status) status.style.display = 'none';
+            const ghSuccess = document.getElementById('ghVideoUploadSuccess');
+            if (ghSuccess) ghSuccess.style.display = 'none';
+            const prog = document.getElementById('videoUploadProgressContainer');
+            if (prog) prog.style.display = 'none';
+        }
+        window.setVideoUploadSource = setVideoUploadSource;
+
         // Initialize video broadcast listeners
         function initVideoBroadcastFeature() {
             const broadcastBtn = document.getElementById('broadcastVideoBtn');
@@ -6970,6 +7153,27 @@
                         videoBroadcastFileData = null;
                     }
                 });
+            }
+
+            // GitHub file upload input
+            const ghFileInput = document.getElementById('ghVideoFileInput');
+            if (ghFileInput) {
+                ghFileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    // Sync repo select from github section to main
+                    const ghRepo = document.getElementById('ghRepoSelectVideoGh');
+                    const mainRepo = document.getElementById('ghRepoSelectVideo');
+                    if (ghRepo && mainRepo && ghRepo.value) mainRepo.value = ghRepo.value;
+                    handleVideoFileSelect(file);
+                });
+            }
+
+            // Keep ghRepoSelectVideoGh in sync with ghRepoSelectVideo
+            const ghRepo = document.getElementById('ghRepoSelectVideoGh');
+            const mainRepo = document.getElementById('ghRepoSelectVideo');
+            if (ghRepo && mainRepo) {
+                ghRepo.addEventListener('change', () => { mainRepo.value = ghRepo.value; });
             }
 
             // Broadcast button
@@ -7044,9 +7248,15 @@
                     // Hide progress and show success message
                     setTimeout(() => {
                         if (progressContainer) progressContainer.style.display = 'none';
+                        // Show success in GitHub upload section
+                        const ghSuccess = document.getElementById('ghVideoUploadSuccess');
+                        const ghFileName = document.getElementById('ghVideoUploadedFileName');
+                        if (ghSuccess) { ghSuccess.style.display = 'flex'; }
+                        if (ghFileName) ghFileName.textContent = fileName;
                         if (statusContainer) {
                             statusContainer.style.display = 'flex';
-                            document.getElementById('videoUploadedFileName').textContent = fileName;
+                            const el = document.getElementById('videoUploadedFileName');
+                            if (el) el.textContent = fileName;
                         }
                         if (broadcastBtn) broadcastBtn.disabled = false;
                     }, 500);
@@ -7244,6 +7454,13 @@
             const status = document.getElementById('videoUploadStatus');
             if (display) display.style.display = 'none';
             if (status) status.style.display = 'none';
+            // Clear GitHub upload section
+            const ghSuccess = document.getElementById('ghVideoUploadSuccess');
+            if (ghSuccess) ghSuccess.style.display = 'none';
+            const ghFileInput = document.getElementById('ghVideoFileInput');
+            if (ghFileInput) ghFileInput.value = '';
+            const prog = document.getElementById('videoUploadProgressContainer');
+            if (prog) prog.style.display = 'none';
         }
 
         function loadActiveBroadcasts() {
@@ -7346,9 +7563,44 @@
             if (pending.length > 0) {
                 const modal = document.getElementById('videoBroadcastModal');
                 if (modal && modal.classList.contains('active')) return;
-                playNextBroadcastVideo(pending[0]);
+                // Show floating notification instead of auto-playing
+                showVideoNotification(pending[0]);
             }
         }
+
+        // Floating notification — user must click to watch (view-once applied only on watch)
+        let _pendingNotifBroadcast = null;
+        function showVideoNotification(broadcast) {
+            const notif = document.getElementById('videoNotifFloat');
+            const titleEl = document.getElementById('videoNotifTitleText');
+            const watchBtn = document.getElementById('videoNotifWatchBtn');
+            const dismissBtn = document.getElementById('videoNotifDismissBtn');
+            if (!notif) return;
+
+            _pendingNotifBroadcast = broadcast;
+            if (titleEl) titleEl.textContent = broadcast.title || 'Special Message';
+
+            // Show the notification
+            notif.style.display = 'flex';
+
+            // Watch Now → open video player (view-once will apply)
+            if (watchBtn) {
+                watchBtn.onclick = () => {
+                    notif.style.display = 'none';
+                    if (_pendingNotifBroadcast) playNextBroadcastVideo(_pendingNotifBroadcast);
+                    _pendingNotifBroadcast = null;
+                };
+            }
+
+            // Dismiss (✕) → hide but DON'T mark as viewed; shows again next login
+            if (dismissBtn) {
+                dismissBtn.onclick = () => {
+                    notif.style.display = 'none';
+                    // Do NOT mark as viewed — user will see it on next login
+                };
+            }
+        }
+        window.showVideoNotification = showVideoNotification;
 
         // Load YouTube IFrame API once
         function ensureYTApiLoaded(cb) {
@@ -7505,7 +7757,10 @@
                             if (broadcast.scheduledTime <= now && !alreadyViewed) {
                                 const modal = document.getElementById('videoBroadcastModal');
                                 if (modal && modal.classList.contains('active')) return;
-                                playNextBroadcastVideo(broadcast);
+                                // Show floating notification — do not auto-play
+                                const notif = document.getElementById('videoNotifFloat');
+                                if (notif && notif.style.display === 'flex') return; // already shown
+                                showVideoNotification(broadcast);
                             }
                         });
                         localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
@@ -7556,6 +7811,17 @@
 
     });
     </script>
+
+    <!-- FLOATING VIDEO NOTIFICATION (bottom-left, for users) -->
+    <div id="videoNotifFloat">
+        <div class="notif-icon">🎬</div>
+        <div class="notif-body">
+            <div class="notif-label">📹 New Video for You</div>
+            <div class="notif-title" id="videoNotifTitleText">Special Message</div>
+            <button class="notif-watch-btn" id="videoNotifWatchBtn">▶ Watch Now</button>
+        </div>
+        <button class="notif-dismiss" id="videoNotifDismissBtn" title="Remind me next time">✕</button>
+    </div>
 
     <!-- VIDEO BROADCAST MODAL (For Users) — YouTube Edition -->
     <div id="videoBroadcastModal" class="video-broadcast-modal">
