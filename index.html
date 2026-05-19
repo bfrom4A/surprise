@@ -4312,6 +4312,49 @@
                 console.log("Firebase Auth Successful");
                 setupNotificationSystem();
                 
+                // ===== GITHUB LOGIN BUTTON (Available to all users) =====
+                const ghLoginBtn = document.getElementById('ghLoginBtn');
+                if (ghLoginBtn) {
+                    ghLoginBtn.onclick = async () => {
+                        try {
+                            console.log("GitHub login button clicked");
+                            const provider = new GithubAuthProvider();
+                            provider.addScope('repo');
+                            console.log("GitHub provider configured with 'repo' scope");
+                            
+                            const result = await signInWithPopup(auth, provider);
+                            console.log("GitHub popup result:", result);
+                            
+                            const credential = GithubAuthProvider.credentialFromResult(result);
+                            console.log("Credential extracted:", credential ? "exists" : "null");
+                            
+                            if (!credential) {
+                                throw new Error('GitHub credential not received. Ensure GitHub OAuth is configured in Firebase Console.');
+                            }
+                            if (!credential.accessToken) {
+                                throw new Error('Access token not found in credential response. Check Firebase GitHub provider settings.');
+                            }
+                            
+                            githubToken = credential.accessToken;
+                            sessionStorage.setItem('ghToken', githubToken);
+                            console.log("GitHub token stored successfully:", githubToken.substring(0, 10) + "...");
+                            
+                            updateGitHubUI(true);
+                            showToast("GitHub Connected! ✅", "You can now manage repositories.", "✅");
+                        } catch (e) {
+                            console.error("GitHub Login Failed - Full Error:", e);
+                            console.error("Error Code:", e.code);
+                            console.error("Error Message:", e.message);
+                            showToast("GitHub Login Failed ❌", e.message || "Check console for details", "❌");
+                            alert(`GitHub Login Failed:\n\nError: ${e.message}\n\nCode: ${e.code}\n\nMake sure:\n1. Firebase GitHub Provider is enabled\n2. OAuth app is configured\n3. Redirect URIs are correct in Firebase Console`);
+                            updateGitHubUI(false);
+                        }
+                    };
+                    console.log("GitHub button handler attached successfully");
+                } else {
+                    console.warn("GitHub login button element not found in DOM");
+                }
+                
                 const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
                 const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
@@ -6072,28 +6115,6 @@
                 } catch (e) { alert("Error"); }
             };
             
-            document.getElementById('ghLoginBtn').onclick = async () => {
-                const provider = new GithubAuthProvider();
-                provider.addScope('repo'); 
-                try {
-                    const result = await signInWithPopup(auth, provider);
-                    const credential = GithubAuthProvider.credentialFromResult(result);
-                    if (!credential) {
-                        throw new Error('GitHub credential not received. Ensure GitHub OAuth is configured.');
-                    }
-                    if (!credential.accessToken) {
-                        throw new Error('Access token not found in credential response.');
-                    }
-                    githubToken = credential.accessToken;
-                    sessionStorage.setItem('ghToken', githubToken); 
-                    console.log("GitHub Token Acquired:", githubToken.substring(0, 10) + "...");
-                    updateGitHubUI(true); 
-                } catch (e) { 
-                    console.error("GitHub Login Failed:", e);
-                    alert(`Login Failed: ${e.message} (Code: ${e.code})`);
-                    updateGitHubUI(false);
-                }
-            };
             
             document.getElementById('addImgBtn').onclick = async () => {
                 if(!adminTargetUser) return;
@@ -6912,7 +6933,31 @@
 
     <!-- Original UI Logic -->
     <script>
-    let audioContext; 
+    let audioContext;
+    
+    // ===== TOAST NOTIFICATION SYSTEM =====
+    function showToast(title, message, icon = '') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `
+            <div class="toast-icon">${icon}</div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-msg">${message}</div>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            toast.classList.add('hide');
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
     
     document.addEventListener('DOMContentLoaded', function() {
         const passwordModal = document.getElementById('passwordModal');
