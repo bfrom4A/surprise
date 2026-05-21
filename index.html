@@ -2458,11 +2458,11 @@
                         <div class="admin-form-group">
                             <input type="text" id="subRequestArtistName" class="fw-input" placeholder="Artist Name">
                             <input type="text" id="subRequestSongTitle" class="fw-input" placeholder="Song Title">
-                            <div class="file-input-wrapper" onclick="document.getElementById('subMusicRequestFileInput').click()">
+                            <label class="file-input-wrapper" for="subMusicRequestFileInput" style="cursor:pointer; display:block;">
                                 <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to select a song file for approval</p>
                                 <span id="subMusicRequestFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
                                 <input type="file" id="subMusicRequestFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('subMusicRequestFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
-                            </div>
+                            </label>
                         </div>
                         <button id="submitSubMusicRequestBtn" class="submit-btn" style="width: 100%;">Submit Music Request</button>
                         <p id="subMusicRequestStatus" style="margin-top: 10px; font-size: 12px; color: #d81b60; text-align: center;"></p>
@@ -2561,11 +2561,11 @@
                                     <input type="text" id="uploadArtistName" class="fw-input" placeholder="Artist Name">
                                     <input type="text" id="uploadSongTitle" class="fw-input" placeholder="Song Title">
                                     
-                                    <div class="file-input-wrapper" onclick="document.getElementById('musicFileInput').click()">
+                                    <label class="file-input-wrapper" for="musicFileInput" style="cursor:pointer; display:block;">
                                         <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to Select MP3</p>
                                         <span id="fileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
                                         <input type="file" id="musicFileInput" accept="audio/*" style="display: none;" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
-                                    </div>
+                                    </label>
                                 </div>
                                 
                                 <button id="startUploadBtn" class="submit-btn" style="width: 100%;">Upload & Sync</button>
@@ -2610,11 +2610,11 @@
                                 
                                 <input type="text" id="adminImgCaption" class="fw-input" placeholder="Caption (optional)" style="font-size: 13px; margin-top:10px;">
                                 
-                                <div class="file-input-wrapper" onclick="document.getElementById('galleryFileInput').click()">
+                                <label class="file-input-wrapper" for="galleryFileInput" style="cursor:pointer; display:block;">
                                     <p style="color: #888; margin-bottom: 5px; font-size: 12px;">🖼️ Click to Select Image (JPG/PNG)</p>
                                     <span id="galleryFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
                                     <input type="file" id="galleryFileInput" accept="image/jpeg, image/png" style="display: none;" onchange="document.getElementById('galleryFileNameDisplay').textContent = this.files[0] ? this.files[0].name : 'No file selected'">
-                                </div>
+                                </label>
                             </div>
 
                             <button id="addImgBtn" class="submit-btn" style="width: 100%; margin-bottom: 10px;">Upload & Add</button>
@@ -4864,7 +4864,7 @@
                     const data = docSnap.data();
                     if (notesLoaded && window.notifyUser) window.notifyUser("Daily Notes Updated 📝", "Check out the new reminders!", "📝");
 
-                    if (data.lastUpdated) {
+                    if (data.lastUpdated && typeof data.lastUpdated.toDate === 'function') {
                         const dateObj = data.lastUpdated.toDate();
                         const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true };
                         updateDateLabel.textContent = `Update: ${dateObj.toLocaleString('en-US', options)}`;
