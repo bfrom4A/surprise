@@ -3009,12 +3009,12 @@
                     <!-- GIF Sender -->
                     <div style="margin-bottom: 18px; border-top: 1px dashed #ffe4e9; padding-top: 15px;">
                         <p style="font-size: 12px; color: #666; margin-bottom: 8px;">Send a GIF notification to a user:</p>
-                        <input type="text" id="adminGifUrl" class="fw-input" placeholder="GIF URL (e.g. from tenor.com/...)" style="font-size:12px; padding:8px; margin-bottom:8px;">
-                        <input type="text" id="adminGifCaption" class="fw-input" placeholder="Caption (optional)" style="font-size:12px; padding:8px; margin-bottom:10px;">
+                        <input type="text" id="widgetGifUrl" class="fw-input" placeholder="GIF URL (e.g. from tenor.com/...)" style="font-size:12px; padding:8px; margin-bottom:8px;">
+                        <input type="text" id="widgetGifCaption" class="fw-input" placeholder="Caption (optional)" style="font-size:12px; padding:8px; margin-bottom:10px;">
                         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            <button id="adminSendGifKate" class="submit-btn" style="flex:1; font-size:12px; padding:8px;">🎀 → Kate</button>
-                            <button id="adminSendGifBaby" class="submit-btn" style="flex:1; font-size:12px; padding:8px; background:#a78bfa;">🎀 → Baby</button>
-                            <button id="adminSendGifAll" class="submit-btn" style="flex:1; font-size:12px; padding:8px; background:#f97316;">🎀 → All</button>
+                            <button id="widgetSendGifKate" class="submit-btn" style="flex:1; font-size:12px; padding:8px;">🎀 → Kate</button>
+                            <button id="widgetSendGifBaby" class="submit-btn" style="flex:1; font-size:12px; padding:8px; background:#a78bfa;">🎀 → Baby</button>
+                            <button id="widgetSendGifAll" class="submit-btn" style="flex:1; font-size:12px; padding:8px; background:#f97316;">🎀 → All</button>
                         </div>
                     </div>
 
@@ -5262,9 +5262,9 @@
                 document.getElementById('adminSendConfettiAll')?.addEventListener('click',  () => sendConfetti('all'));
 
                 // ── GIF SENDER ──
-                const sendGif = async (targetUser) => {
-                    const url     = document.getElementById('adminGifUrl')?.value.trim();
-                    const caption = document.getElementById('adminGifCaption')?.value.trim() || '😊';
+                const sendGif = async (targetUser, urlOverride, captionOverride) => {
+                    const url     = urlOverride || document.getElementById('adminGifUrl')?.value.trim();
+                    const caption = captionOverride || document.getElementById('adminGifCaption')?.value.trim() || '😊';
                     if (!url) return alert('Please enter a GIF URL first.');
                     const users = targetUser === 'all' ? ['kate', 'baby'] : [targetUser];
                     const ts = Date.now();
@@ -5278,6 +5278,11 @@
                 document.getElementById('adminSendGifKate')?.addEventListener('click', () => sendGif('kate'));
                 document.getElementById('adminSendGifBaby')?.addEventListener('click', () => sendGif('baby'));
                 document.getElementById('adminSendGifAll')?.addEventListener('click',  () => sendGif('all'));
+
+                // Wire sidebar widget GIF buttons (renamed IDs to avoid duplicates)
+                document.getElementById('widgetSendGifKate')?.addEventListener('click', () => sendGif('kate', document.getElementById('widgetGifUrl')?.value.trim(), document.getElementById('widgetGifCaption')?.value.trim()));
+                document.getElementById('widgetSendGifBaby')?.addEventListener('click', () => sendGif('baby', document.getElementById('widgetGifUrl')?.value.trim(), document.getElementById('widgetGifCaption')?.value.trim()));
+                document.getElementById('widgetSendGifAll')?.addEventListener('click',  () => sendGif('all',  document.getElementById('widgetGifUrl')?.value.trim(), document.getElementById('widgetGifCaption')?.value.trim()));
 
                 // GIF Preview
                 document.getElementById('adminPreviewGifBtn')?.addEventListener('click', () => {
@@ -7044,6 +7049,7 @@
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             mainContent.style.display = 'block';
+            if (window.loadUserContent) window.loadUserContent(savedUser);
         } else {
             submitPassword.addEventListener('click', async function() {
                 const username = loginUsernameInput.value.trim().toLowerCase();
