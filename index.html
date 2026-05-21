@@ -5394,9 +5394,6 @@
             window.updateAdminData = function(user) {
                 window.loadAdminGallery(user);
                 window.loadAdminCustomization(user);
-                if (typeof setupAdminNotesListener === 'function') {
-                    setupAdminNotesListener();
-                }
                 
                 // Fetch existing deletion schedule if any
                 getDocs(query(collection(db, 'app_users'), where('username', '==', user))).then(snap => {
@@ -6085,60 +6082,38 @@
                 }
             }, 2000); // Check every 2 seconds for real-time publishing
 
-            // Real-time listener for admin notes display
-            let notesUnsubscribe = null;
-            function setupAdminNotesListener() {
-                if (notesUnsubscribe) notesUnsubscribe();
-                const docRef = doc(db, 'content', `${adminTargetUser}_daily_notes`);
-                notesUnsubscribe = onSnapshot(docRef, (docSnap) => {
+            document.getElementById('scanNotesBtn').onclick = async () => {
+                if(!adminTargetUser) return;
+                try {
+                    const docSnap = await getDoc(doc(db, 'content', `${adminTargetUser}_daily_notes`));
                     if (docSnap.exists()) {
                         const data = docSnap.data();
                         if (data.items && Array.isArray(data.items)) {
                             document.getElementById('adminNotesContent').value = data.items.join('\n');
-                        }
-                    }
-                });
-            }
-
-            const scanNotesBtn = document.getElementById('scanNotesBtn');
-            if (scanNotesBtn) {
-                scanNotesBtn.onclick = async () => {
-                    if(!adminTargetUser) return;
-                    setupAdminNotesListener();
-                    try {
-                        const docSnap = await getDoc(doc(db, 'content', `${adminTargetUser}_daily_notes`));
-                        if (docSnap.exists()) {
-                            const data = docSnap.data();
-                            if (data.items && Array.isArray(data.items)) {
-                                document.getElementById('adminNotesContent').value = data.items.join('\n');
-                            } else {
-                                document.getElementById('adminNotesContent').value = "";
-                                alert("Notes found but empty list.");
-                            }
                         } else {
-                            alert("No existing notes found for this user.");
+                            document.getElementById('adminNotesContent').value = "";
+                            alert("Notes found but empty list.");
                         }
-                    } catch (e) {
-                        console.error(e);
-                        alert("Error fetching notes.");
+                    } else {
+                        alert("No existing notes found for this user.");
                     }
-                };
-            }
+                } catch (e) {
+                    console.error(e);
+                    alert("Error fetching notes.");
+                }
+            };
 
-            const saveNotesBtn = document.getElementById('saveNotesBtn');
-            if (saveNotesBtn) {
-                saveNotesBtn.onclick = async () => {
-                    if(!adminTargetUser) return;
-                    const rawText = document.getElementById('adminNotesContent').value;
-                    const items = rawText.split('\n').filter(line => line.trim() !== '');
-                    try {
-                        await setDoc(doc(db, 'content', `${adminTargetUser}_daily_notes`), {
-                            items, lastUpdated: serverTimestamp()
-                        });
-                        showToast("Success", `Updated ${adminTargetUser}'s Notes!`, "✅");
-                    } catch (e) { alert("Error"); }
-                };
-            }
+            document.getElementById('saveNotesBtn').onclick = async () => {
+                if(!adminTargetUser) return;
+                const rawText = document.getElementById('adminNotesContent').value;
+                const items = rawText.split('\n').filter(line => line.trim() !== '');
+                try {
+                    await setDoc(doc(db, 'content', `${adminTargetUser}_daily_notes`), {
+                        items, lastUpdated: serverTimestamp()
+                    });
+                    showToast("Success", `Updated ${adminTargetUser}'s Notes!`, "✅");
+                } catch (e) { alert("Error"); }
+            };
             
             
             document.getElementById('addImgBtn').onclick = async () => {
@@ -6252,7 +6227,6 @@
                 const uploadBtnMusic = document.getElementById('startUploadBtn');
                 const scanMusicBtn = document.getElementById('scanMusicBtn'); 
                 
-                if (uploadBtnMusic) {
                 uploadBtnMusic.onclick = async () => {
                     const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
                     const artistName = document.getElementById('uploadArtistName').value.trim();
@@ -6343,9 +6317,7 @@
                         setTimeout(() => statusText.textContent = '', 5000);
                     }
                 }
-                }
                 
-                if (scanMusicBtn) {
                 async function scanRepositoryForMusic(repoFullName, token) {
                     const statusText = document.getElementById('musicStatus');
                     const prevStatus = statusText.textContent;
@@ -6434,7 +6406,6 @@
                     if (!githubToken) return alert("Please log in with GitHub first.");
                     scanRepositoryForMusic(repoFullName, githubToken);
                 };
-                }
             }
 
             const subMusicRequestBtn = document.getElementById('submitSubMusicRequestBtn');
@@ -7564,22 +7535,7 @@
 
         if(nextBtn) nextBtn.addEventListener('click', playNextSong);
 
-        const artistSearchInput = document.getElementById('artistSearch');
-        if (artistSearchInput) {
-            artistSearchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const artistHeaders = document.querySelectorAll('.artist-header');
-                
-                artistHeaders.forEach(header => {
-                    const artistName = header.textContent.toLowerCase();
-                    if (artistName.includes(searchTerm)) {
-                        header.style.display = 'block';
-                    } else {
-                        header.style.display = 'none';
-                    }
-                });
-            });
-        }
+        document.getElementById('artistSearch').addEventListener('input', function() {});
 
         let analyser, source;
         let isVisualizerInit = false;
