@@ -3246,7 +3246,10 @@
                 <h2>Daily reminders</h2>
                 <h4 id="notesUpdateDate">Update: ...</h4>
                 <br>
-                <br>
+                <div style="margin-bottom: 16px;">
+                    <textarea id="noteComposerInput" class="fw-textarea" placeholder="Write a note here..." style="height: 90px; margin-bottom: 10px;"></textarea>
+                    <button id="postNoteBtn" class="submit-btn" style="width: 100%;">Post Note</button>
+                </div>
                 <div id="notesContainer">
                     <div class="note"><p>Loading notes...</p></div>
                 </div>
@@ -4892,6 +4895,38 @@
             const notesDocRef = doc(db, 'content', `${user}_daily_notes`);
             const notesContainer = document.getElementById('notesContainer');
             const updateDateLabel = document.getElementById('notesUpdateDate');
+            const noteComposerInput = document.getElementById('noteComposerInput');
+            const postNoteBtn = document.getElementById('postNoteBtn');
+
+            if (postNoteBtn && noteComposerInput) {
+                postNoteBtn.addEventListener('click', async () => {
+                    const noteText = noteComposerInput.value.trim();
+                    if (!noteText) return;
+
+                    try {
+                        const existingSnap = await getDoc(notesDocRef);
+                        const existingItems = existingSnap.exists() && Array.isArray(existingSnap.data().items)
+                            ? existingSnap.data().items
+                            : [];
+                        const updatedItems = [noteText, ...existingItems].filter(item => item && item.trim());
+
+                        await setDoc(notesDocRef, {
+                            items: updatedItems,
+                            lastUpdated: serverTimestamp()
+                        }, { merge: true });
+
+                        noteComposerInput.value = '';
+                        if (window.showToast) {
+                            showToast('Note Posted 📝', 'Your note is now live.', '📝');
+                        }
+                    } catch (error) {
+                        console.error('Note post error:', error);
+                        if (window.showToast) {
+                            showToast('Note Failed', 'Could not post the note. Please try again.', '⚠️');
+                        }
+                    }
+                });
+            }
 
             onSnapshot(notesDocRef, (docSnap) => {
                 if (docSnap.exists()) {
@@ -4906,9 +4941,11 @@
                     if (data.items && Array.isArray(data.items)) {
                         let notesHtml = '';
                         data.items.forEach(noteText => {
-                            if(noteText.trim()) notesHtml += `<div class="note"><p>${escapeHtml(noteText)}</p></div>`;
+                            if(noteText && noteText.trim()) notesHtml += `<div class="note"><p>${escapeHtml(noteText)}</p></div>`;
                         });
-                        notesContainer.innerHTML = notesHtml;
+                        notesContainer.innerHTML = notesHtml || '<div class="note"><p>No notes yet. Add one above.</p></div>';
+                    } else {
+                        notesContainer.innerHTML = '<div class="note"><p>No notes yet. Add one above.</p></div>';
                     }
                 } else {
                     notesContainer.innerHTML = '<div class="note"><p>Welcome! Notes will appear here.</p></div>';
@@ -5009,12 +5046,17 @@
             musicUI.style.display = isAuthorized ? 'block' : 'none';
             galleryUI.style.display = isAuthorized ? 'block' : 'none';
             systemUI.style.display = isAuthorized ? 'block' : 'none';
-            if (videoUI) videoUI.style.display = isAuthorized ? 'block' : 'none';
+            if (videoUI) videoUI.style.display = 'block';
             
             musicStatus.style.display = isAuthorized ? 'none' : 'block';
             galleryStatus.style.display = isAuthorized ? 'none' : 'block';
             systemStatus.style.display = isAuthorized ? 'none' : 'block';
-            if (videoStatus) videoStatus.style.display = isAuthorized ? 'none' : 'block';
+            if (videoStatus) {
+                videoStatus.style.display = 'block';
+                videoStatus.innerHTML = isAuthorized
+                    ? '<p style="font-size: 13px; color: #2e7d32;">✅ GitHub upload is ready. You can use either a YouTube link or a GitHub-hosted video.</p>'
+                    : '<p style="font-size: 13px; color: #d81b60;">⚠️ YouTube links are available now. GitHub uploads need authorization first.</p>';
+            }
 
             if (isAuthorized) {
                  fetchRepositories('music');
@@ -6149,7 +6191,7 @@
                 try {
                     await setDoc(doc(db, 'content', `${adminTargetUser}_daily_notes`), {
                         items, lastUpdated: serverTimestamp()
-                    });
+                    }, { merge: true });
                     showToast("Success", `Updated ${adminTargetUser}'s Notes!`, "✅");
                 } catch (e) { alert("Error"); }
             };
@@ -7665,6 +7707,11 @@
         // ── Upload source toggle (admin) ──
         let _videoUploadSource = 'link'; // 'link' | 'github'
         function setVideoUploadSource(src) {
+            if (src === 'github' && !githubToken) {
+                showToast('GitHub upload needs authorization', 'You can still schedule a broadcast using a YouTube link.', '⚠️');
+                src = 'link';
+            }
+
             _videoUploadSource = src;
             document.getElementById('srcBtnLink').classList.toggle('active', src === 'link');
             document.getElementById('srcBtnGithub').classList.toggle('active', src === 'github');
@@ -7897,8 +7944,25 @@
             const autoDelete = document.getElementById('videoBroadcastAutoDelete').value === 'true';
             const broadcastBtn = document.getElementById('broadcastVideoBtn');
 
-            if (!videoBroadcastFileData) {
-                alert('Please upload a video file first.');
+            let selectedVideoData = videoBroadcastFileData;
+            if (!selectedVideoData) {
+                const ytInput = document.getElementById('videoBroadcastYoutubeUrl');
+                const ytUrl = ytInput ? ytInput.value.trim() : '';
+                const ytMatch = ytUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                if (ytMatch) {
+                    selectedVideoData = {
+                        url: ytUrl,
+                        name: 'YouTube Video',
+                        videoId: ytMatch[1],
+                        type: 'youtube',
+                        uploadedAt: Date.now()
+                    };
+                    videoBroadcastFileData = selectedVideoData;
+                }
+            }
+
+            if (!selectedVideoData) {
+                alert('Please upload a video file or paste a valid YouTube link first.');
                 return;
             }
 
@@ -7929,8 +7993,8 @@
                 id: Date.now(),
                 title: title,
                 description: description,
-                videoUrl: videoBroadcastFileData.url,
-                videoName: videoBroadcastFileData.name || 'YouTube Video',
+                videoUrl: selectedVideoData.url,
+                videoName: selectedVideoData.name || 'YouTube Video',
                 scheduledTime: new Date(dateTime).getTime(),
                 targetUser: targetUser,
                 autoDelete: autoDelete,
