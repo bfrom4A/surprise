@@ -35,6 +35,40 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            -moz-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            background-color: #ffd1dc;
+        }
+
+        body {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: none;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        a, button, input, select, textarea {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        button, input, textarea, select {
+            font: inherit;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        img, svg {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
         
         @media print {
             html, body {
