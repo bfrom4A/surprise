@@ -415,6 +415,42 @@
             position: relative;
         }
 
+        .user-profile-card {
+            background: #fff0f6;
+            border: 1px solid #ffd6e7;
+            border-radius: 20px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 0 auto 20px;
+            max-width: 1040px;
+            box-shadow: 0 8px 30px rgba(216, 27, 96, 0.08);
+        }
+
+        .user-profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #d81b60;
+        }
+
+        .user-profile-content {
+            flex: 1;
+        }
+
+        .user-profile-meta {
+            margin-top: 8px;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .user-profile-detail {
+            margin: 4px 0;
+        }
+
         .profile-avatar {
             width: 60px;
             height: 60px;
@@ -3361,6 +3397,20 @@
     
     <!-- Main Content -->
      <div id="phClock"></div>
+
+    <div class="user-profile-card" id="userProfileCard" style="display: none;">
+        <img id="userProfileAvatar" class="user-profile-avatar" src="https://placehold.co/100x100/ffb7c5/d81b60?text=U" alt="Your Avatar">
+        <div class="user-profile-content">
+            <p class="profile-greeting">Hi, <span id="userProfileGreeting">Friend</span>!</p>
+            <p class="profile-name" id="userProfileFullName">Guest</p>
+            <div class="user-profile-meta">
+                <p id="userProfileFavorites" class="user-profile-detail"></p>
+                <p id="userProfileLikes" class="user-profile-detail"></p>
+                <p id="userProfileDreamLife" class="user-profile-detail"></p>
+            </div>
+        </div>
+    </div>
+
     <div class="container" id="mainContent" style="display: none;">
         
         <br>
@@ -4323,6 +4373,7 @@
 
             window.currentLetterAudio = window.currentLetterAudio || null;
             setupDeletionMonitor(user); // Start account deletion monitor
+            loadProfileDetails(user);
 
             // Start new notification listeners (using normalized username)
             startGifListener(user);
@@ -4395,40 +4446,10 @@
                     if (window.notifyUser) window.notifyUser('🎆 Fireworks!', 'Enjoy the show!', '🎆');
 
                     if (data.songUrl && data.cueTime >= 0 && data.cueTime <= 20) {
-                        console.log('Music will play at:', data.cueTime, 'seconds');
-                        setTimeout(() => {
-                            try {
-                                const audio = new Audio();
-                                audio.crossOrigin = 'anonymous';
-                                audio.src = data.songUrl;
-                                audio.volume = 0.8;
-                                audio.preload = 'auto';
-                                audio.addEventListener('playing', () => {
-                                    console.log('✅ Audio is now playing');
-                                });
-                                audio.addEventListener('error', (e) => {
-                                    console.error('❌ Audio error:', e);
-                                });
-                                const playPromise = audio.play();
-                                if (playPromise !== undefined) {
-                                    playPromise
-                                        .then(() => {
-                                            console.log('✅ Music playing successfully');
-                                        })
-                                        .catch(error => {
-                                            console.warn('⚠️ Music playback blocked by browser (autoplay policy):', error.name);
-                                            if (window.notifyUser) {
-                                                window.notifyUser('♪ Audio Blocked', 'Browser autoplay policy prevents audio. Click anywhere to enable sound.', '🔊');
-                                            }
-                                            document.addEventListener('click', () => {
-                                                audio.play().catch(e => console.error('Retry failed:', e));
-                                            }, { once: true });
-                                        });
-                                }
-                            } catch (e) {
-                                console.error('Audio initialization error:', e);
-                            }
-                        }, data.cueTime * 1000);
+                        console.log('Fireworks audio is available but will not auto-play under user settings:', data.songUrl);
+                        if (window.notifyUser) {
+                            window.notifyUser('🎆 Fireworks!', 'A celebration is happening. Open the Music tab to play any attached song manually.', '🎆');
+                        }
                     }
 
                     setTimeout(() => {
@@ -5117,6 +5138,22 @@
             document.getElementById('profileDreamCountryInput').value = data.dreamCountry || '';
             document.getElementById('profileAvatar').src = avatarUrl;
             document.getElementById('profileAvatarPreview').src = avatarUrl;
+
+            const userAvatar = document.getElementById('userProfileAvatar');
+            const userGreeting = document.getElementById('userProfileGreeting');
+            const userFullName = document.getElementById('userProfileFullName');
+            const userFavorites = document.getElementById('userProfileFavorites');
+            const userLikes = document.getElementById('userProfileLikes');
+            const userDreamLife = document.getElementById('userProfileDreamLife');
+            const userCard = document.getElementById('userProfileCard');
+
+            if (userAvatar) userAvatar.src = avatarUrl;
+            if (userGreeting) userGreeting.textContent = displayName.split(' ')[0] || displayName;
+            if (userFullName) userFullName.textContent = displayName;
+            if (userFavorites) userFavorites.textContent = data.favorites ? `Favorites: ${data.favorites}` : '';
+            if (userLikes) userLikes.textContent = data.likes ? `Likes: ${data.likes}` : '';
+            if (userDreamLife) userDreamLife.textContent = data.dreamLife ? `Dream: ${data.dreamLife}` : '';
+            if (userCard) userCard.style.display = 'flex';
 
             if (data.avatarRepo) {
                 const profileRepoSelect = document.getElementById('ghRepoSelectProfile');
@@ -6421,22 +6458,24 @@
                 }
             };
 
-            if (isSuperAdmin) {
-                setupAdminSongList(); 
+            setupAdminSongList(); 
                 
                 const uploadBtnMusic = document.getElementById('startUploadBtn');
                 const scanMusicBtn = document.getElementById('scanMusicBtn'); 
-                
-                uploadBtnMusic.onclick = async () => {
+                const musicStatusText = document.getElementById('musicStatus');
+
+                const performMusicUpload = async () => {
+                    if (!uploadBtnMusic) return;
+
                     const repoSelect = document.getElementById('ghRepoSelectMusic');
                     const repoFullName = repoSelect?.value;
                     const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || 'main';
-                    const artistName = document.getElementById('uploadArtistName').value.trim();
-                    const songTitle = document.getElementById('uploadSongTitle').value.trim();
+                    const artistName = document.getElementById('uploadArtistName')?.value?.trim() || '';
+                    const songTitle = document.getElementById('uploadSongTitle')?.value?.trim() || '';
                     const fileInput = document.getElementById('musicFileInput');
-                    const statusText = document.getElementById('musicStatus');
+                    const statusText = musicStatusText;
 
-                    if (!repoFullName || !artistName || !songTitle || !fileInput.files.length) {
+                    if (!repoFullName || !artistName || !songTitle || !fileInput?.files?.length) {
                         alert("Please select a repository, a music file, and fill in all song details.");
                         return;
                     }
@@ -6453,18 +6492,18 @@
                     const [owner, repoName] = repoFullName.split('/');
                     const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${filePath}`;
                     
-                    statusText.textContent = "1/3: Checking for duplicates on GitHub...";
+                    if (statusText) statusText.textContent = "1/3: Checking for duplicates on GitHub...";
                     uploadBtnMusic.disabled = true;
                     
                     try {
                         const fileExists = await checkFileExists(repoFullName, filePath, githubToken, branch);
                         if (fileExists) {
-                            statusText.textContent = "❌ Upload Failed: Song already exists on GitHub.";
+                            if (statusText) statusText.textContent = "❌ Upload Failed: Song already exists on GitHub.";
                             showToast("Overwrite Blocked!", `"${fileName}" already exists in the repository.`, "🚫");
                             return;
                         }
                         
-                        statusText.textContent = "1/3: Reading file...";
+                        if (statusText) statusText.textContent = "1/3: Reading file...";
                         const base64Content = await toBase64(file);
                         
                         const githubApiUrl = `https://api.github.com/repos/${repoFullName}/contents/${filePath}`;
@@ -6476,7 +6515,7 @@
                             branch: branch 
                         };
 
-                        statusText.textContent = "2/3: Uploading to GitHub...";
+                        if (statusText) statusText.textContent = "2/3: Uploading to GitHub...";
                         
                         const ghResponse = await fetch(githubApiUrl, {
                             method: 'PUT',
@@ -6492,7 +6531,7 @@
                             throw new Error(`GitHub API Error: ${errorData.message || ghResponse.statusText}`);
                         }
                         
-                        statusText.textContent = "3/3: Syncing with Firestore...";
+                        if (statusText) statusText.textContent = "3/3: Syncing with Firestore...";
 
                         const songsCollectionRef = collection(db, 'songs');
                         await addDoc(songsCollectionRef, {
@@ -6504,28 +6543,31 @@
                             timestamp: serverTimestamp()
                         });
 
-                        statusText.textContent = "✅ Upload and Sync Successful!";
+                        if (statusText) statusText.textContent = "✅ Upload and Sync Successful!";
                         showToast("Success! 🎵", `"${songTitle}" synced to library.`, "✅");
                         
-                        document.getElementById('uploadArtistName').value = '';
-                        document.getElementById('uploadSongTitle').value = '';
-                        fileInput.value = '';
-                        document.getElementById('fileNameDisplay').textContent = 'No file selected';
+                        const uploadArtistName = document.getElementById('uploadArtistName');
+                        const uploadSongTitle = document.getElementById('uploadSongTitle');
+                        if (uploadArtistName) uploadArtistName.value = '';
+                        if (uploadSongTitle) uploadSongTitle.value = '';
+                        if (fileInput) fileInput.value = '';
+                        const fileNameDisplay = document.getElementById('fileNameDisplay');
+                        if (fileNameDisplay) fileNameDisplay.textContent = 'No file selected';
 
                     } catch (e) {
                         console.error("Upload/Sync Error:", e);
-                        statusText.textContent = `❌ Upload Failed: ${e.message}`;
+                        if (statusText) statusText.textContent = `❌ Upload Failed: ${e.message}`;
                         alert("Upload Failed. Check console for details.");
                     } finally {
                         uploadBtnMusic.disabled = false;
-                        setTimeout(() => statusText.textContent = '', 5000);
+                        if (statusText) setTimeout(() => statusText.textContent = '', 5000);
                     }
-                }
+                };
                 
-                async function scanRepositoryForMusic(repoFullName, token) {
-                    const statusText = document.getElementById('musicStatus');
-                    const prevStatus = statusText.textContent;
-                    statusText.textContent = "Scanning GitHub repository...";
+                const scanRepositoryForMusic = async (repoFullName, token) => {
+                    const statusText = musicStatusText;
+                    const prevStatus = statusText?.textContent || '';
+                    if (statusText) statusText.textContent = "Scanning GitHub repository...";
                     try {
                         const repoSelect = document.getElementById('ghRepoSelectMusic');
                         const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || 'main';
@@ -6553,7 +6595,7 @@
                         const mp3Files = files.filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.mp3'));
                         
                         if (mp3Files.length === 0) {
-                             statusText.textContent = "No MP3 files found in /music directory.";
+                             if (statusText) statusText.textContent = "No MP3 files found in /music directory.";
                              return;
                         }
 
@@ -6594,25 +6636,34 @@
                             }
                         }
 
-                        statusText.textContent = `✅ Scan complete. ${newSongsAdded} new songs added.`;
+                        if (statusText) statusText.textContent = `✅ Scan complete. ${newSongsAdded} new songs added.`;
                         showToast("Music Sync Complete 🎵", `${newSongsAdded} songs added/verified.`, "✅");
 
                     } catch (e) {
                         console.error("Scan Error:", e);
-                        statusText.textContent = `❌ Scan Failed: ${e.message}`;
+                        if (statusText) statusText.textContent = `❌ Scan Failed: ${e.message}`;
                         alert(`Scan failed: ${e.message}`);
                     } finally {
-                        setTimeout(() => statusText.textContent = prevStatus, 5000);
+                        if (statusText) setTimeout(() => statusText.textContent = prevStatus, 5000);
                     }
-                }
-                
-                scanMusicBtn.onclick = () => {
-                    const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
+                };
+
+                const handleMusicScan = () => {
+                    const repoFullName = document.getElementById('ghRepoSelectMusic')?.value;
                     if (!repoFullName) return alert("Please select a repository first.");
                     if (!githubToken) return alert("Please log in with GitHub first.");
                     scanRepositoryForMusic(repoFullName, githubToken);
                 };
-            }
+
+                if (uploadBtnMusic) {
+                    uploadBtnMusic.removeEventListener('click', performMusicUpload);
+                    uploadBtnMusic.addEventListener('click', performMusicUpload);
+                }
+
+                if (scanMusicBtn) {
+                    scanMusicBtn.removeEventListener('click', handleMusicScan);
+                    scanMusicBtn.addEventListener('click', handleMusicScan);
+                }
 
             const subMusicRequestBtn = document.getElementById('submitSubMusicRequestBtn');
             if (subMusicRequestBtn) {
@@ -6976,7 +7027,9 @@
             const statusText = document.getElementById('maintenanceDefaultStatus');
             const setBtn = document.getElementById('setDefaultMaintBtn');
 
-            onSnapshot(collection(db, 'songs'), (snapshot) => {
+            if (!select || !setBtn) return;
+
+            const updateSelectorOptions = (snapshot) => {
                 select.innerHTML = '<option value="">Select a maintenance song</option>';
                 snapshot.forEach((songDoc) => {
                     const song = songDoc.data();
@@ -6985,6 +7038,10 @@
                     option.textContent = `${song.artist} - ${song.title}`;
                     select.appendChild(option);
                 });
+            };
+
+            onSnapshot(collection(db, 'songs'), (snapshot) => {
+                updateSelectorOptions(snapshot);
             });
 
             onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
@@ -6992,14 +7049,18 @@
                     const maintData = docSnap.data();
                     if (maintData.defaultSongId) {
                         select.value = maintData.defaultSongId;
-                        statusText.textContent = `Current default maintenance song: ${maintData.defaultSongArtist || ''} ${maintData.defaultSongTitle ? '- ' + maintData.defaultSongTitle : ''}`;
-                    } else {
+                        if (statusText) {
+                            statusText.textContent = `Current default maintenance song: ${maintData.defaultSongArtist || ''} ${maintData.defaultSongTitle ? '- ' + maintData.defaultSongTitle : ''}`;
+                        }
+                    } else if (statusText) {
                         statusText.textContent = 'No default maintenance song selected.';
                     }
+                } else if (statusText) {
+                    statusText.textContent = 'No default maintenance song selected.';
                 }
             });
 
-            setBtn.onclick = async () => {
+            const handleSetDefaultMaintenance = async () => {
                 const songId = select.value;
                 if (!songId) return alert('Please select a song to set as maintenance default.');
                 try {
@@ -7012,12 +7073,20 @@
                         defaultSongArtist: songData.artist,
                         defaultSongUrl: songData.url
                     }, { merge: true });
+                    maintenanceDefaultSongUrl = songData.url || null;
+                    maintenanceDefaultSongTitle = songData.title || null;
+                    if (document.getElementById('maintAudio') && typeof initMaintMusic === 'function') {
+                        initMaintMusic();
+                    }
                     showToast('Default Maintenance Set', `${songData.title} will play during maintenance.`, '🎵');
                 } catch (e) {
                     console.error('Set default maintenance failed', e);
                     alert('Unable to set maintenance default song.');
                 }
             };
+
+            setBtn.removeEventListener('click', handleSetDefaultMaintenance);
+            setBtn.addEventListener('click', handleSetDefaultMaintenance);
         }
 
         async function submitSubMusicRequest() {
