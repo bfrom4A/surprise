@@ -4391,6 +4391,8 @@
             window.currentLetterAudio = window.currentLetterAudio || null;
             setupDeletionMonitor(user); // Start account deletion monitor
             loadProfileDetails(user);
+            setupGallery(user);
+            setupDynamicContent(user);
 
             // Start new notification listeners (using normalized username)
             startGifListener(user);
@@ -4712,14 +4714,18 @@
             });
         }
 
-        function setupGallery(user) {
+        async function setupGallery(user) {
             const collectionName = `${user}_gallery`;
             const galleryContainer = document.getElementById('publicGallery');
-            const q = query(collection(db, collectionName), orderBy('timestamp', 'desc'));
+            if (!galleryContainer) return;
 
-            onSnapshot(q, (snapshot) => {
+            galleryContainer.innerHTML = '<p style="text-align: center; width: 100%; color: #999;">Loading gallery...</p>';
+
+            try {
+                const q = query(collection(db, collectionName), orderBy('timestamp', 'desc'));
+                const snapshot = await getDocs(q);
                 galleryContainer.innerHTML = '';
-                
+
                 if(snapshot.empty) {
                     galleryContainer.innerHTML = '<p style="text-align: center; width: 100%; color: #999;">No images uploaded yet.</p>';
                     return;
@@ -4739,93 +4745,64 @@
                         galleryContainer.appendChild(item);
                     }
                 });
-            }, (error) => {
+            } catch (error) {
                 console.error("Gallery error:", error);
                 galleryContainer.innerHTML = '<p>Error loading gallery.</p>';
-            });
+            }
         }
 
-        function setupDynamicContent(user) {
+        async function setupDynamicContent(user) {
             let lettersLoaded = false;
             let notesLoaded = false;
             let allSongsData = {}; 
 
-            const lettersCol = collection(db, `${user}_love_letters`);
-            const q = query(lettersCol, orderBy('timestamp', 'desc')); 
             const lettersContainer = document.getElementById('lettersContainer');
-
-            onSnapshot(q, (snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added" && lettersLoaded) {
-                        const data = change.doc.data();
-                        const notificationTitle = data.isScheduled ? "📅 Scheduled Letter Published" : "New Love Letter 💌";
-                        const notificationMsg = data.isScheduled 
-                            ? `"${data.title}" has been automatically published!`
-                            : `"${data.title}" has been added!`;
-                        if (window.notifyUser) window.notifyUser(notificationTitle, notificationMsg, "💌");
-                        console.log('[Real-time] Letter notification shown:', notificationTitle, notificationMsg);
-                    }
-                });
-
-                if (snapshot.empty) {
-                    lettersContainer.innerHTML = '<p style="text-align:center; color: #888;">No letters yet.</p>';
-                    return;
-                }
-                
-                let html = '';
-                snapshot.docs.forEach((doc) => {
-                    const data = doc.data();
-                    const letterId = `letter_${doc.id}`;
-                    const formattedContent = data.content.split('\n').map(line => line.trim()).map(line => line.length > 0 ? `<p>${escapeHtml(line)}</p>` : '<br>').join('');
-                    const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
-                    const scheduledBadge = data.isScheduled ? ` <span style="color:#ff9800; font-size:12px; font-weight: bold;">📅 Scheduled</span>` : "";
-                    const adminCredit = data.scheduledBy ? ` <span style="color:#999; font-size:11px; font-style: italic;">(by ${escapeHtml(data.scheduledBy)})</span>` : "";
-                    html += `
-                        <div class="letter" id="${letterId}" ${songDataAttrs}>
-                            <div class="letter-header">
-                                <h3>${escapeHtml(data.title)} (${escapeHtml(data.dateLabel)})${scheduledBadge}${adminCredit}</h3>
-                                <span>Click to open</span>
-                            </div>
-                            <div class="letter-content" style="text-align: justify">${formattedContent}</div>
-                        </div>
-                    `;
-                });
-                lettersContainer.innerHTML = html;
-                
-                document.querySelectorAll('.letter').forEach(letter => {
-                    letter.addEventListener('click', function() { 
-                        this.classList.toggle('expanded'); 
-                        
-                        if (this.classList.contains('expanded') && this.dataset.songUrl) {
-                            // Stop previous audio if playing
-                            if (window.currentLetterAudio) {
-                                window.currentLetterAudio.pause();
-                                window.currentLetterAudio = null;
-                            }
-                            
-                            // Play new audio once
-                            window.currentLetterAudio = new Audio(this.dataset.songUrl);
-                            window.currentLetterAudio.volume = 0.25;
-                            window.currentLetterAudio.loop = false;
-                            window.currentLetterAudio.preload = 'auto';
-                            window.currentLetterAudio.play().catch(e => console.error('Audio play error:', e));
-                        } else if (!this.classList.contains('expanded') && this.dataset.songUrl) {
-                            // Stop audio when collapsing
-                            if (window.currentLetterAudio) {
-                                window.currentLetterAudio.pause();
-                                window.currentLetterAudio = null;
-                            }
-                        }
-                    });
-                });
-                lettersLoaded = true;
-            });
-
-            const notesDocRef = doc(db, 'content', `${user}_daily_notes`);
             const notesContainer = document.getElementById('notesContainer');
             const updateDateLabel = document.getElementById('notesUpdateDate');
             const noteComposerInput = document.getElementById('noteComposerInput');
             const postNoteBtn = document.getElementById('postNoteBtn');
+            const artistListContainer = document.getElementById('artistList');
+            const songListContainer = document.getElementById('songListContainer');
+
+            if (!lettersContainer || !notesContainer || !artistListContainer || !songListContainer) return;
+
+            lettersContainer.innerHTML = '<p style="text-align:center; color: #888;">Loading letters...</p>';
+            notesContainer.innerHTML = '<p style="text-align:center; color: #888;">Loading notes...</p>';
+
+            try {
+                const lettersCol = collection(db, `${user}_love_letters`);
+                const lettersQuery = query(lettersCol, orderBy('timestamp', 'desc'));
+                const lettersSnap = await getDocs(lettersQuery);
+
+                if (lettersSnap.empty) {
+                    lettersContainer.innerHTML = '<p style="text-align:center; color: #888;">No letters yet.</p>';
+                } else {
+                    let html = '';
+                    lettersSnap.docs.forEach((doc) => {
+                        const data = doc.data();
+                        const letterId = `letter_${doc.id}`;
+                        const formattedContent = (data.content || '').split('\n').map(line => line.trim()).map(line => line.length > 0 ? `<p>${escapeHtml(line)}</p>` : '<br>').join('');
+                        const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
+                        const scheduledBadge = data.isScheduled ? ` <span style="color:#ff9800; font-size:12px; font-weight: bold;">📅 Scheduled</span>` : "";
+                        const adminCredit = data.scheduledBy ? ` <span style="color:#999; font-size:11px; font-style: italic;">(by ${escapeHtml(data.scheduledBy)})</span>` : "";
+                        html += `
+                            <div class="letter" id="${letterId}" ${songDataAttrs}>
+                                <div class="letter-header">
+                                    <h3>${escapeHtml(data.title || 'Untitled Letter')} (${escapeHtml(data.dateLabel || 'No date')})${scheduledBadge}${adminCredit}</h3>
+                                    <span>Click to open</span>
+                                </div>
+                                <div class="letter-content" style="text-align: justify">${formattedContent}</div>
+                            </div>
+                        `;
+                    });
+                    lettersContainer.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Letters load error:', error);
+                lettersContainer.innerHTML = '<p style="text-align:center; color: #888;">Unable to load letters right now.</p>';
+            }
+
+            const notesDocRef = doc(db, 'content', `${user}_daily_notes`);
 
             if (postNoteBtn && noteComposerInput) {
                 postNoteBtn.addEventListener('click', async () => {
@@ -4857,15 +4834,14 @@
                 });
             }
 
-            onSnapshot(notesDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (notesLoaded && window.notifyUser) window.notifyUser("Daily Notes Updated 📝", "Check out the new reminders!", "📝");
-
+            try {
+                const notesSnap = await getDoc(notesDocRef);
+                if (notesSnap.exists()) {
+                    const data = notesSnap.data();
                     if (data.lastUpdated && typeof data.lastUpdated.toDate === 'function') {
                         const dateObj = data.lastUpdated.toDate();
                         const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true };
-                        updateDateLabel.textContent = `Update: ${dateObj.toLocaleString('en-US', options)}`;
+                        if (updateDateLabel) updateDateLabel.textContent = `Update: ${dateObj.toLocaleString('en-US', options)}`;
                     }
                     if (data.items && Array.isArray(data.items)) {
                         let notesHtml = '';
@@ -4879,17 +4855,17 @@
                 } else {
                     notesContainer.innerHTML = '<div class="note"><p>Welcome! Notes will appear here.</p></div>';
                 }
-                notesLoaded = true;
-            });
+            } catch (error) {
+                console.error('Notes load error:', error);
+                notesContainer.innerHTML = '<div class="note"><p>Unable to load notes right now.</p></div>';
+            }
 
-            const artistListContainer = document.getElementById('artistList');
-            const songListContainer = document.getElementById('songListContainer');
-            
-            onSnapshot(collection(db, 'songs'), (snapshot) => {
+            try {
+                const songsSnap = await getDocs(collection(db, 'songs'));
                 artistListContainer.innerHTML = ''; 
                 allSongsData = {}; 
 
-                snapshot.forEach(doc => {
+                songsSnap.forEach(doc => {
                     const song = doc.data();
                     if(!allSongsData[song.artist]) allSongsData[song.artist] = [];
                     allSongsData[song.artist].push(song);
@@ -4912,7 +4888,10 @@
                 });
                 
                 if(window.updateAllSongs) window.updateAllSongs(allSongsData);
-            });
+            } catch (error) {
+                console.error('Songs load error:', error);
+                artistListContainer.innerHTML = '<p style="text-align:center; color:#888;">Unable to load music right now.</p>';
+            }
 
             function displayArtistSongs(artistName, songs, clickedElement) {
                 document.querySelectorAll('.artist-header').forEach(header => {
