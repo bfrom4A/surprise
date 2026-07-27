@@ -404,6 +404,185 @@
             gap: 15px;
         }
 
+        .profile-card {
+            background: #fff0f6;
+            border: 1px solid #ffd6e7;
+            border-radius: 20px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #d81b60;
+            cursor: pointer;
+        }
+
+        .profile-card-content {
+            flex: 1;
+        }
+
+        .profile-card-content .profile-greeting {
+            font-size: 14px;
+            color: #555;
+            margin: 0 0 4px;
+        }
+
+        .profile-card-content .profile-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #d81b60;
+            margin: 0;
+        }
+
+        .profile-arrow {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #d81b60;
+            transition: transform 0.2s ease;
+        }
+
+        .profile-arrow:hover {
+            transform: translateX(3px);
+        }
+
+        .profile-drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 2999;
+        }
+
+        .profile-drawer-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .profile-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(360px, 90vw);
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: 10px 0 40px rgba(0,0,0,0.12);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+            overflow-y: auto;
+        }
+
+        .profile-drawer.active {
+            transform: translateX(0);
+        }
+
+        .profile-drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 22px 20px 10px;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        .profile-drawer-header h3 {
+            margin: 0;
+            font-size: 22px;
+            color: #d81b60;
+        }
+
+        .profile-drawer-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .profile-drawer .drawer-section {
+            background: #fdf2f8;
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid #ffe4ec;
+        }
+
+        .profile-drawer label {
+            display: block;
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 6px;
+        }
+
+        .profile-drawer input,
+        .profile-drawer textarea,
+        .profile-drawer select {
+            width: 100%;
+            border: 1px solid #e9d5e3;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #333;
+            background: white;
+            outline: none;
+        }
+
+        .profile-drawer textarea {
+            resize: vertical;
+            min-height: 72px;
+        }
+
+        .profile-drawer .profile-action-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .profile-drawer .profile-avatar-preview {
+            width: 100%;
+            border-radius: 18px;
+            object-fit: cover;
+            max-height: 220px;
+        }
+
+        .profile-drawer .edit-save-btn {
+            background: #d81b60;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 12px 18px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .profile-drawer .edit-save-btn:hover {
+            background: #b0174f;
+        }
+
+        .profile-drawer .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .profile-drawer .field-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .admin-main-content {
             background: white;
             border-radius: 20px;
@@ -2376,7 +2555,16 @@
             <div class="admin-sidebar-left">
                 <h3 style="color: #d81b60; text-align: center; margin-bottom: 10px; font-family: 'Dancing Script', cursive; font-size: 32px;">Admin</h3>
                 <p id="targetSelectionHelperText" style="color: #888; font-size: 12px; text-align: center; margin-bottom: 20px;">Select Target User</p>
-                
+
+                <div class="profile-card">
+                    <img id="profileAvatar" class="profile-avatar" src="https://placehold.co/120x120/ffb7c5/d81b60?text=U" alt="User Avatar">
+                    <div class="profile-card-content">
+                        <p class="profile-greeting">Hi, <span id="profileGreeting">User</span>!</p>
+                        <p class="profile-name" id="profileFullName">Guest</p>
+                    </div>
+                    <div class="profile-arrow" id="openProfileDrawer">➤</div>
+                </div>
+
                 <button class="admin-target-btn static-target active" data-target-user="kate">
                     <span style="font-size: 20px;">👧🏻</span> Manage Kate
                 </button>
@@ -2394,6 +2582,61 @@
 
                 <button id="adminLogoutBtn" class="tab" style="background: #ffb7c5; color: white; width: 100%; justify-content: center; border-radius: 12px;">🔒 Log Out</button>
             </div>
+
+            <div class="profile-drawer-overlay" id="profileDrawerOverlay"></div>
+            <aside class="profile-drawer" id="profileDrawer">
+                <div class="profile-drawer-header">
+                    <h3>User Profile</h3>
+                    <button id="closeProfileDrawer" class="submit-btn" style="padding: 8px 12px; font-size: 14px;">Close</button>
+                </div>
+                <div class="profile-drawer-body">
+                    <div class="drawer-section">
+                        <label>Avatar</label>
+                        <img id="profileAvatarPreview" class="profile-avatar-preview" src="https://placehold.co/300x300/ffb7c5/d81b60?text=Avatar" alt="Profile Preview">
+                        <input type="file" id="profileAvatarInput" accept="image/*">
+                        <label style="margin-top: 10px;">GitHub Repository</label>
+                        <select id="ghRepoSelectProfile" class="repo-select">
+                            <option value="">Loading repositories...</option>
+                        </select>
+                        <button id="uploadProfileAvatarBtn" class="edit-save-btn">Upload Avatar to GitHub</button>
+                    </div>
+
+                    <div class="drawer-section">
+                        <label>Full Name</label>
+                        <input type="text" id="profileFullNameInput" placeholder="Enter full name">
+                        <div class="field-row">
+                            <div>
+                                <label>Favorites</label>
+                                <input type="text" id="profileFavoritesInput" placeholder="Favorites">
+                            </div>
+                            <div>
+                                <label>Likes</label>
+                                <input type="text" id="profileLikesInput" placeholder="Likes">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div>
+                                <label>Dislikes</label>
+                                <input type="text" id="profileDislikesInput" placeholder="Dislikes">
+                            </div>
+                            <div>
+                                <label>Allergies</label>
+                                <input type="text" id="profileAllergiesInput" placeholder="Allergies">
+                            </div>
+                        </div>
+                        <div>
+                            <label>Dream in life</label>
+                            <textarea id="profileDreamLifeInput" placeholder="Life dream"></textarea>
+                        </div>
+                        <div>
+                            <label>Dream country</label>
+                            <input type="text" id="profileDreamCountryInput" placeholder="Dream country">
+                        </div>
+                    </div>
+
+                    <button id="saveProfileDetailsBtn" class="edit-save-btn">Save Profile Details</button>
+                </div>
+            </aside>
 
             <!-- Main Central Area -->
             <div class="admin-main-content">
@@ -3424,19 +3667,19 @@
         let maintenanceDefaultSongTitle = null;
 
         async function initMaintMusic() {
-            if (maintMusicInitialized) {
-                const maintAudio = document.getElementById('maintAudio');
-                if (maintAudio && maintAudio.paused && maintAudio.src) {
-                    maintAudio.play().catch(() => {});
-                }
-                return;
-            }
-
             const maintAudio = document.getElementById('maintAudio');
             const maintDisc = document.getElementById('maint-disc');
             const maintTitle = document.getElementById('maint-song-title');
             const maintTime = document.getElementById('maint-song-time');
             const maintPlayBtn = document.getElementById('maint-play-btn');
+
+            if (maintMusicInitialized) {
+                if (maintAudio && maintAudio.src) {
+                    maintPlayBtn.textContent = maintAudio.paused ? '▶️' : '⏸️';
+                    maintDisc.style.animationPlayState = maintAudio.paused ? 'paused' : 'running';
+                }
+                return;
+            }
 
             try {
                 let songData = null;
@@ -3456,23 +3699,14 @@
                 if (songData) {
                     maintAudio.src = songData.url;
                     maintTitle.textContent = songData.title || "Unknown Song";
-                    
-                    maintAudio.play().then(() => {
-                        maintPlayBtn.textContent = '⏸️';
-                        maintDisc.style.animationPlayState = 'running';
-                    }).catch((e) => {
-                        console.log("Autoplay blocked, waiting for user interaction.", e);
-                        maintPlayBtn.textContent = '▶️';
-                        maintDisc.style.animationPlayState = 'paused';
-                        
-                        const playOnInteraction = () => {
-                            if (isMaintenanceActiveLocally && maintAudio.paused) {
-                                maintAudio.play().catch(()=>{});
-                            }
-                            document.removeEventListener('click', playOnInteraction);
-                        };
-                        document.addEventListener('click', playOnInteraction);
-                    });
+                    maintAudio.preload = 'none';
+                    maintAudio.autoplay = false;
+                    maintPlayBtn.textContent = '▶️';
+                    maintDisc.style.animationPlayState = 'paused';
+
+                    if (window.notifyUser) {
+                        window.notifyUser('Maintenance Music Ready', 'Click the play button to start the maintenance track.', '🎵');
+                    }
                 } else {
                     maintTitle.textContent = "No music available";
                 }
@@ -3482,8 +3716,8 @@
             }
 
             maintPlayBtn.onclick = () => {
-                if(maintAudio.paused) {
-                    maintAudio.play();
+                if (maintAudio.paused) {
+                    maintAudio.play().catch((e) => console.warn('Maintenance play blocked:', e));
                 } else {
                     maintAudio.pause();
                 }
@@ -3550,19 +3784,17 @@
             const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
             if (btnToggleMaintenance) {
                 const isCurrentlyActiveOrScheduled = maintData.isActive || maintData.isScheduled;
-                if (isCurrentlyActiveOrScheduled) {
-                    btnToggleMaintenance.textContent = "Disable Maintenance";
-                    btnToggleMaintenance.style.background = "#28a745";
-                    if(document.getElementById('maintStartTime')) document.getElementById('maintStartTime').value = maintData.startTime || '';
-                    if(document.getElementById('maintEndTime')) {
-                        document.getElementById('maintEndTime').value = maintData.endTime || '';
-                        document.getElementById('maintEndTime').dispatchEvent(new Event('input'));
-                    }
-                    if(document.getElementById('maintMessage')) document.getElementById('maintMessage').value = maintData.message || '';
-                } else {
-                    btnToggleMaintenance.textContent = "Enable / Schedule Maintenance";
-                    btnToggleMaintenance.style.background = "#d81b60";
+                currentMaintenanceEnabled = isCurrentlyActiveOrScheduled;
+                btnToggleMaintenance.style.background = "#28a745";
+                if(document.getElementById('maintStartTime')) document.getElementById('maintStartTime').value = maintData.startTime || '';
+                if(document.getElementById('maintEndTime')) {
+                    document.getElementById('maintEndTime').value = maintData.endTime || '';
+                    document.getElementById('maintEndTime').dispatchEvent(new Event('input'));
                 }
+                if(document.getElementById('maintMessage')) document.getElementById('maintMessage').value = maintData.message || '';
+            } else {
+                btnToggleMaintenance.textContent = "Enable / Schedule Maintenance";
+                btnToggleMaintenance.style.background = "#d81b60";
             }
 
             const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
@@ -3664,13 +3896,21 @@
             reader.onerror = error => reject(error);
         });
 
+        const blobToBase64 = blob => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+
         function utf8ToBase64(str) {
             return window.btoa(unescape(encodeURIComponent(str)));
         }
 
-        async function getShaAndPath(repo, path, token) {
+        async function getShaAndPath(repo, path, token, branch = 'main') {
             const [owner, name] = repo.split('/');
-            const apiUrl = `https://api.github.com/repos/${owner}/${name}/contents/${path}`;
+            let apiUrl = `https://api.github.com/repos/${owner}/${name}/contents/${path}`;
+            if (branch) apiUrl += `?ref=${encodeURIComponent(branch)}`;
             const response = await fetch(apiUrl, {
                 headers: { 'Authorization': `token ${token}` }
             });
@@ -3681,9 +3921,10 @@
             return { sha: null, path: null };
         }
         
-        async function checkFileExists(repo, path, token) {
+        async function checkFileExists(repo, path, token, branch = 'main') {
             const [owner, name] = repo.split('/');
-            const apiUrl = `https://api.github.com/repos/${owner}/${name}/contents/${path}`;
+            let apiUrl = `https://api.github.com/repos/${owner}/${name}/contents/${path}`;
+            if (branch) apiUrl += `?ref=${encodeURIComponent(branch)}`;
             try {
                 const response = await fetch(apiUrl, {
                     method: 'HEAD',
@@ -4725,6 +4966,7 @@
                  fetchRepositories('gallery');
                  fetchRepositories('system');
                  fetchRepositories('video');
+                 fetchRepositories('profile');
             }
         }
         
@@ -4734,6 +4976,7 @@
             if(type === 'gallery') selectId = 'ghRepoSelectGallery';
             if(type === 'system') selectId = 'ghRepoSelectSystem';
             if(type === 'video') selectId = 'ghRepoSelectVideo';
+            if(type === 'profile') selectId = 'ghRepoSelectProfile';
             
             const repoSelect = document.getElementById(selectId);
             
@@ -4747,7 +4990,8 @@
                 if (Array.isArray(repos)) {
                     repos.forEach(repo => {
                         const opt = document.createElement('option');
-                        opt.value = repo.full_name; 
+                        opt.value = repo.full_name;
+                        opt.dataset.defaultBranch = repo.default_branch || 'main';
                         opt.textContent = repo.name;
                         repoSelect.appendChild(opt);
                     });
@@ -4757,6 +5001,163 @@
             } catch (e) { 
                 console.error("Error fetching repos:", e);
                 repoSelect.innerHTML = '<option value="">Failed to load repos</option>';
+            }
+        }
+
+        function initProfileDrawer() {
+            const openBtn = document.getElementById('openProfileDrawer');
+            const profileAvatar = document.getElementById('profileAvatar');
+            const drawer = document.getElementById('profileDrawer');
+            const overlay = document.getElementById('profileDrawerOverlay');
+            const closeBtn = document.getElementById('closeProfileDrawer');
+            const uploadBtn = document.getElementById('uploadProfileAvatarBtn');
+            const avatarInput = document.getElementById('profileAvatarInput');
+            const preview = document.getElementById('profileAvatarPreview');
+
+            const toggleDrawer = (show) => {
+                if (!drawer || !overlay) return;
+                drawer.classList.toggle('active', show);
+                overlay.classList.toggle('active', show);
+                if (show && window.getAdminTargetUser) {
+                    const user = window.getAdminTargetUser();
+                    if (user) window.loadProfileDetails(user);
+                }
+            };
+
+            if (openBtn) openBtn.addEventListener('click', () => toggleDrawer(true));
+            if (profileAvatar) profileAvatar.addEventListener('click', () => toggleDrawer(true));
+            if (closeBtn) closeBtn.addEventListener('click', () => toggleDrawer(false));
+            if (overlay) overlay.addEventListener('click', () => toggleDrawer(false));
+
+            if (avatarInput && preview) {
+                avatarInput.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        preview.src = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', async () => {
+                    const user = window.getAdminTargetUser ? window.getAdminTargetUser() : null;
+                    if (!user) return alert('Select a target user before uploading an avatar.');
+
+                    const repoSelect = document.getElementById('ghRepoSelectProfile');
+                    const repoFullName = repoSelect?.value;
+                    const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || 'main';
+                    const fileInput = document.getElementById('profileAvatarInput');
+                    if (!repoFullName || !fileInput || !fileInput.files.length) {
+                        return alert('Please select a GitHub repo and an avatar image.');
+                    }
+                    if (!githubToken) {
+                        return alert('GitHub connection failed. Please log in first.');
+                    }
+
+                    const file = fileInput.files[0];
+                    const safeName = `${user}_${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9-_.]/g, '_');
+                    const filePath = `avatars/${safeName}`;
+                    const [owner, repoName] = repoFullName.split('/');
+                    const githubApiUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/${filePath}`;
+                    const base64Content = await toBase64(file);
+                    const payload = {
+                        message: `Upload avatar for ${user}`,
+                        content: base64Content,
+                        branch: branch
+                    };
+
+                    uploadBtn.disabled = true;
+                    uploadBtn.textContent = 'Uploading...';
+                    try {
+                        const response = await fetch(githubApiUrl, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `token ${githubToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!response.ok) {
+                            const errData = await response.json();
+                            throw new Error(errData.message || response.statusText);
+                        }
+
+                        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${filePath}`;
+                        await saveProfileDetails(user, { avatarUrl: rawUrl, avatarRepo: repoFullName, avatarPath: filePath, avatarBranch: branch });
+                        document.getElementById('profileAvatar').src = rawUrl;
+                        preview.src = rawUrl;
+                        showToast('Avatar Uploaded', 'Profile picture saved to GitHub.', '✅');
+                    } catch (e) {
+                        console.error('Avatar upload failed', e);
+                        alert('Avatar upload failed: ' + e.message);
+                    } finally {
+                        uploadBtn.disabled = false;
+                        uploadBtn.textContent = 'Upload Avatar to GitHub';
+                    }
+                });
+            }
+
+            const saveBtn = document.getElementById('saveProfileDetailsBtn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', async () => {
+                    const user = window.getAdminTargetUser ? window.getAdminTargetUser() : null;
+                    if (!user) return alert('Select a target user before saving profile details.');
+                    await saveProfileDetails(user);
+                });
+            }
+        }
+
+        window.loadProfileDetails = async function(user) {
+            if (!user) return;
+            const profileRef = doc(db, 'profiles', user);
+            const profileSnap = await getDoc(profileRef);
+            const data = profileSnap.exists() ? profileSnap.data() : {};
+            const displayName = data.fullName || (user.charAt(0).toUpperCase() + user.slice(1));
+            const avatarUrl = data.avatarUrl || `https://placehold.co/120x120/ffb7c5/d81b60?text=${encodeURIComponent(displayName.charAt(0) || 'U')}`;
+
+            document.getElementById('profileGreeting').textContent = displayName.split(' ')[0] || displayName;
+            document.getElementById('profileFullName').textContent = displayName;
+            document.getElementById('profileFullNameInput').value = data.fullName || '';
+            document.getElementById('profileFavoritesInput').value = data.favorites || '';
+            document.getElementById('profileLikesInput').value = data.likes || '';
+            document.getElementById('profileDislikesInput').value = data.dislikes || '';
+            document.getElementById('profileAllergiesInput').value = data.allergies || '';
+            document.getElementById('profileDreamLifeInput').value = data.dreamLife || '';
+            document.getElementById('profileDreamCountryInput').value = data.dreamCountry || '';
+            document.getElementById('profileAvatar').src = avatarUrl;
+            document.getElementById('profileAvatarPreview').src = avatarUrl;
+
+            if (data.avatarRepo) {
+                const profileRepoSelect = document.getElementById('ghRepoSelectProfile');
+                if (profileRepoSelect) profileRepoSelect.value = data.avatarRepo;
+            }
+        };
+
+        async function saveProfileDetails(user, extras = {}) {
+            if (!user) return;
+            const payload = {
+                fullName: document.getElementById('profileFullNameInput').value.trim(),
+                favorites: document.getElementById('profileFavoritesInput').value.trim(),
+                likes: document.getElementById('profileLikesInput').value.trim(),
+                dislikes: document.getElementById('profileDislikesInput').value.trim(),
+                allergies: document.getElementById('profileAllergiesInput').value.trim(),
+                dreamLife: document.getElementById('profileDreamLifeInput').value.trim(),
+                dreamCountry: document.getElementById('profileDreamCountryInput').value.trim(),
+                ...extras,
+                updatedAt: serverTimestamp()
+            };
+            try {
+                await setDoc(doc(db, 'profiles', user), payload, { merge: true });
+                const displayName = payload.fullName || (user.charAt(0).toUpperCase() + user.slice(1));
+                document.getElementById('profileGreeting').textContent = displayName.split(' ')[0] || displayName;
+                document.getElementById('profileFullName').textContent = displayName;
+                showToast('Profile Saved', 'User details updated successfully.', '✅');
+            } catch (e) {
+                console.error('Failed to save profile details', e);
+                alert('Unable to save profile details.');
             }
         }
 
@@ -4969,15 +5370,18 @@
 
                 document.querySelector('[data-target="admin-letters"]').click(); 
                 
+                initProfileDrawer();
                 setupChatSystem('SubAdmin', target);
                 setupDeletionMonitor(target);
+                window.loadProfileDetails(target);
             } else {
                 setupDeviceMonitor();
                 updateGitHubUI(!!githubToken);
                 startLiveScanner();
                 setupAdminUserManagement();
                 setupChatSystem('SuperAdmin');
-                
+                initProfileDrawer();
+
                 targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
 
                 // Show realtime users widget for superadmin
@@ -5385,6 +5789,7 @@
 
             // Initial Target Load
             window.updateAdminData(adminTargetUser);
+            window.loadProfileDetails(adminTargetUser);
 
             targetBtns.forEach(btn => {
                 btn.onclick = () => {
@@ -5394,6 +5799,7 @@
                     adminTargetUser = btn.getAttribute('data-target-user');
                     targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
                     window.updateAdminData(adminTargetUser);
+                    window.loadProfileDetails(adminTargetUser);
                 };
             });
 
@@ -6034,7 +6440,9 @@
                 const scanMusicBtn = document.getElementById('scanMusicBtn'); 
                 
                 uploadBtnMusic.onclick = async () => {
-                    const repoFullName = document.getElementById('ghRepoSelectMusic').value; 
+                    const repoSelect = document.getElementById('ghRepoSelectMusic');
+                    const repoFullName = repoSelect?.value;
+                    const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || 'main';
                     const artistName = document.getElementById('uploadArtistName').value.trim();
                     const songTitle = document.getElementById('uploadSongTitle').value.trim();
                     const fileInput = document.getElementById('musicFileInput');
@@ -6055,12 +6463,13 @@
                     const filePath = `music/${fileName}`;
                     
                     const [owner, repoName] = repoFullName.split('/');
-                    const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/${filePath}`;
+                    const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${filePath}`;
                     
                     statusText.textContent = "1/3: Checking for duplicates on GitHub...";
+                    uploadBtnMusic.disabled = true;
                     
                     try {
-                        const fileExists = await checkFileExists(repoFullName, filePath, githubToken);
+                        const fileExists = await checkFileExists(repoFullName, filePath, githubToken, branch);
                         if (fileExists) {
                             statusText.textContent = "❌ Upload Failed: Song already exists on GitHub.";
                             showToast("Overwrite Blocked!", `"${fileName}" already exists in the repository.`, "🚫");
@@ -6076,7 +6485,7 @@
                         const uploadPayload = {
                             message: commitMessage,
                             content: base64Content,
-                            branch: 'main' 
+                            branch: branch 
                         };
 
                         statusText.textContent = "2/3: Uploading to GitHub...";
@@ -6120,6 +6529,7 @@
                         statusText.textContent = `❌ Upload Failed: ${e.message}`;
                         alert("Upload Failed. Check console for details.");
                     } finally {
+                        uploadBtnMusic.disabled = false;
                         setTimeout(() => statusText.textContent = '', 5000);
                     }
                 }
@@ -6129,8 +6539,10 @@
                     const prevStatus = statusText.textContent;
                     statusText.textContent = "Scanning GitHub repository...";
                     try {
+                        const repoSelect = document.getElementById('ghRepoSelectMusic');
+                        const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || 'main';
                         const [owner, repoName] = repoFullName.split('/');
-                        const contentsUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/music`;
+                        const contentsUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/music?ref=${encodeURIComponent(branch)}`;
 
                         const response = await fetch(contentsUrl, {
                             headers: { 'Authorization': `token ${token}` }
@@ -6161,7 +6573,7 @@
                         let newSongsAdded = 0;
                         
                         for (const file of mp3Files) {
-                            const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/main/music/${file.name}`;
+                            const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/music/${file.name}`;
                             
                             const q = query(songsCollectionRef, where('url', '==', rawContentUrl));
                             const existingDocs = await getDocs(q);
@@ -6316,6 +6728,7 @@
                 // --- ADMIN MAINTENANCE ACTIONS ---
                 const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
                 const btnEmergencyMaintenance = document.getElementById('btnEmergencyMaintenance');
+                let currentMaintenanceEnabled = false;
                 
                 let adminPreviewInterval = null;
                 function updateAdminMaintPreview() {
@@ -6364,9 +6777,10 @@
                 
                 if(btnToggleMaintenance) {
                     btnToggleMaintenance.onclick = async () => {
-                        const isCurrentlyActiveOrScheduled = btnToggleMaintenance.textContent === "Disable Maintenance";
+                        const isCurrentlyActiveOrScheduled = currentMaintenanceEnabled;
                         if (isCurrentlyActiveOrScheduled) {
                             await setDoc(doc(db, 'settings', 'maintenance'), { isActive: false, isScheduled: false }, { merge: true });
+                            currentMaintenanceEnabled = false;
                             showToast("Maintenance Disabled", "Site is now open to users.", "✅");
                         } else {
                             const startTime = document.getElementById('maintStartTime').value;
@@ -6383,6 +6797,7 @@
                                 endTime, 
                                 message 
                             }, { merge: true });
+                            currentMaintenanceEnabled = true;
                             
                             if(isScheduled) {
                                  showToast("Maintenance Scheduled", "Will start at the designated time.", "🗓️");
@@ -6471,19 +6886,76 @@
 
                     item.querySelector('.approve-music-btn').onclick = async () => {
                         try {
+                            if (!githubToken) {
+                                return alert('Please login to GitHub first to approve requests to the repository.');
+                            }
+                            const repoSelect = document.getElementById('ghRepoSelectMusic');
+                            const repoFullName = repoSelect?.value;
+                            const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || 'main';
+                            if (!repoFullName) {
+                                return alert('Select a GitHub repository before approving music.');
+                            }
+
+                            const safeFileName = `${request.artist || 'Unknown Artist'} - ${request.title || 'New Song'}`
+                                .replace(/[^a-zA-Z0-9-\.\s]/g, '').replace(/\s+/g, '_') + '.mp3';
+                            const filePath = `music/${safeFileName}`;
+
+                            const fileExists = await checkFileExists(repoFullName, filePath, githubToken, branch);
+                            if (fileExists) {
+                                return alert(`A song named "${safeFileName}" already exists in the selected repository.`);
+                            }
+
+                            const fetchResponse = await fetch(request.url);
+                            if (!fetchResponse.ok) {
+                                throw new Error('Failed to fetch requested audio file for GitHub upload.');
+                            }
+                            const blob = await fetchResponse.blob();
+                            const base64Content = await blobToBase64(blob);
+
+                            const [owner, repoName] = repoFullName.split('/');
+                            const githubApiUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/${filePath}`;
+                            const commitMessage = `Approve music request: ${safeFileName}`;
+
+                            const uploadResponse = await fetch(githubApiUrl, {
+                                method: 'PUT',
+                                headers: {
+                                    'Authorization': `token ${githubToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    message: commitMessage,
+                                    content: base64Content,
+                                    branch: branch
+                                })
+                            });
+                            if (!uploadResponse.ok) {
+                                const errorData = await uploadResponse.json();
+                                throw new Error(`GitHub upload failed: ${errorData.message || uploadResponse.statusText}`);
+                            }
+
+                            const rawContentUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${filePath}`;
+
                             await addDoc(collection(db, 'songs'), {
                                 title: request.title,
                                 artist: request.artist,
-                                url: request.url,
+                                url: rawContentUrl,
                                 uploader: request.uploader || 'Admin',
                                 requestId: requestDoc.id,
+                                githubRepo: repoFullName,
+                                githubPath: filePath,
                                 timestamp: serverTimestamp()
                             });
-                            await updateDoc(requestDoc.ref, { status: 'approved', approvedBy: 'SuperAdmin', approvedAt: serverTimestamp() });
-                            showToast('Approved', `${request.title} is now global.`, '✅');
+                            await updateDoc(requestDoc.ref, {
+                                status: 'approved',
+                                approvedBy: 'SuperAdmin',
+                                approvedAt: serverTimestamp(),
+                                githubRepo: repoFullName,
+                                githubPath: filePath
+                            });
+                            showToast('Approved', `${request.title} is now global and uploaded to GitHub.`, '✅');
                         } catch (e) {
                             console.error('Approve request failed', e);
-                            alert('Failed to approve request.');
+                            alert(`Failed to approve request. ${e.message}`);
                         }
                     };
 
