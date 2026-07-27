@@ -5101,7 +5101,7 @@
         window.initAdminConsole = initAdminConsole; 
         
         let githubToken = sessionStorage.getItem('ghToken') || null; 
-        let adminTargetUser = sessionStorage.getItem('subAdminTarget') || null; 
+        let adminTargetUser = 'kate'; 
 
         function updateGitHubUI(isAuthorized) {
             const musicUI = document.getElementById('ghMusicAuthorizedUI');
@@ -5427,8 +5427,6 @@
                     return;
                 }
 
-                const approvedUsernames = [];
-
                 snap.forEach(userDoc => {
                     const data = userDoc.data();
                     const id = userDoc.id;
@@ -5453,8 +5451,7 @@
                         `;
                         approvedContainer.appendChild(item);
 
-                        if (dynamicTargets && data.username) {
-                            approvedUsernames.push(data.username);
+                        if(dynamicTargets && data.username !== 'kate' && data.username !== 'baby' && data.username !== 'admin') {
                             const btn = document.createElement('button');
                             btn.className = 'admin-target-btn';
                             btn.setAttribute('data-target-user', data.username);
@@ -5464,8 +5461,7 @@
                                 btn.classList.add('active');
                                 adminTargetUser = data.username;
                                 document.getElementById('adminTargetLabel').textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-                                window.updateAdminData?.(adminTargetUser);
-                                window.loadProfileDetails?.(adminTargetUser);
+                                window.updateAdminData(adminTargetUser);
                             };
                             dynamicTargets.appendChild(btn);
                         }
@@ -5487,13 +5483,6 @@
                 if (!pendingContainer.hasChildNodes()) pendingContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No pending users.</p>';
                 if (!approvedContainer.hasChildNodes()) approvedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No approved users.</p>';
                 if (!deactivatedContainer.hasChildNodes()) deactivatedContainer.innerHTML = '<p style="text-align:center; font-size:12px; color:#999;">No deactivated users.</p>';
-
-                if (!adminTargetUser && approvedUsernames.length) {
-                    adminTargetUser = approvedUsernames[0];
-                    const targetLabel = document.getElementById('adminTargetLabel');
-                    if (targetLabel) targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-                    window.loadProfileDetails?.(adminTargetUser);
-                }
 
                 document.querySelectorAll('.btn-approve').forEach(b => {
                     b.onclick = () => {
@@ -9074,11 +9063,8 @@
         // Helper function to get admin target user
         function getAdminTargetUser() {
             const activeBtn = document.querySelector('.admin-target-btn.active');
-            if (activeBtn && activeBtn.dataset.targetUser) {
+            if (activeBtn) {
                 return activeBtn.dataset.targetUser;
-            }
-            if (adminTargetUser) {
-                return adminTargetUser;
             }
             return null;
         }
