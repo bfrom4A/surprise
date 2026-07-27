@@ -7608,18 +7608,29 @@
                 let user = null;
 
                 if (!username) {
-                    if (pass.toLowerCase() === 'katecutie') user = 'kate';
-                    else if (pass.toLowerCase() === 'babycutie') user = 'baby';
-                    else if (pass.toLowerCase() === 'admin112003') {
+                    if (pass === 'admin112003') {
                         triggerAdminLogin(true);
                         return;
                     }
-                    
-                    if (user) {
-                        doLogin(user);
-                    } else {
-                        showLoginError();
+
+                    try {
+                        const fallbackQ = window.query(
+                            window.collection(window.db, 'app_users'),
+                            window.where('password', '==', pass)
+                        );
+                        const fallbackSnap = await window.getDocs(fallbackQ);
+                        const approvedMatch = fallbackSnap.docs.find(docSnap => docSnap.data().status === 'approved');
+
+                        if (approvedMatch) {
+                            const approvedData = approvedMatch.data();
+                            doLogin(approvedData.username || approvedMatch.id, approvedData, approvedMatch.id);
+                            return;
+                        }
+                    } catch (e) {
+                        console.error('Fallback user lookup failed', e);
                     }
+
+                    showLoginError();
                     return;
                 }
 
@@ -7690,7 +7701,6 @@
                 const p = regPasswordInput.value;
                 
                 if (!u || !p) return alert("Please fill in all fields.");
-                if (u === 'kate' || u === 'baby' || u === 'admin') return alert("This username is reserved.");
                 
                 try {
                     submitRegister.textContent = "Registering...";
