@@ -3026,42 +3026,18 @@
                     </ul>
                 </div>
 
-                <!-- Superadmin Fun Controls -->
-                <div class="admin-widget superadmin-only" id="superAdminFunWidget" style="display:none;">
-                    <h4 style="color: #d81b60; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid #ffe4e9; padding-bottom: 8px;">🎉 Fun Controls</h4>
-
-                    <!-- Confetti Button -->
-                    <div style="margin-bottom: 18px;">
-                        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">Blast confetti on the target user's screen!</p>
-                        <div style="display:flex; gap:8px; flex-wrap: wrap;">
-                            <button id="adminSendConfettiKate" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#ff69b4,#ff1493); font-size:13px; padding:10px 8px;">🎊 Kate</button>
-                            <button id="adminSendConfettiBaby" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#a78bfa,#7c3aed); font-size:13px; padding:10px 8px;">🎊 Baby</button>
-                            <button id="adminSendConfettiAll" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#f97316,#dc2626); font-size:13px; padding:10px 8px;">🎊 All</button>
-                        </div>
+                <!-- Realtime Users Online (replaces Fun Controls) -->
+                <div class="admin-widget superadmin-only" id="superAdminUsersOnline" style="display:none;">
+                    <h4 style="color: #d81b60; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid #ffe4e9; padding-bottom: 8px;">👥 Users (Realtime)</h4>
+                    <div style="font-size:13px; color:#555; margin-bottom:8px;">
+                        <strong id="onlineUsersCount">0</strong> users
                     </div>
-
-                    <!-- GIF Sender -->
-                    <div style="margin-bottom: 18px; border-top: 1px dashed #ffe4e9; padding-top: 15px;">
-                        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">Send a GIF notification to a user:</p>
-                        <input type="text" id="widgetGifUrl" class="fw-input" placeholder="GIF URL (e.g. from tenor.com/...)" style="font-size:12px; padding:8px; margin-bottom:8px;">
-                        <input type="text" id="widgetGifCaption" class="fw-input" placeholder="Caption (optional)" style="font-size:12px; padding:8px; margin-bottom:10px;">
-                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            <button id="widgetSendGifKate" class="submit-btn" style="flex:1; font-size:12px; padding:8px;">🎀 → Kate</button>
-                            <button id="widgetSendGifBaby" class="submit-btn" style="flex:1; font-size:12px; padding:8px; background:#a78bfa;">🎀 → Baby</button>
-                            <button id="widgetSendGifAll" class="submit-btn" style="flex:1; font-size:12px; padding:8px; background:#f97316;">🎀 → All</button>
-                        </div>
+                    <div style="max-height:160px; overflow:auto; margin-bottom:10px;">
+                        <ul id="onlineUsersList" style="list-style:none; padding:0; margin:0; font-size:13px; color:#333;"></ul>
                     </div>
-
-                    <!-- Sleep Time Notifier -->
-                    <div style="border-top: 1px dashed #ffe4e9; padding-top: 15px;">
-                        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">Send sleep time notification (dims their screen 🌙):</p>
-                        <input type="text" id="adminSleepMessage" class="fw-input" placeholder="Sleep message (optional)" style="font-size:12px; padding:8px; margin-bottom:10px;" value="It's time to rest, sweetheart. Good night! 🌙">
-                        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-                            <button id="adminSleepKate" class="submit-btn" style="flex:1; background:#1a1a2e; font-size:12px; padding:8px;">🌙 Kate</button>
-                            <button id="adminSleepBaby" class="submit-btn" style="flex:1; background:#0f3460; font-size:12px; padding:8px;">🌙 Baby</button>
-                            <button id="adminSleepAll" class="submit-btn" style="flex:1; background:#16213e; font-size:12px; padding:8px;">🌙 All</button>
-                        </div>
-                        <button id="adminCancelSleep" class="submit-btn" style="width:100%; background:#888; font-size:12px; padding:8px;">☀️ Cancel Sleep (All)</button>
+                    <div style="border-top:1px solid #f3f3f3; padding-top:8px; max-height:160px; overflow:auto;">
+                        <h5 style="font-size:13px; margin:6px 0; color:#666;">Recent Activity</h5>
+                        <ul id="activityLogList" style="list-style:none; padding:0; margin:0; font-size:12px; color:#444;"></ul>
                     </div>
                 </div>
 
@@ -3162,9 +3138,7 @@
             <button class="tab" data-tab="freedom-wall">
                 <span>🕊️</span> Freedom Wall
             </button>
-            <button class="tab" data-tab="video-chat">
-                <span>📹</span> Video Chat
-            </button>
+            <!-- Video Chat removed -->
             <button class="tab" id="logoutButton">
                 <span>🔒</span> Log Out
             </button>
@@ -3282,38 +3256,7 @@
                 </div>
             </div>
 
-            <!-- Video Chat Tab -->
-            <div class="tab-content" id="video-chat">
-                <h2>Video Chat 📹</h2>
-                <div id="videoChatContainer">
-                    <div style="margin-bottom: 20px;">
-                        <input type="text" id="userName" placeholder="Your Name / Identity" class="fw-input" maxlength="30" style="margin-bottom: 10px;">
-                        <button id="initVideoChatBtn" class="submit-btn" style="margin-right: 10px;">Start Video Chat</button>
-                        <button id="callBtn" class="submit-btn">Call Other Device</button>
-                        <button id="hangupBtn" class="submit-btn" style="background: #ff4d4d; margin-left: 10px;">Hang Up</button>
-                        <button id="acceptCallBtn" class="submit-btn" style="background: #28a745; margin-left: 10px; display: none;">Accept</button>
-                        <button id="declineCallBtn" class="submit-btn" style="background: #ccc; margin-left: 10px; display: none; color: #333;">Decline</button>
-                    </div>
-                    <div id="myIdDisplay" style="margin-bottom: 10px; font-weight: bold; color: #d81b60;"></div>
-                    <div id="deviceInfo" style="margin-bottom: 10px; color: #555; font-size: 14px;"></div>
-                    <div id="ringStatus" style="margin-bottom: 10px; color: #b71550; font-weight: bold;"></div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button id="toggleCameraBtn" class="submit-btn">📹 Camera On</button>
-                        <button id="toggleMicBtn" class="submit-btn">🎤 Mic On</button>
-                        <button id="shareScreenBtn" class="submit-btn">🖥️ Share Screen</button>
-                    </div>
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div>
-                            <h3>Your Video</h3>
-                            <video id="myVideo" autoplay muted playsinline style="width: 300px; border: 2px solid #ffb7c5; border-radius: 10px;"></video>
-                        </div>
-                        <div>
-                            <h3>Remote Video</h3>
-                            <video id="remoteVideo" autoplay playsinline style="width: 300px; border: 2px solid #ffb7c5; border-radius: 10px;"></video>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Video Chat content removed -->
 
         </div>
     </div>
@@ -3358,19 +3301,7 @@
         let currentDeactivatedUserId = null; 
         let currentDisplayName = '';
         
-        // --- VIDEO CHAT VARIABLES ---
-        let myPeer = null;
-        let myStream = null;
-        let currentCall = null;
-        let incomingCall = null;
-        let isCameraOn = true;
-        let isMicOn = true;
-        let videoChatInitialized = false;
-        let userBaseId = null;
-        let deviceSlot = null;
-        let videoChatDocRef = null;
-        let ringInterval = null;
-        let ringAudio = null;
+        // --- VIDEO CHAT VARIABLES (removed) ---
         
         // --- GLOBAL SECURITY & BLOCKING LOGIC ---
         let userIPAddress = 'Unknown IP';
@@ -3483,278 +3414,7 @@
             if(document.hasFocus()) handleSecurityFocus();
         });
 
-        // --- VIDEO CHAT FUNCTIONS ---
-        function sanitizeUserBase(name) {
-            return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'user';
-        }
-
-        function getStoredDeviceSlot() {
-            return localStorage.getItem('videoChatDeviceSlot');
-        }
-
-        function setStoredDeviceSlot(slot) {
-            localStorage.setItem('videoChatDeviceSlot', slot);
-        }
-
-        function stopRing() {
-            document.getElementById('ringStatus').textContent = '';
-            if (ringInterval) {
-                clearInterval(ringInterval);
-                ringInterval = null;
-            }
-            if (ringAudio) {
-                ringAudio.pause();
-                ringAudio.currentTime = 0;
-            }
-        }
-
-        function startRing(text) {
-            document.getElementById('ringStatus').textContent = text;
-            if (!ringAudio) {
-                ringAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=');
-                ringAudio.loop = true;
-            }
-            ringAudio.play().catch(() => {});
-            if (navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]);
-            }
-            if (!ringInterval) {
-                ringInterval = setInterval(() => {
-                    const status = document.getElementById('ringStatus');
-                    status.textContent = status.textContent.endsWith('...') ? text : text + '...';
-                }, 700);
-            }
-        }
-
-        function setCallEndedState() {
-            if (currentCall) {
-                currentCall.close();
-                currentCall = null;
-            }
-            if (incomingCall) {
-                incomingCall.close();
-                incomingCall = null;
-            }
-            stopRing();
-            document.getElementById('acceptCallBtn').style.display = 'none';
-            document.getElementById('declineCallBtn').style.display = 'none';
-            document.getElementById('remoteVideo').srcObject = null;
-            document.getElementById('ringStatus').textContent = 'Call ended. Camera and mic are off.';
-            if (myStream) {
-                const videoTrack = myStream.getVideoTracks()[0];
-                const audioTrack = myStream.getAudioTracks()[0];
-                if (videoTrack) {
-                    videoTrack.enabled = false;
-                    isCameraOn = false;
-                    document.getElementById('toggleCameraBtn').textContent = '📷 Camera Off';
-                }
-                if (audioTrack) {
-                    audioTrack.enabled = false;
-                    isMicOn = false;
-                    document.getElementById('toggleMicBtn').textContent = '🔇 Mic Off';
-                }
-            }
-        }
-
-        async function writeDeviceRegistration(peerId, slot, name) {
-            if (!videoChatDocRef) return;
-            const deviceKey = slot === 1 ? 'device1' : 'device2';
-            const deviceData = {
-                [deviceKey]: {
-                    peerId,
-                    name,
-                    updatedAt: serverTimestamp(),
-                }
-            };
-            await setDoc(videoChatDocRef, deviceData, { merge: true });
-        }
-
-        async function clearDeviceRegistration() {
-            if (!videoChatDocRef || !deviceSlot) return;
-            const deviceKey = deviceSlot === 1 ? 'device1' : 'device2';
-            await setDoc(videoChatDocRef, { [deviceKey]: null }, { merge: true });
-        }
-
-        async function assignDeviceSlot(userBase) {
-            const docRef = doc(db, 'video_chat', userBase);
-            const snapshot = await getDoc(docRef);
-            const storedSlot = getStoredDeviceSlot();
-            if (storedSlot === '1' || storedSlot === '2') {
-                deviceSlot = Number(storedSlot);
-            }
-            if (!snapshot.exists() || !snapshot.data()) {
-                if (!deviceSlot) deviceSlot = 1;
-                return docRef;
-            }
-            const data = snapshot.data();
-            if (!deviceSlot) {
-                if (!data.device1 || !data.device1.peerId) deviceSlot = 1;
-                else if (!data.device2 || !data.device2.peerId) deviceSlot = 2;
-                else deviceSlot = 1;
-            }
-            return docRef;
-        }
-
-        function updateDeviceInfoText() {
-            const otherSlot = deviceSlot === 1 ? 2 : 1;
-            const myId = `${userBaseId}-${deviceSlot}`;
-            const otherId = `${userBaseId}-${otherSlot}`;
-            document.getElementById('myIdDisplay').textContent = `Your fixed ID: ${myId}`;
-            document.getElementById('deviceInfo').textContent = `Calling will ring device ${otherSlot}. Other device ID: ${otherId}`;
-        }
-
-        async function initVideoChat() {
-            if (videoChatInitialized) return;
-            videoChatInitialized = true;
-
-            const nameInput = document.getElementById('userName').value.trim();
-            const base = currentUser || localStorage.getItem('videoChatBase') || nameInput;
-            if (!base) {
-                alert('Please enter your name or identity before starting the video chat.');
-                return;
-            }
-            userBaseId = sanitizeUserBase(base);
-            localStorage.setItem('videoChatBase', userBaseId);
-
-            videoChatDocRef = await assignDeviceSlot(userBaseId);
-            if (!deviceSlot) deviceSlot = 1;
-            setStoredDeviceSlot(deviceSlot);
-
-            try {
-                myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('myVideo').srcObject = myStream;
-
-                const peerId = `${userBaseId}-${deviceSlot}`;
-                myPeer = new Peer(peerId);
-                
-                myPeer.on('open', async (id) => {
-                    await writeDeviceRegistration(id, deviceSlot, nameInput || currentUser || `User ${deviceSlot}`);
-                    updateDeviceInfoText();
-                });
-
-                myPeer.on('call', (call) => {
-                    if (currentCall) {
-                        call.close();
-                        return;
-                    }
-                    incomingCall = call;
-                    startRing('Incoming call');
-                    showIncomingCallButtons(true);
-                    document.getElementById('ringStatus').textContent = 'Incoming call. Accept to connect.';
-                });
-
-                // Watch for remote call close and cleanup
-                const onCallStream = (remoteStream) => {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
-                };
-
-                        function showIncomingCallButtons(show) {
-                    document.getElementById('acceptCallBtn').style.display = show ? 'inline-flex' : 'none';
-                    document.getElementById('declineCallBtn').style.display = show ? 'inline-flex' : 'none';
-                }
-
-                async function acceptIncomingCall() {
-                    if (!incomingCall) return;
-                    stopRing();
-                    currentCall = incomingCall;
-                    incomingCall.answer(myStream);
-                    currentCall.on('stream', onCallStream);
-                    currentCall.on('close', () => setCallEndedState());
-                    currentCall.on('error', () => setCallEndedState());
-                    incomingCall = null;
-                    showIncomingCallButtons(false);
-                    document.getElementById('ringStatus').textContent = 'Call connected.';
-                }
-
-                function rejectIncomingCall() {
-                    if (!incomingCall) return;
-                    incomingCall.close();
-                    incomingCall = null;
-                    showIncomingCallButtons(false);
-                    stopRing();
-                    document.getElementById('ringStatus').textContent = 'Call declined.';
-                }
-
-                document.getElementById('acceptCallBtn').addEventListener('click', acceptIncomingCall);
-                document.getElementById('declineCallBtn').addEventListener('click', rejectIncomingCall);
-
-                document.getElementById('callBtn').addEventListener('click', async () => {
-                    if (!myStream) {
-                        alert('Start video chat first.');
-                        return;
-                    }
-                    const otherPeerId = `${userBaseId}-${deviceSlot === 1 ? 2 : 1}`;
-                    if (otherPeerId === `${userBaseId}-${deviceSlot}`) return;
-
-                    try {
-                        currentCall = myPeer.call(otherPeerId, myStream);
-                        currentCall.on('stream', onCallStream);
-                        currentCall.on('close', () => setCallEndedState());
-                        currentCall.on('error', () => setCallEndedState());
-                        document.getElementById('ringStatus').textContent = `Calling ${otherPeerId}...`;
-                    } catch (err) {
-                        console.error('Call failed', err);
-                        alert('Could not call the other device. Make sure the other device is connected and started.');
-                    }
-                });
-
-                document.getElementById('hangupBtn').addEventListener('click', () => {
-                    setCallEndedState();
-                });
-
-                document.getElementById('toggleCameraBtn').addEventListener('click', () => {
-                    if (myStream) {
-                        const videoTrack = myStream.getVideoTracks()[0];
-                        if (videoTrack) {
-                            isCameraOn = !isCameraOn;
-                            videoTrack.enabled = isCameraOn;
-                            document.getElementById('toggleCameraBtn').textContent = isCameraOn ? '📹 Camera On' : '📷 Camera Off';
-                        }
-                    }
-                });
-
-                document.getElementById('toggleMicBtn').addEventListener('click', () => {
-                    if (myStream) {
-                        const audioTrack = myStream.getAudioTracks()[0];
-                        if (audioTrack) {
-                            isMicOn = !isMicOn;
-                            audioTrack.enabled = isMicOn;
-                            document.getElementById('toggleMicBtn').textContent = isMicOn ? '🎤 Mic On' : '🔇 Mic Off';
-                        }
-                    }
-                });
-
-                document.getElementById('shareScreenBtn').addEventListener('click', async () => {
-                    try {
-                        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                        const screenTrack = screenStream.getVideoTracks()[0];
-                        if (currentCall && currentCall.peerConnection) {
-                            const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
-                            if (sender) {
-                                sender.replaceTrack(screenTrack);
-                                screenTrack.onended = () => {
-                                    const videoTrack = myStream.getVideoTracks()[0];
-                                    sender.replaceTrack(videoTrack);
-                                };
-                            }
-                        }
-                    } catch (err) {
-                        console.error('Error sharing screen:', err);
-                    }
-                });
-
-                window.addEventListener('beforeunload', clearDeviceRegistration);
-            } catch (err) {
-                console.error('Error initializing video chat:', err);
-                alert('Error accessing camera/microphone. Please allow permissions.');
-            }
-        }
-
-        document.getElementById('initVideoChatBtn').addEventListener('click', initVideoChat);
-
-        document.getElementById('hangupBtn').addEventListener('click', () => {
-            if (currentCall || incomingCall) setCallEndedState();
-        });
+        // Video chat functionality removed.
 
         // --- MAINTENANCE MODE LOGIC (ADVANCED SCHEDULE) ---
         let maintInterval = null;
@@ -4406,13 +4066,15 @@
         }
 
         window.loadUserContent = function(user) {
+            // Normalize username to lowercase to ensure listeners and admin targets match
+            user = (user || '').toLowerCase();
             currentUser = user; 
             setupFreedomWall(user);
             setupDynamicContent(user); 
             setupGallery(user); 
             setupDeletionMonitor(user); // Start account deletion monitor
 
-            // Start new notification listeners
+            // Start new notification listeners (using normalized username)
             startGifListener(user);
             startConfettiListener(user);
             startSleepListener(user);
@@ -5318,9 +4980,72 @@
                 
                 targetLabel.textContent = `Target: ${adminTargetUser.toUpperCase()}`;
 
-                // Show fun controls widget for superadmin
-                const funWidget = document.getElementById('superAdminFunWidget');
-                if (funWidget) funWidget.style.display = 'block';
+                // Show realtime users widget for superadmin
+                const usersWidget = document.getElementById('superAdminUsersOnline');
+                if (usersWidget) usersWidget.style.display = 'block';
+
+                // Presence listener: populate online users list
+                try {
+                    const onlineList = document.getElementById('onlineUsersList');
+                    const onlineCount = document.getElementById('onlineUsersCount');
+                    if (onlineList && onlineCount && window.onSnapshot && window.collection) {
+                        const presenceCol = collection(db, 'presence');
+                        if (window._adminPresenceUnsub) window._adminPresenceUnsub();
+                        window._adminPresenceUnsub = onSnapshot(presenceCol, (snap) => {
+                            onlineList.innerHTML = '';
+                            let onlineCountNum = 0;
+                            const nowMs = Date.now();
+                            snap.forEach(sdoc => {
+                                const d = sdoc.data() || {};
+                                const username = (d.user || sdoc.id || '').toLowerCase();
+                                const display = d.displayName || username;
+                                // Determine lastActive timestamp (Firestore Timestamp or number)
+                                let lastActiveMs = 0;
+                                if (d.lastActive && typeof d.lastActive.toDate === 'function') {
+                                    lastActiveMs = d.lastActive.toDate().getTime();
+                                } else if (d.lastActive && typeof d.lastActive === 'number') {
+                                    lastActiveMs = d.lastActive;
+                                }
+                                // online if lastActive within 5 minutes OR explicit online flag
+                                const fiveMinMs = 5 * 60 * 1000;
+                                const isOnline = (lastActiveMs && (nowMs - lastActiveMs) < fiveMinMs) || d.online === true;
+                                const statusLabel = d.status || (isOnline ? 'available' : 'offline');
+                                const lastSeen = lastActiveMs ? new Date(lastActiveMs).toLocaleString() : (d.lastSeen && d.lastSeen.toDate ? d.lastSeen.toDate().toLocaleString() : '');
+                                const li = document.createElement('li');
+                                li.style.padding = '6px 8px';
+                                li.style.borderBottom = '1px solid #f6f6f6';
+                                li.textContent = isOnline ? `${display} • ${statusLabel}` : `${display} • last active: ${lastSeen || 'unknown'}`;
+                                onlineList.appendChild(li);
+                                if (isOnline) onlineCountNum++;
+                            });
+                            onlineCount.textContent = String(onlineCountNum || 0);
+                        }, (err) => { console.error('Presence snapshot error', err); });
+                        // Activity log listener (recent)
+                        try {
+                            const activityList = document.getElementById('activityLogList');
+                            if (activityList && window.query && window.orderBy) {
+                                const q = query(collection(db, 'presence_log'), orderBy('timestamp', 'desc'));
+                                if (window._adminActivityUnsub) window._adminActivityUnsub();
+                                window._adminActivityUnsub = onSnapshot(q, (snap) => {
+                                    activityList.innerHTML = '';
+                                    let count = 0;
+                                    snap.forEach(docSnap => {
+                                        if (count++ > 80) return; // limit displayed
+                                        const d = docSnap.data() || {};
+                                        const who = d.user || 'unknown';
+                                        const ev = d.event || 'event';
+                                        const ts = d.timestamp && d.timestamp.toDate ? d.timestamp.toDate().toLocaleString() : '';
+                                        const li = document.createElement('li');
+                                        li.style.padding = '6px 8px';
+                                        li.style.borderBottom = '1px solid #f6f6f6';
+                                        li.textContent = `${ts} — ${who}: ${ev}`;
+                                        activityList.appendChild(li);
+                                    });
+                                }, (err) => { console.error('Activity log listener failed', err); });
+                            }
+                        } catch(e) { console.error('Activity listener setup error', e); }
+                    }
+                } catch (e) { console.error('Presence listener setup failed', e); }
 
                 // ── CONFETTI BUTTONS ──
                 const sendConfetti = async (targetUser) => {
@@ -7126,6 +6851,7 @@
             welcomeScreen.style.display = 'none';
             mainContent.style.display = 'block';
             if (window.loadUserContent) window.loadUserContent(savedUser);
+            try { startPresenceHeartbeat(savedUser); ensureStatusControl(); } catch(e) { console.error('Presence start saved user failed', e); }
         } else {
             submitPassword.addEventListener('click', async function() {
                 const username = loginUsernameInput.value.trim().toLowerCase();
@@ -7281,6 +7007,8 @@
             
             if(window.loadUserContent) window.loadUserContent(user);
             if(window.logDeviceLogin) window.logDeviceLogin(user);
+            // Start presence heartbeat and ensure status control UI
+            try { startPresenceHeartbeat(user); ensureStatusControl(); } catch(e) { console.error('Presence start failed', e); }
 
             // Start real-time video broadcast listener now that we have a logged-in user
             if (typeof startVideoBroadcastChecker === 'function') {
@@ -7357,6 +7085,7 @@
         }
 
         document.getElementById('logoutButton').addEventListener('click', function() {
+            try { stopPresence(sessionStorage.getItem('loggedInUser')); } catch(e){}
             sessionStorage.removeItem('loggedInUser');
             mainContent.style.display = 'none';
             document.getElementById('logoutScreen').style.display = 'flex';
@@ -7367,6 +7096,7 @@
         });
 
         document.getElementById('adminLogoutBtn').addEventListener('click', function() {
+            try { stopPresence(sessionStorage.getItem('loggedInUser')); } catch(e){}
             sessionStorage.removeItem('isAdminLoggedIn');
             sessionStorage.removeItem('isSubAdminLoggedIn');
             sessionStorage.removeItem('subAdminTarget');
@@ -7383,9 +7113,131 @@
             pageTitle.textContent = `For You ${name}`;
         }
 
+        // ===== PRESENCE & ACTIVITY (client-side) =====
+        // Keeps a presence doc updated and logs activity events
+        window._presenceHeartbeatInterval = null;
+        window._lastPresenceUpdate = 0;
+        window._activityThrottleMs = 15000; // throttle activity writes
+
+        async function recordActivityEvent(user, event, meta = {}) {
+            try {
+                if (!window.db || !window.addDoc || !window.collection) return;
+                await addDoc(collection(db, 'presence_log'), {
+                    user: user,
+                    event: event,
+                    meta: meta,
+                    timestamp: serverTimestamp()
+                });
+            } catch (e) { console.debug('Activity log failed', e); }
+        }
+
+        async function setPresence(user, status = 'available', opts = {}) {
+            if (!user) return;
+            try {
+                if (!window.db || !window.setDoc || !window.doc) return;
+                const payload = {
+                    user: user,
+                    displayName: currentDisplayName || user,
+                    status: status,
+                    online: opts.online !== undefined ? !!opts.online : true,
+                    lastActive: serverTimestamp(),
+                    lastSeen: opts.online === false ? serverTimestamp() : undefined
+                };
+                await setDoc(doc(db, 'presence', user), payload, { merge: true });
+            } catch (e) { console.error('setPresence error', e); }
+        }
+
+        function startPresenceHeartbeat(user) {
+            if (!user) return;
+            // immediate set
+            setPresence(user, 'available', { online: true });
+            recordActivityEvent(user, 'login');
+
+            // activity listeners to keep lastActive updated
+            const touch = () => {
+                const now = Date.now();
+                if (now - (window._lastPresenceUpdate || 0) < window._activityThrottleMs) return;
+                window._lastPresenceUpdate = now;
+                setPresence(user, window._currentUserStatus || 'available', { online: true });
+            };
+
+            ['click','mousemove','keydown','touchstart'].forEach(ev => document.addEventListener(ev, touch));
+
+            // heartbeat interval to ensure lastActive is refreshed
+            if (window._presenceHeartbeatInterval) clearInterval(window._presenceHeartbeatInterval);
+            window._presenceHeartbeatInterval = setInterval(() => {
+                setPresence(user, window._currentUserStatus || 'available', { online: true });
+            }, 30000);
+
+            // visibility change: mark offline when hidden (optional)
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    // do not immediately mark offline — we'll set lastActive and let admin TTL determine offline; but mark offline for quickness
+                    setPresence(user, window._currentUserStatus || 'away', { online: false });
+                    recordActivityEvent(user, 'hidden');
+                } else {
+                    setPresence(user, window._currentUserStatus || 'available', { online: true });
+                    recordActivityEvent(user, 'visible');
+                }
+            });
+
+            // beforeunload: mark offline
+            window.addEventListener('beforeunload', () => {
+                try { setPresence(user, window._currentUserStatus || 'away', { online: false }); recordActivityEvent(user, 'logout'); } catch(e){}
+            });
+        }
+
+        async function stopPresence(user) {
+            try {
+                if (!user) user = sessionStorage.getItem('loggedInUser');
+                if (!user || !window.db || !window.setDoc || !window.doc) return;
+                if (window._presenceHeartbeatInterval) { clearInterval(window._presenceHeartbeatInterval); window._presenceHeartbeatInterval = null; }
+                await setDoc(doc(db, 'presence', user), { online: false, lastSeen: serverTimestamp() }, { merge: true });
+                recordActivityEvent(user, 'logout');
+            } catch (e) { console.error('stopPresence error', e); }
+        }
+
+        // Allow user to change status via a small floating control
+        function ensureStatusControl() {
+            if (document.getElementById('userStatusControl')) return;
+            const ctrl = document.createElement('div');
+            ctrl.id = 'userStatusControl';
+            ctrl.style.position = 'fixed';
+            ctrl.style.bottom = '18px';
+            ctrl.style.right = '18px';
+            ctrl.style.zIndex = 9999;
+            ctrl.style.background = 'white';
+            ctrl.style.border = '1px solid #eee';
+            ctrl.style.padding = '8px';
+            ctrl.style.borderRadius = '12px';
+            ctrl.style.boxShadow = '0 6px 18px rgba(0,0,0,0.08)';
+            ctrl.innerHTML = `
+                <select id="userStatusSelect" style="font-size:13px;padding:6px;border-radius:8px;border:1px solid #ddd;">
+                    <option value="available">Available</option>
+                    <option value="busy">Busy</option>
+                    <option value="away">Away</option>
+                    <option value="offline">Offline</option>
+                </select>
+            `;
+            document.body.appendChild(ctrl);
+            const sel = document.getElementById('userStatusSelect');
+            sel.addEventListener('change', async (e) => {
+                const s = e.target.value;
+                window._currentUserStatus = s;
+                const u = sessionStorage.getItem('loggedInUser');
+                if (!u) return;
+                const online = s !== 'offline';
+                await setPresence(u, s, { online });
+                recordActivityEvent(u, 'status_change', { status: s });
+                if (s === 'offline') stopPresence(u);
+            });
+        }
+
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
         
+        // Video chat removed statically; no runtime removal needed here.
+
         let tulipInterval = null;
 
         function createTulip() {
@@ -7444,10 +7296,6 @@
                     startTulipRain();
                 } else {
                     stopTulipRain();
-                }
-
-                if (targetTab === 'video-chat') {
-                    initVideoChat();
                 }
             });
         });
