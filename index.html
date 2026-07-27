@@ -424,39 +424,70 @@
         }
 
         .user-profile-card {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 1800;
             background: #fff0f6;
             border: 1px solid #ffd6e7;
             border-radius: 20px;
-            padding: 18px;
+            padding: 12px 14px;
             display: flex;
             align-items: center;
-            gap: 16px;
-            margin: 0 auto 20px;
-            max-width: 1040px;
+            gap: 12px;
+            margin: 0;
+            max-width: min(320px, calc(100vw - 24px));
             box-shadow: 0 8px 30px rgba(216, 27, 96, 0.08);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .user-profile-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(216, 27, 96, 0.12);
         }
 
         .user-profile-avatar {
-            width: 80px;
-            height: 80px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #d81b60;
+            flex-shrink: 0;
         }
 
         .user-profile-content {
             flex: 1;
+            min-width: 0;
         }
 
         .user-profile-meta {
+            display: none;
             margin-top: 8px;
             color: #555;
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 13px;
+            line-height: 1.4;
+            padding-top: 8px;
+            border-top: 1px solid #f5dce7;
+        }
+
+        .user-profile-card.active .user-profile-meta {
+            display: block;
         }
 
         .user-profile-detail {
             margin: 4px 0;
+        }
+
+        .user-profile-arrow {
+            font-size: 16px;
+            color: #d81b60;
+            margin-left: 4px;
+            transition: transform 0.2s ease;
+        }
+
+        .user-profile-card.active .user-profile-arrow {
+            transform: rotate(180deg);
         }
 
         .profile-avatar {
@@ -3455,7 +3486,7 @@
     <!-- Main Content -->
      <div id="phClock"></div>
 
-    <div class="user-profile-card" id="userProfileCard" style="display: none;">
+    <div class="user-profile-card" id="userProfileCard" style="display: none;" role="button" tabindex="0" aria-label="Open profile details" aria-expanded="false">
         <img id="userProfileAvatar" class="user-profile-avatar" src="https://placehold.co/100x100/ffb7c5/d81b60?text=U" alt="Your Avatar">
         <div class="user-profile-content">
             <p class="profile-greeting">Hi, <span id="userProfileGreeting">Friend</span>!</p>
@@ -3466,6 +3497,7 @@
                 <p id="userProfileDreamLife" class="user-profile-detail"></p>
             </div>
         </div>
+        <span class="user-profile-arrow" aria-hidden="true">▾</span>
     </div>
 
     <div class="container" id="mainContent" style="display: none;">
@@ -4355,6 +4387,7 @@
                 }
                 console.log("Firebase Auth Successful");
                 setupNotificationSystem();
+                initUserProfileDropdown();
                 
                 // ===== GITHUB LOGIN BUTTON (Available to all users) =====
                 const ghLoginBtn = document.getElementById('ghLoginBtn');
@@ -4546,6 +4579,35 @@
                     new Notification(title, { body: body, icon: icon || "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/2764.png" });
                 }
             };
+        }
+
+        function initUserProfileDropdown() {
+            const card = document.getElementById('userProfileCard');
+            if (!card) return;
+
+            const toggleDropdown = () => {
+                const isActive = card.classList.toggle('active');
+                card.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+            };
+
+            card.addEventListener('click', (event) => {
+                if (event.target.closest('button, input, textarea, select, a')) return;
+                toggleDropdown();
+            });
+
+            card.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggleDropdown();
+                }
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!card.contains(event.target)) {
+                    card.classList.remove('active');
+                    card.setAttribute('aria-expanded', 'false');
+                }
+            });
         }
 
         // ===== GIF NOTIFICATION LISTENER (user-side) =====
@@ -5258,7 +5320,11 @@
             if (userFavorites) userFavorites.textContent = data.favorites ? `Favorites: ${data.favorites}` : '';
             if (userLikes) userLikes.textContent = data.likes ? `Likes: ${data.likes}` : '';
             if (userDreamLife) userDreamLife.textContent = data.dreamLife ? `Dream: ${data.dreamLife}` : '';
-            if (userCard) userCard.style.display = 'flex';
+            if (userCard) {
+                userCard.style.display = 'flex';
+                userCard.classList.remove('active');
+                userCard.setAttribute('aria-expanded', 'false');
+            }
 
             if (data.avatarRepo) {
                 const profileRepoSelect = document.getElementById('ghRepoSelectProfile');
