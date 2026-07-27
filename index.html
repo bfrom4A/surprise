@@ -1036,7 +1036,12 @@
             border: 2px dashed #ffb7c5;
             margin-bottom: 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .letter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(216, 27, 96, 0.12);
         }
         
         .letter-header {
@@ -1055,7 +1060,9 @@
         .letter-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.5s ease;
+            opacity: 0;
+            padding: 0;
+            transition: max-height 0.45s ease, opacity 0.3s ease, padding 0.3s ease;
             -webkit-user-select: text;
             -moz-user-select: text;
             -ms-user-select: text;
@@ -1066,10 +1073,19 @@
             word-spacing: 2px;
         }
         
+        .letter.expanded {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(216, 27, 96, 0.14);
+            border-color: #d81b60;
+        }
+
         .letter.expanded .letter-content {
-            max-height: 60vh; 
-            overflow-y: auto; 
+            max-height: 62vh;
+            overflow-y: auto;
+            opacity: 1;
+            padding-top: 6px;
             padding-right: 10px;
+            padding-bottom: 2px;
         }
 
         .letter-content p {
@@ -4393,6 +4409,7 @@
             loadProfileDetails(user);
             setupGallery(user);
             setupDynamicContent(user);
+            setupFreedomWall(user);
 
             // Start new notification listeners (using normalized username)
             startGifListener(user);
@@ -4796,6 +4813,42 @@
                         `;
                     });
                     lettersContainer.innerHTML = html;
+
+                    const letters = lettersContainer.querySelectorAll('.letter');
+                    letters.forEach((letter) => {
+                        letter.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            const isOpening = !this.classList.contains('expanded');
+
+                            letters.forEach((otherLetter) => {
+                                otherLetter.classList.remove('expanded');
+                            });
+
+                            if (isOpening) {
+                                this.classList.add('expanded');
+                            }
+
+                            if (this.classList.contains('expanded') && this.dataset.songUrl) {
+                                if (window.currentLetterAudio) {
+                                    window.currentLetterAudio.pause();
+                                    window.currentLetterAudio = null;
+                                }
+
+                                window.currentLetterAudio = new Audio(this.dataset.songUrl);
+                                window.currentLetterAudio.volume = 0.25;
+                                window.currentLetterAudio.loop = false;
+                                window.currentLetterAudio.preload = 'auto';
+                                window.currentLetterAudio.play().catch((e) => console.error('Audio play error:', e));
+                            } else if (!this.classList.contains('expanded') && this.dataset.songUrl) {
+                                if (window.currentLetterAudio) {
+                                    window.currentLetterAudio.pause();
+                                    window.currentLetterAudio = null;
+                                }
+                            }
+                        });
+                    });
                 }
             } catch (error) {
                 console.error('Letters load error:', error);
@@ -7153,13 +7206,15 @@
             }
         }
 
-        function setupFreedomWall(user) {
+        async function setupFreedomWall(user) {
             const collectionName = `${user}_messages`;
             const fwName = document.getElementById('fwName');
             const fwMessage = document.getElementById('fwMessage');
             const fwPostBtn = document.getElementById('fwPostBtn');
             const messagesContainer = document.getElementById('fwMessagesContainer');
             const notifyBtn = document.getElementById('enableNotifyBtn');
+
+            if (!fwName || !fwMessage || !fwPostBtn || !messagesContainer) return;
             
             if(notifyBtn) {
                 if(Notification.permission === 'granted') {
@@ -7191,12 +7246,26 @@
                 } catch (e) { alert("Failed to post."); newBtn.disabled = false; }
             });
 
+            try {
+                const snapshot = await getDocs(query(messagesCol, orderBy('timestamp', 'desc')));
+                const messages = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const time = data.timestamp ? (data.timestamp.toMillis ? data.timestamp.toMillis() : Date.now()) : Date.now();
+                    messages.push({ id: doc.id, name: data.name || 'Anonymous', message: data.message || '', time });
+                });
+                renderFreedomWallMessages(messages, messagesContainer, user, fwName.value, isInitialLoad);
+            } catch (error) {
+                console.error('Freedom wall load error:', error);
+                messagesContainer.innerHTML = '<div class="empty-wall-message">Unable to load messages right now.</div>';
+            }
+
             onSnapshot(messagesCol, (snapshot) => {
                 const messages = [];
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         const data = change.doc.data();
-                        const msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now();
+                        const msgTime = data.timestamp ? (data.timestamp.toMillis ? data.timestamp.toMillis() : Date.now()) : Date.now();
                         if (!isInitialLoad && msgTime > latestMessageTime) {
                              if(data.name !== fwName.value && window.notifyUser) { 
                                  window.notifyUser(`New Message on ${user}'s Wall`, data.message, "🕊️");
@@ -7204,31 +7273,35 @@
                         }
                     }
                 });
-                snapshot.forEach(doc => {
+                snapshot.forEach((doc) => {
                     const data = doc.data();
-                    const time = data.timestamp ? data.timestamp.toMillis() : Date.now();
+                    const time = data.timestamp ? (data.timestamp.toMillis ? data.timestamp.toMillis() : Date.now()) : Date.now();
                     messages.push({ id: doc.id, name: data.name || 'Anonymous', message: data.message || '', time });
                 });
                 if(messages.length > 0) {
                      const maxTime = Math.max(...messages.map(m => m.time));
                      if(maxTime > latestMessageTime) latestMessageTime = maxTime;
                 }
-                messages.sort((a, b) => b.time - a.time);
-                messagesContainer.innerHTML = '';
-                if (messages.length === 0) {
-                    messagesContainer.innerHTML = '<div class="empty-wall-message">No messages yet. Be the first!</div>';
-                } else {
-                    messages.forEach(msg => {
-                        const dateObj = new Date(msg.time);
-                        const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        const card = document.createElement('div');
-                        card.className = 'fw-message-card';
-                        card.innerHTML = `<div class="fw-message-header"><span class="fw-author">${escapeHtml(msg.name)}</span><span>${dateStr}</span></div><div class="fw-text">${escapeHtml(msg.message)}</div>`;
-                        messagesContainer.appendChild(card);
-                    });
-                }
+                renderFreedomWallMessages(messages, messagesContainer, user, fwName.value, isInitialLoad);
                 isInitialLoad = false;
             });
+        }
+
+        function renderFreedomWallMessages(messages, messagesContainer, user, currentName, isInitialLoad) {
+            messages.sort((a, b) => b.time - a.time);
+            messagesContainer.innerHTML = '';
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = '<div class="empty-wall-message">No messages yet. Be the first!</div>';
+            } else {
+                messages.forEach((msg) => {
+                    const dateObj = new Date(msg.time);
+                    const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const card = document.createElement('div');
+                    card.className = 'fw-message-card';
+                    card.innerHTML = `<div class="fw-message-header"><span class="fw-author">${escapeHtml(msg.name)}</span><span>${dateStr}</span></div><div class="fw-text">${escapeHtml(msg.message)}</div>`;
+                    messagesContainer.appendChild(card);
+                });
+            }
         }
 
         function requestNotificationPermission() {
