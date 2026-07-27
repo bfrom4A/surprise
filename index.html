@@ -4893,35 +4893,46 @@
             }
 
             const notesDocRef = doc(db, 'content', `${user}_daily_notes`);
+            const canManageNotes = sessionStorage.getItem('isAdminLoggedIn') === 'true' || sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
             if (postNoteBtn && noteComposerInput) {
-                postNoteBtn.addEventListener('click', async () => {
-                    const noteText = noteComposerInput.value.trim();
-                    if (!noteText) return;
+                if (!canManageNotes) {
+                    noteComposerInput.style.display = 'none';
+                    postNoteBtn.style.display = 'none';
+                    noteComposerInput.setAttribute('disabled', 'disabled');
+                    noteComposerInput.placeholder = 'Only admins can update notes.';
+                } else {
+                    noteComposerInput.removeAttribute('disabled');
+                    noteComposerInput.style.display = '';
+                    postNoteBtn.style.display = '';
+                    postNoteBtn.onclick = async () => {
+                        const noteText = noteComposerInput.value.trim();
+                        if (!noteText) return;
 
-                    try {
-                        const existingSnap = await getDoc(notesDocRef);
-                        const existingItems = existingSnap.exists() && Array.isArray(existingSnap.data().items)
-                            ? existingSnap.data().items
-                            : [];
-                        const updatedItems = [noteText, ...existingItems].filter(item => item && item.trim());
+                        try {
+                            const existingSnap = await getDoc(notesDocRef);
+                            const existingItems = existingSnap.exists() && Array.isArray(existingSnap.data().items)
+                                ? existingSnap.data().items
+                                : [];
+                            const updatedItems = [noteText, ...existingItems].filter(item => item && item.trim());
 
-                        await setDoc(notesDocRef, {
-                            items: updatedItems,
-                            lastUpdated: serverTimestamp()
-                        }, { merge: true });
+                            await setDoc(notesDocRef, {
+                                items: updatedItems,
+                                lastUpdated: serverTimestamp()
+                            }, { merge: true });
 
-                        noteComposerInput.value = '';
-                        if (window.showToast) {
-                            showToast('Note Posted 📝', 'Your note is now live.', '📝');
+                            noteComposerInput.value = '';
+                            if (window.showToast) {
+                                showToast('Note Posted 📝', 'Your note is now live.', '📝');
+                            }
+                        } catch (error) {
+                            console.error('Note post error:', error);
+                            if (window.showToast) {
+                                showToast('Note Failed', 'Could not post the note. Please try again.', '⚠️');
+                            }
                         }
-                    } catch (error) {
-                        console.error('Note post error:', error);
-                        if (window.showToast) {
-                            showToast('Note Failed', 'Could not post the note. Please try again.', '⚠️');
-                        }
-                    }
-                });
+                    };
+                }
             }
 
             try {
@@ -5041,14 +5052,14 @@
             const systemStatus = document.getElementById('ghSystemAuthStatus');
             const videoStatus = document.getElementById('ghVideoAuthStatus');
             
-            musicUI.style.display = isAuthorized ? 'block' : 'none';
-            galleryUI.style.display = isAuthorized ? 'block' : 'none';
-            systemUI.style.display = isAuthorized ? 'block' : 'none';
+            if (musicUI) musicUI.style.display = isAuthorized ? 'block' : 'none';
+            if (galleryUI) galleryUI.style.display = isAuthorized ? 'block' : 'none';
+            if (systemUI) systemUI.style.display = isAuthorized ? 'block' : 'none';
             if (videoUI) videoUI.style.display = 'block';
             
-            musicStatus.style.display = isAuthorized ? 'none' : 'block';
-            galleryStatus.style.display = isAuthorized ? 'none' : 'block';
-            systemStatus.style.display = isAuthorized ? 'none' : 'block';
+            if (musicStatus) musicStatus.style.display = isAuthorized ? 'none' : 'block';
+            if (galleryStatus) galleryStatus.style.display = isAuthorized ? 'none' : 'block';
+            if (systemStatus) systemStatus.style.display = isAuthorized ? 'none' : 'block';
             if (videoStatus) {
                 videoStatus.style.display = 'block';
                 videoStatus.innerHTML = isAuthorized
@@ -5057,11 +5068,19 @@
             }
 
             if (isAuthorized) {
-                 fetchRepositories('music');
-                 fetchRepositories('gallery');
-                 fetchRepositories('system');
-                 fetchRepositories('video');
-                 fetchRepositories('profile');
+                ['music', 'gallery', 'system', 'video', 'profile'].forEach((type) => {
+                    const selectId = type === 'music'
+                        ? 'ghRepoSelectMusic'
+                        : type === 'gallery'
+                            ? 'ghRepoSelectGallery'
+                            : type === 'system'
+                                ? 'ghRepoSelectSystem'
+                                : type === 'video'
+                                    ? 'ghRepoSelectVideo'
+                                    : 'ghRepoSelectProfile';
+                    const select = document.getElementById(selectId);
+                    if (select) fetchRepositories(type);
+                });
             }
         }
         
@@ -5456,6 +5475,8 @@
             const isSuperAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
             const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
+            updateGitHubUI(!!githubToken);
+
             const targetLabel = document.getElementById('adminTargetLabel');
             const targetBtns = document.querySelectorAll('.admin-target-btn');
             const tabBtns = document.querySelectorAll('.admin-tab-btn');
@@ -5487,7 +5508,6 @@
                 window.loadProfileDetails(target);
             } else {
                 setupDeviceMonitor();
-                updateGitHubUI(!!githubToken);
                 startLiveScanner();
                 setupAdminUserManagement();
                 setupChatSystem('SuperAdmin');
@@ -6428,6 +6448,13 @@
 
             document.getElementById('saveNotesBtn').onclick = async () => {
                 if(!adminTargetUser) return;
+                const isSuperAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+                const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
+                if (!isSuperAdmin && !isSubAdmin) {
+                    showToast("Access Denied", "Only admins can update notes.", "⚠️");
+                    return;
+                }
+
                 const rawText = document.getElementById('adminNotesContent').value;
                 const items = rawText.split('\n').filter(line => line.trim() !== '');
                 try {
@@ -6741,6 +6768,11 @@
                     scanRepositoryForMusic(repoFullName, githubToken);
                 };
 
+                const repoSelectMusic = document.getElementById('ghRepoSelectMusic');
+                if (repoSelectMusic && !repoSelectMusic.value && githubToken) {
+                    fetchRepositories('music');
+                }
+
                 if (uploadBtnMusic) {
                     uploadBtnMusic.removeEventListener('click', performMusicUpload);
                     uploadBtnMusic.addEventListener('click', performMusicUpload);
@@ -6761,6 +6793,11 @@
             }
             if (document.getElementById('maintenanceMusicSelect')) {
                 setupMaintenanceMusicSelector();
+            }
+
+            const ghRepoSelectMusic = document.getElementById('ghRepoSelectMusic');
+            if (ghRepoSelectMusic && githubToken) {
+                fetchRepositories('music');
             }
 
             // --- CODE VERIFICATION AND UPLOAD SYSTEM ---
