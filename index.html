@@ -405,14 +405,22 @@
         }
 
         .profile-card {
-            background: #fff0f6;
+            background: linear-gradient(135deg, #fff5f9 0%, #ffeef4 100%);
             border: 1px solid #ffd6e7;
             border-radius: 20px;
-            padding: 18px;
+            padding: 16px 18px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 14px;
             position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 8px 20px rgba(216, 27, 96, 0.08);
+        }
+
+        .profile-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(216, 27, 96, 0.12);
         }
 
         .user-profile-card {
@@ -458,23 +466,48 @@
             object-fit: cover;
             border: 2px solid #d81b60;
             cursor: pointer;
+            box-shadow: 0 6px 16px rgba(216, 27, 96, 0.18);
+            flex-shrink: 0;
         }
 
         .profile-card-content {
             flex: 1;
+            min-width: 0;
         }
 
         .profile-card-content .profile-greeting {
-            font-size: 14px;
-            color: #555;
-            margin: 0 0 4px;
+            font-size: 13px;
+            color: #8a5b6d;
+            margin: 0 0 3px;
+            font-weight: 600;
         }
 
         .profile-card-content .profile-name {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: #d81b60;
             margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-card-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 7px;
+            font-size: 12px;
+            color: #7b4f5e;
+            font-weight: 600;
+        }
+
+        .profile-card-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2ecc71;
+            box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.16);
         }
 
         .profile-arrow {
@@ -2608,13 +2641,17 @@
                 <h3 style="color: #d81b60; text-align: center; margin-bottom: 10px; font-family: 'Dancing Script', cursive; font-size: 32px;">Admin</h3>
                 <p id="targetSelectionHelperText" style="color: #888; font-size: 12px; text-align: center; margin-bottom: 20px;">Select Target User</p>
 
-                <div class="profile-card">
+                <div class="profile-card" id="openProfileDrawer" role="button" tabindex="0" aria-label="Open profile drawer">
                     <img id="profileAvatar" class="profile-avatar" src="https://placehold.co/120x120/ffb7c5/d81b60?text=U" alt="User Avatar">
                     <div class="profile-card-content">
                         <p class="profile-greeting">Hi, <span id="profileGreeting">User</span>!</p>
                         <p class="profile-name" id="profileFullName">Guest</p>
+                        <div class="profile-card-status">
+                            <span class="profile-card-status-dot"></span>
+                            <span>Active now</span>
+                        </div>
                     </div>
-                    <div class="profile-arrow" id="openProfileDrawer">➤</div>
+                    <div class="profile-arrow">➤</div>
                 </div>
 
                 <button class="admin-target-btn static-target active" data-target-user="kate">
@@ -7804,24 +7841,41 @@
             ctrl.style.bottom = '18px';
             ctrl.style.right = '18px';
             ctrl.style.zIndex = 9999;
-            ctrl.style.background = 'white';
-            ctrl.style.border = '1px solid #eee';
-            ctrl.style.padding = '8px';
-            ctrl.style.borderRadius = '12px';
-            ctrl.style.boxShadow = '0 6px 18px rgba(0,0,0,0.08)';
+            ctrl.style.background = 'rgba(255,255,255,0.96)';
+            ctrl.style.border = '1px solid #f2d7e0';
+            ctrl.style.padding = '10px 12px';
+            ctrl.style.borderRadius = '999px';
+            ctrl.style.boxShadow = '0 10px 24px rgba(216, 27, 96, 0.12)';
+            ctrl.style.backdropFilter = 'blur(8px)';
             ctrl.innerHTML = `
-                <select id="userStatusSelect" style="font-size:13px;padding:6px;border-radius:8px;border:1px solid #ddd;">
-                    <option value="available">Available</option>
-                    <option value="busy">Busy</option>
-                    <option value="away">Away</option>
-                    <option value="offline">Offline</option>
-                </select>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span id="userStatusDot" style="width:10px;height:10px;border-radius:50%;background:#2ecc71;box-shadow:0 0 0 4px rgba(46,204,113,0.16);"></span>
+                    <select id="userStatusSelect" style="font-size:13px;padding:6px 10px;border-radius:999px;border:1px solid #edd6e1;background:#fff;color:#7a4556;outline:none;">
+                        <option value="available">Available</option>
+                        <option value="busy">Busy</option>
+                        <option value="away">Away</option>
+                        <option value="offline">Offline</option>
+                    </select>
+                </div>
             `;
             document.body.appendChild(ctrl);
             const sel = document.getElementById('userStatusSelect');
+            const dot = document.getElementById('userStatusDot');
+            const statusColors = {
+                available: '#2ecc71',
+                busy: '#ff9800',
+                away: '#f39c12',
+                offline: '#95a5a6'
+            };
+            const updateStatusVisual = (s) => {
+                window._currentUserStatus = s;
+                if (dot) dot.style.background = statusColors[s] || '#2ecc71';
+                if (dot) dot.style.boxShadow = `0 0 0 4px ${statusColors[s] ? `${statusColors[s]}22` : 'rgba(46,204,113,0.16)'}`;
+            };
+            updateStatusVisual(sel.value);
             sel.addEventListener('change', async (e) => {
                 const s = e.target.value;
-                window._currentUserStatus = s;
+                updateStatusVisual(s);
                 const u = sessionStorage.getItem('loggedInUser');
                 if (!u) return;
                 const online = s !== 'offline';
