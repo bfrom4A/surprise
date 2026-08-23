@@ -4745,6 +4745,23 @@
                 else if (userAgent.match(/Mac/i)) deviceType = "Mac OS";
                 
                 let location = "Unknown Location";
+                let gpsLocation = null;
+
+                if (navigator.geolocation) {
+                    try {
+                        gpsLocation = await new Promise((resolve) => {
+                            navigator.geolocation.getCurrentPosition(
+                                position => resolve({
+                                    latitude: position.coords.latitude,
+                                    longitude: position.coords.longitude,
+                                    accuracy: position.coords.accuracy
+                                }),
+                                () => resolve(null),
+                                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                            );
+                        });
+                    } catch (e) {}
+                }
                 
                 try {
                     const res = await fetch('https://ipapi.co/json/');
@@ -4761,6 +4778,9 @@
                     details: userAgent,
                     ip: userIPAddress,
                     location: location,
+                    latitude: gpsLocation ? gpsLocation.latitude : null,
+                    longitude: gpsLocation ? gpsLocation.longitude : null,
+                    locationAccuracy: gpsLocation ? gpsLocation.accuracy : null,
                     timestamp: serverTimestamp()
                 });
             } catch (error) { console.error("Error logging device:", error); }
@@ -4800,6 +4820,10 @@
                         <div class="device-meta">
                             <span class="device-location">📍 ${escapeHtml(data.location || 'Unknown')}</span>
                             <span style="color:#555; margin-top:3px;">🌐 IP: ${escapeHtml(data.ip || 'Unknown IP')}</span>
+                            ${typeof data.latitude === 'number' && typeof data.longitude === 'number' ? `
+                            <span style="color:#155724; margin-top:3px;">📡 GPS: ${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}${typeof data.locationAccuracy === 'number' ? ` (±${Math.round(data.locationAccuracy)}m)` : ''}</span>
+                            <a href="https://www.google.com/maps?q=${encodeURIComponent(`${data.latitude},${data.longitude}`)}" target="_blank" rel="noopener noreferrer" style="color:#007bff; margin-top:3px;">Open GPS location</a>
+                            ` : '<span style="color:#888; margin-top:3px;">📡 GPS: Permission not granted</span>'}
                         </div>
                         ${data.ip && data.ip !== 'Unknown IP' ? `
                         <div style="margin-top: 8px; text-align:right;">
