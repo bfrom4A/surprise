@@ -4997,8 +4997,7 @@
                 }
             }
 
-            try {
-                const notesSnap = await getDoc(notesDocRef);
+            onSnapshot(notesDocRef, (notesSnap) => {
                 if (notesSnap.exists()) {
                     const data = notesSnap.data();
                     if (data.lastUpdated && typeof data.lastUpdated.toDate === 'function') {
@@ -5018,10 +5017,10 @@
                 } else {
                     notesContainer.innerHTML = '<div class="note"><p>Welcome! Notes will appear here.</p></div>';
                 }
-            } catch (error) {
+            }, (error) => {
                 console.error('Notes load error:', error);
                 notesContainer.innerHTML = '<div class="note"><p>Unable to load notes right now.</p></div>';
-            }
+            });
 
             try {
                 const songsSnap = await getDocs(collection(db, 'songs'));
@@ -6359,11 +6358,14 @@
                 }
             }
 
-            document.getElementById('sendVideoBtn').onclick = () => {
-                if (!adminTargetUser) return alert('Please select a target user first');
-                updateVideoBroadcastTargetDisplay();
-                document.getElementById('videoBroadcastModal').style.display = 'flex';
-            };
+            const sendVideoBtn = document.getElementById('sendVideoBtn');
+            if (sendVideoBtn) {
+                sendVideoBtn.onclick = () => {
+                    if (!adminTargetUser) return alert('Please select a target user first');
+                    updateVideoBroadcastTargetDisplay();
+                    document.getElementById('videoBroadcastModal').style.display = 'flex';
+                };
+            }
 
             // Video broadcast file selection
             let selectedVideoFile = null;
@@ -6956,7 +6958,6 @@
                 // --- ADMIN MAINTENANCE ACTIONS ---
                 const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
                 const btnEmergencyMaintenance = document.getElementById('btnEmergencyMaintenance');
-                let currentMaintenanceEnabled = false;
                 
                 let adminPreviewInterval = null;
                 function updateAdminMaintPreview() {
@@ -7015,6 +7016,10 @@
                             const endTime = document.getElementById('maintEndTime').value;
                             const message = document.getElementById('maintMessage').value;
                             if (!endTime) return alert("Please set an end date and time for the maintenance.");
+                            if (new Date(endTime).getTime() <= Date.now()) return alert("Please set an end date and time in the future.");
+                            if (startTime && new Date(startTime).getTime() >= new Date(endTime).getTime()) {
+                                return alert("The maintenance start time must be before the end time.");
+                            }
                             
                             const isScheduled = !!startTime;
                             
@@ -7050,6 +7055,11 @@
                             endTime: localISOTime,
                             message: "Emergency maintenance in progress. We are working quickly to restore service."
                         }, { merge: true });
+                        currentMaintenanceEnabled = true;
+                        if (btnToggleMaintenance) {
+                            btnToggleMaintenance.style.background = "#28a745";
+                            btnToggleMaintenance.textContent = "Disable Maintenance";
+                        }
                         showToast("Emergency Maintenance", "Enabled for 1 hour.", "🚨");
                     };
                 }
