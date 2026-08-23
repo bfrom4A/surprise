@@ -1159,6 +1159,80 @@
         .letter-content p:last-child {
             margin-bottom: 0;
         }
+
+        .letter-expanded-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 180px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        .letter-song-panel {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            padding: 10px;
+            border-left: 1px solid #ffb7c5;
+            color: #d81b60;
+            font-size: 12px;
+        }
+
+        .letter.expanded .letter-song-panel {
+            display: flex;
+        }
+
+        .letter-disc {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            background: conic-gradient(#d81b60, #ffb7c5, #fff, #d81b60);
+            box-shadow: 0 2px 7px rgba(216, 27, 96, 0.2);
+        }
+
+        .letter-disc.playing {
+            animation: letterDiscSpin 2.4s linear infinite;
+        }
+
+        @keyframes letterDiscSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .letter-song-details {
+            min-width: 0;
+        }
+
+        .letter-song-title,
+        .letter-song-artist,
+        .letter-song-timestamp {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .letter-song-title {
+            font-weight: 700;
+        }
+
+        .letter-song-artist,
+        .letter-song-timestamp {
+            color: #888;
+            margin-top: 3px;
+        }
+
+        @media (max-width: 600px) {
+            .letter-expanded-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .letter-song-panel {
+                border-left: none;
+                border-top: 1px solid #ffb7c5;
+                padding-left: 0;
+            }
+        }
         
         /* Custom Scrollbar */
         .letter-content::-webkit-scrollbar,
@@ -4923,6 +4997,9 @@
                         const letterId = `letter_${doc.id}`;
                         const formattedContent = (data.content || '').split('\n').map(line => line.trim()).map(line => line.length > 0 ? `<p>${escapeHtml(line)}</p>` : '<br>').join('');
                         const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
+                        const letterTimestamp = data.timestamp && typeof data.timestamp.toDate === 'function'
+                            ? data.timestamp.toDate().toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                            : 'Date unavailable';
                         const scheduledBadge = data.isScheduled ? ` <span style="color:#ff9800; font-size:12px; font-weight: bold;">📅 Scheduled</span>` : "";
                         const adminCredit = data.scheduledBy ? ` <span style="color:#999; font-size:11px; font-style: italic;">(by ${escapeHtml(data.scheduledBy)})</span>` : "";
                         html += `
@@ -4931,7 +5008,19 @@
                                     <h3>${escapeHtml(data.title || 'Untitled Letter')} (${escapeHtml(data.dateLabel || 'No date')})${scheduledBadge}${adminCredit}</h3>
                                     <span>Click to open</span>
                                 </div>
-                                <div class="letter-content" style="text-align: justify">${formattedContent}</div>
+                                <div class="letter-expanded-layout">
+                                    <div class="letter-content" style="text-align: justify">${formattedContent}</div>
+                                    ${data.songUrl ? `
+                                    <div class="letter-song-panel">
+                                        <div class="letter-disc" aria-hidden="true"></div>
+                                        <div class="letter-song-details">
+                                            <div class="letter-song-title">${escapeHtml(data.songTitle || 'Untitled song')}</div>
+                                            <div class="letter-song-artist">${escapeHtml(data.songArtist || 'Unknown artist')}</div>
+                                            <div class="letter-song-timestamp">${escapeHtml(letterTimestamp)}</div>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                </div>
                             </div>
                         `;
                     });
@@ -4947,6 +5036,7 @@
 
                             letters.forEach((otherLetter) => {
                                 otherLetter.classList.remove('expanded');
+                                otherLetter.querySelector('.letter-disc')?.classList.remove('playing');
                             });
 
                             if (isOpening) {
@@ -4963,6 +5053,10 @@
                                 window.currentLetterAudio.volume = 0.25;
                                 window.currentLetterAudio.loop = false;
                                 window.currentLetterAudio.preload = 'auto';
+                                const disc = this.querySelector('.letter-disc');
+                                window.currentLetterAudio.addEventListener('play', () => disc?.classList.add('playing'));
+                                window.currentLetterAudio.addEventListener('pause', () => disc?.classList.remove('playing'));
+                                window.currentLetterAudio.addEventListener('ended', () => disc?.classList.remove('playing'));
                                 window.currentLetterAudio.play().catch((e) => console.error('Audio play error:', e));
                             } else if (!this.classList.contains('expanded') && this.dataset.songUrl) {
                                 if (window.currentLetterAudio) {
