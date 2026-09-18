@@ -479,6 +479,17 @@
             margin: 4px 0;
         }
 
+        .user-profile-edit-btn {
+            margin-top: 8px;
+            border: 0;
+            border-radius: 8px;
+            padding: 7px 10px;
+            background: #d81b60;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
         .user-profile-arrow {
             font-size: 16px;
             color: #d81b60;
@@ -2800,6 +2811,26 @@
                         <input type="text" id="profileFullNameInput" placeholder="Enter full name">
                         <div class="field-row">
                             <div>
+                                <label>Surname</label>
+                                <input type="text" id="profileSurnameInput" placeholder="Surname">
+                            </div>
+                            <div>
+                                <label>Gender</label>
+                                <select id="profileGenderInput">
+                                    <option value="">Select gender</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Other">Other</option>
+                                    <option value="Prefer not to say">Prefer not to say</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Birthdate</label>
+                            <input type="date" id="profileBirthdateInput">
+                        </div>
+                        <div class="field-row">
+                            <div>
                                 <label>Favorites</label>
                                 <input type="text" id="profileFavoritesInput" placeholder="Favorites">
                             </div>
@@ -2823,8 +2854,8 @@
                             <textarea id="profileDreamLifeInput" placeholder="Life dream"></textarea>
                         </div>
                         <div>
-                            <label>Dream country</label>
-                            <input type="text" id="profileDreamCountryInput" placeholder="Dream country">
+                            <label>Dream place</label>
+                            <input type="text" id="profileDreamCountryInput" placeholder="Dream place">
                         </div>
                     </div>
 
@@ -3568,11 +3599,60 @@
             <div class="user-profile-meta">
                 <p id="userProfileFavorites" class="user-profile-detail"></p>
                 <p id="userProfileLikes" class="user-profile-detail"></p>
+                <p id="userProfileDislikes" class="user-profile-detail"></p>
+                <p id="userProfileGender" class="user-profile-detail"></p>
+                <p id="userProfileBirthdate" class="user-profile-detail"></p>
+                <p id="userProfileDreamPlace" class="user-profile-detail"></p>
                 <p id="userProfileDreamLife" class="user-profile-detail"></p>
+                <button type="button" id="openUserProfileEditor" class="user-profile-edit-btn">Edit profile</button>
             </div>
         </div>
         <span class="user-profile-arrow" aria-hidden="true">▾</span>
     </div>
+
+    <div class="profile-drawer-overlay" id="userProfileDrawerOverlay"></div>
+    <aside class="profile-drawer" id="userProfileDrawer" aria-label="Edit your profile">
+        <div class="profile-drawer-header">
+            <h3>Edit Profile</h3>
+            <button id="closeUserProfileDrawer" class="submit-btn" style="padding: 8px 12px; font-size: 14px;">Close</button>
+        </div>
+        <div class="profile-drawer-body">
+            <div class="drawer-section">
+                <label>Name</label>
+                <input type="text" id="userProfileNameInput" placeholder="Name">
+                <label>Surname</label>
+                <input type="text" id="userProfileSurnameInput" placeholder="Surname">
+                <div class="field-row">
+                    <div>
+                        <label>Gender</label>
+                        <select id="userProfileGenderInput">
+                            <option value="">Select gender</option>
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                            <option value="Other">Other</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Birthdate</label>
+                        <input type="date" id="userProfileBirthdateInput">
+                    </div>
+                </div>
+                <label>Favorites</label>
+                <input type="text" id="userProfileFavoritesInput" placeholder="Favorites">
+                <label>Likes</label>
+                <textarea id="userProfileLikesInput" placeholder="Likes"></textarea>
+                <label>Dislikes</label>
+                <textarea id="userProfileDislikesInput" placeholder="Dislikes"></textarea>
+                <label>Dream place</label>
+                <input type="text" id="userProfileDreamPlaceInput" placeholder="Dream place">
+                <label>Dreams in life</label>
+                <textarea id="userProfileDreamLifeInput" placeholder="Dreams in life"></textarea>
+            </div>
+            <button id="saveUserProfileBtn" class="edit-save-btn">Save profile once</button>
+            <p id="userProfileEditNotice" style="font-size:12px; color:#777; text-align:center;"></p>
+        </div>
+    </aside>
 
     <div class="container" id="mainContent" style="display: none;">
         
@@ -4682,6 +4762,54 @@
                     card.setAttribute('aria-expanded', 'false');
                 }
             });
+
+            const editor = document.getElementById('userProfileDrawer');
+            const editorOverlay = document.getElementById('userProfileDrawerOverlay');
+            const openEditor = document.getElementById('openUserProfileEditor');
+            const closeEditor = document.getElementById('closeUserProfileDrawer');
+            const saveEditor = document.getElementById('saveUserProfileBtn');
+            const toggleEditor = (show) => {
+                if (!editor || !editorOverlay) return;
+                editor.classList.toggle('active', show);
+                editorOverlay.classList.toggle('active', show);
+                if (show && currentUser) window.loadUserProfileEditor(currentUser);
+            };
+            if (openEditor) openEditor.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleEditor(true);
+            });
+            if (closeEditor) closeEditor.addEventListener('click', () => toggleEditor(false));
+            if (editorOverlay) editorOverlay.addEventListener('click', () => toggleEditor(false));
+            if (saveEditor) saveEditor.addEventListener('click', () => window.saveUserProfileOnce(currentUser, toggleEditor));
+        }
+
+        function getProfileRole() {
+            return sessionStorage.getItem('isAdminLoggedIn') === 'true'
+                ? 'superadmin'
+                : sessionStorage.getItem('isSubAdminLoggedIn') === 'true' ? 'subadmin' : 'user';
+        }
+
+        function profileDisplayName(data, user) {
+            return [data.fullName, data.surname].filter(Boolean).join(' ') || (user.charAt(0).toUpperCase() + user.slice(1));
+        }
+
+        function setProfileAdminPermissions() {
+            const role = getProfileRole();
+            const isSuperAdmin = role === 'superadmin';
+            const detailFields = ['profileFullNameInput', 'profileSurnameInput', 'profileGenderInput', 'profileBirthdateInput', 'profileFavoritesInput', 'profileLikesInput', 'profileDislikesInput', 'profileAllergiesInput', 'profileDreamLifeInput', 'profileDreamCountryInput'];
+            detailFields.forEach((id) => {
+                const field = document.getElementById(id);
+                if (field) field.disabled = !isSuperAdmin;
+            });
+            const canUploadAvatar = isSuperAdmin || role === 'subadmin';
+            const avatarInput = document.getElementById('profileAvatarInput');
+            const repoSelect = document.getElementById('ghRepoSelectProfile');
+            const uploadButton = document.getElementById('uploadProfileAvatarBtn');
+            const saveButton = document.getElementById('saveProfileDetailsBtn');
+            if (avatarInput) avatarInput.disabled = !canUploadAvatar;
+            if (repoSelect) repoSelect.disabled = !canUploadAvatar;
+            if (uploadButton) uploadButton.style.display = canUploadAvatar ? 'block' : 'none';
+            if (saveButton) saveButton.style.display = isSuperAdmin ? 'block' : 'none';
         }
 
         // ===== GIF NOTIFICATION LISTENER (user-side) =====
@@ -4997,9 +5125,6 @@
                         const letterId = `letter_${doc.id}`;
                         const formattedContent = (data.content || '').split('\n').map(line => line.trim()).map(line => line.length > 0 ? `<p>${escapeHtml(line)}</p>` : '<br>').join('');
                         const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
-                        const letterTimestamp = data.timestamp && typeof data.timestamp.toDate === 'function'
-                            ? data.timestamp.toDate().toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-                            : 'Date unavailable';
                         const scheduledBadge = data.isScheduled ? ` <span style="color:#ff9800; font-size:12px; font-weight: bold;">📅 Scheduled</span>` : "";
                         const adminCredit = data.scheduledBy ? ` <span style="color:#999; font-size:11px; font-style: italic;">(by ${escapeHtml(data.scheduledBy)})</span>` : "";
                         html += `
@@ -5008,19 +5133,7 @@
                                     <h3>${escapeHtml(data.title || 'Untitled Letter')} (${escapeHtml(data.dateLabel || 'No date')})${scheduledBadge}${adminCredit}</h3>
                                     <span>Click to open</span>
                                 </div>
-                                <div class="letter-expanded-layout">
-                                    <div class="letter-content" style="text-align: justify">${formattedContent}</div>
-                                    ${data.songUrl ? `
-                                    <div class="letter-song-panel">
-                                        <div class="letter-disc" aria-hidden="true"></div>
-                                        <div class="letter-song-details">
-                                            <div class="letter-song-title">${escapeHtml(data.songTitle || 'Untitled song')}</div>
-                                            <div class="letter-song-artist">${escapeHtml(data.songArtist || 'Unknown artist')}</div>
-                                            <div class="letter-song-timestamp">${escapeHtml(letterTimestamp)}</div>
-                                        </div>
-                                    </div>
-                                    ` : ''}
-                                </div>
+                                <div class="letter-content" style="text-align: justify">${formattedContent}</div>
                             </div>
                         `;
                     });
@@ -5036,7 +5149,6 @@
 
                             letters.forEach((otherLetter) => {
                                 otherLetter.classList.remove('expanded');
-                                otherLetter.querySelector('.letter-disc')?.classList.remove('playing');
                             });
 
                             if (isOpening) {
@@ -5053,10 +5165,6 @@
                                 window.currentLetterAudio.volume = 0.25;
                                 window.currentLetterAudio.loop = false;
                                 window.currentLetterAudio.preload = 'auto';
-                                const disc = this.querySelector('.letter-disc');
-                                window.currentLetterAudio.addEventListener('play', () => disc?.classList.add('playing'));
-                                window.currentLetterAudio.addEventListener('pause', () => disc?.classList.remove('playing'));
-                                window.currentLetterAudio.addEventListener('ended', () => disc?.classList.remove('playing'));
                                 window.currentLetterAudio.play().catch((e) => console.error('Audio play error:', e));
                             } else if (!this.classList.contains('expanded') && this.dataset.songUrl) {
                                 if (window.currentLetterAudio) {
@@ -5306,6 +5414,7 @@
             const uploadBtn = document.getElementById('uploadProfileAvatarBtn');
             const avatarInput = document.getElementById('profileAvatarInput');
             const preview = document.getElementById('profileAvatarPreview');
+            setProfileAdminPermissions();
 
             const toggleDrawer = (show) => {
                 if (!drawer || !overlay) return;
@@ -5331,6 +5440,7 @@
                         preview.src = reader.result;
                     };
                     reader.readAsDataURL(file);
+                    if (getProfileRole() === 'superadmin' || getProfileRole() === 'subadmin') uploadBtn?.click();
                 });
             }
 
@@ -5408,12 +5518,15 @@
             const profileRef = doc(db, 'profiles', user);
             const profileSnap = await getDoc(profileRef);
             const data = profileSnap.exists() ? profileSnap.data() : {};
-            const displayName = data.fullName || (user.charAt(0).toUpperCase() + user.slice(1));
+            const displayName = profileDisplayName(data, user);
             const avatarUrl = data.avatarUrl || `https://placehold.co/120x120/ffb7c5/d81b60?text=${encodeURIComponent(displayName.charAt(0) || 'U')}`;
 
             document.getElementById('profileGreeting').textContent = displayName.split(' ')[0] || displayName;
             document.getElementById('profileFullName').textContent = displayName;
             document.getElementById('profileFullNameInput').value = data.fullName || '';
+            document.getElementById('profileSurnameInput').value = data.surname || '';
+            document.getElementById('profileGenderInput').value = data.gender || '';
+            document.getElementById('profileBirthdateInput').value = data.birthdate || '';
             document.getElementById('profileFavoritesInput').value = data.favorites || '';
             document.getElementById('profileLikesInput').value = data.likes || '';
             document.getElementById('profileDislikesInput').value = data.dislikes || '';
@@ -5436,6 +5549,14 @@
             if (userFullName) userFullName.textContent = displayName;
             if (userFavorites) userFavorites.textContent = data.favorites ? `Favorites: ${data.favorites}` : '';
             if (userLikes) userLikes.textContent = data.likes ? `Likes: ${data.likes}` : '';
+            const userDislikes = document.getElementById('userProfileDislikes');
+            const userGender = document.getElementById('userProfileGender');
+            const userBirthdate = document.getElementById('userProfileBirthdate');
+            const userDreamPlace = document.getElementById('userProfileDreamPlace');
+            if (userDislikes) userDislikes.textContent = data.dislikes ? `Dislikes: ${data.dislikes}` : '';
+            if (userGender) userGender.textContent = data.gender ? `Gender: ${data.gender}` : '';
+            if (userBirthdate) userBirthdate.textContent = data.birthdate ? `Birthdate: ${data.birthdate}` : '';
+            if (userDreamPlace) userDreamPlace.textContent = data.dreamCountry ? `Dream place: ${data.dreamCountry}` : '';
             if (userDreamLife) userDreamLife.textContent = data.dreamLife ? `Dream: ${data.dreamLife}` : '';
             if (userCard) {
                 userCard.style.display = 'flex';
@@ -5447,24 +5568,85 @@
                 const profileRepoSelect = document.getElementById('ghRepoSelectProfile');
                 if (profileRepoSelect) profileRepoSelect.value = data.avatarRepo;
             }
+            window.loadUserProfileEditor(user, data);
+        };
+
+        window.loadUserProfileEditor = async function(user, profileData = null) {
+            if (!user) return;
+            const data = profileData || ((await getDoc(doc(db, 'profiles', user))).data() || {});
+            const fields = {
+                userProfileNameInput: data.fullName || '',
+                userProfileSurnameInput: data.surname || '',
+                userProfileGenderInput: data.gender || '',
+                userProfileBirthdateInput: data.birthdate || '',
+                userProfileFavoritesInput: data.favorites || '',
+                userProfileLikesInput: data.likes || '',
+                userProfileDislikesInput: data.dislikes || '',
+                userProfileDreamPlaceInput: data.dreamCountry || '',
+                userProfileDreamLifeInput: data.dreamLife || ''
+            };
+            Object.entries(fields).forEach(([id, value]) => {
+                const field = document.getElementById(id);
+                if (field) field.value = value;
+            });
+            const locked = data.userProfileEditUsed === true;
+            document.querySelectorAll('#userProfileDrawer input, #userProfileDrawer select, #userProfileDrawer textarea').forEach((field) => field.disabled = locked);
+            const saveButton = document.getElementById('saveUserProfileBtn');
+            const notice = document.getElementById('userProfileEditNotice');
+            if (saveButton) saveButton.disabled = locked;
+            if (notice) notice.textContent = locked ? 'Your profile details have already been edited once.' : 'You can save these personal details one time.';
+        };
+
+        window.saveUserProfileOnce = async function(user, closeEditor) {
+            if (!user || getProfileRole() !== 'user') return;
+            const existing = (await getDoc(doc(db, 'profiles', user))).data() || {};
+            if (existing.userProfileEditUsed === true) return alert('Your profile details can only be edited once.');
+            const payload = {
+                fullName: document.getElementById('userProfileNameInput').value.trim(),
+                surname: document.getElementById('userProfileSurnameInput').value.trim(),
+                gender: document.getElementById('userProfileGenderInput').value,
+                birthdate: document.getElementById('userProfileBirthdateInput').value,
+                favorites: document.getElementById('userProfileFavoritesInput').value.trim(),
+                likes: document.getElementById('userProfileLikesInput').value.trim(),
+                dislikes: document.getElementById('userProfileDislikesInput').value.trim(),
+                dreamCountry: document.getElementById('userProfileDreamPlaceInput').value.trim(),
+                dreamLife: document.getElementById('userProfileDreamLifeInput').value.trim(),
+                userProfileEditUsed: true,
+                updatedAt: serverTimestamp()
+            };
+            try {
+                await setDoc(doc(db, 'profiles', user), payload, { merge: true });
+                await window.loadProfileDetails(user);
+                showToast('Profile Saved', 'Your profile details were saved.', '✅');
+                if (closeEditor) closeEditor(false);
+            } catch (e) {
+                console.error('Failed to save user profile', e);
+                alert('Unable to save your profile details.');
+            }
         };
 
         async function saveProfileDetails(user, extras = {}) {
             if (!user) return;
+            if (getProfileRole() !== 'superadmin' && Object.keys(extras).length === 0) return;
             const payload = {
-                fullName: document.getElementById('profileFullNameInput').value.trim(),
-                favorites: document.getElementById('profileFavoritesInput').value.trim(),
-                likes: document.getElementById('profileLikesInput').value.trim(),
-                dislikes: document.getElementById('profileDislikesInput').value.trim(),
-                allergies: document.getElementById('profileAllergiesInput').value.trim(),
-                dreamLife: document.getElementById('profileDreamLifeInput').value.trim(),
-                dreamCountry: document.getElementById('profileDreamCountryInput').value.trim(),
+                ...(getProfileRole() === 'superadmin' ? {
+                    fullName: document.getElementById('profileFullNameInput').value.trim(),
+                    surname: document.getElementById('profileSurnameInput').value.trim(),
+                    gender: document.getElementById('profileGenderInput').value,
+                    birthdate: document.getElementById('profileBirthdateInput').value,
+                    favorites: document.getElementById('profileFavoritesInput').value.trim(),
+                    likes: document.getElementById('profileLikesInput').value.trim(),
+                    dislikes: document.getElementById('profileDislikesInput').value.trim(),
+                    allergies: document.getElementById('profileAllergiesInput').value.trim(),
+                    dreamLife: document.getElementById('profileDreamLifeInput').value.trim(),
+                    dreamCountry: document.getElementById('profileDreamCountryInput').value.trim()
+                } : {}),
                 ...extras,
                 updatedAt: serverTimestamp()
             };
             try {
                 await setDoc(doc(db, 'profiles', user), payload, { merge: true });
-                const displayName = payload.fullName || (user.charAt(0).toUpperCase() + user.slice(1));
+                const displayName = profileDisplayName(payload, user);
                 document.getElementById('profileGreeting').textContent = displayName.split(' ')[0] || displayName;
                 document.getElementById('profileFullName').textContent = displayName;
                 showToast('Profile Saved', 'User details updated successfully.', '✅');
@@ -5579,6 +5761,7 @@
                                 adminTargetUser = data.username;
                                 document.getElementById('adminTargetLabel').textContent = `Target: ${adminTargetUser.toUpperCase()}`;
                                 window.updateAdminData(adminTargetUser);
+                                window.loadProfileDetails(adminTargetUser);
                             };
                             dynamicTargets.appendChild(btn);
                         }
@@ -9196,6 +9379,7 @@
             }
             return null;
         }
+        window.getAdminTargetUser = getAdminTargetUser;
 
     });
     </script>
