@@ -5773,8 +5773,6 @@
                                 adminTargetUser = data.username;
                                 btn.classList.add('active');
                                 document.getElementById('adminTargetLabel').textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-                                window.updateAdminData(adminTargetUser);
-                                window.loadProfileDetails(adminTargetUser);
                             }
                             dynamicTargets.appendChild(btn);
                         }
