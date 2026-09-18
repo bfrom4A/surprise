@@ -2770,6 +2770,13 @@
                     <div class="profile-arrow">➤</div>
                 </div>
 
+                <button class="admin-target-btn static-target active" data-target-user="kate">
+                    <span style="font-size: 20px;">👧🏻</span> Manage Kate
+                </button>
+                <button class="admin-target-btn static-target" data-target-user="baby">
+                    <span style="font-size: 20px;">👶🏻</span> Manage Baby
+                </button>
+                
                 <!-- Dynamic Target Users Container -->
                 <div id="dynamicAdminTargets" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
                 
@@ -2860,7 +2867,7 @@
             <div class="admin-main-content">
                 <div id="adminTabsAndContent">
                     <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                        <span id="adminTargetLabel" style="font-weight: bold; color: #d81b60; font-size: 16px;">Select a user</span>
+                        <span id="adminTargetLabel" style="font-weight: bold; color: #d81b60; font-size: 16px;">Target: KATE</span>
                     </div>
 
                     <div class="admin-tabs">
@@ -2953,9 +2960,6 @@
                         <div class="admin-form-group">
                             <input type="text" id="subRequestArtistName" class="fw-input" placeholder="Artist Name">
                             <input type="text" id="subRequestSongTitle" class="fw-input" placeholder="Song Title">
-                            <select id="ghRepoSelectMusicRequest" class="repo-select">
-                                <option value="">Connect GitHub and select a repository</option>
-                            </select>
                             <label class="file-input-wrapper" for="subMusicRequestFileInput" style="cursor:pointer; display:block;">
                                 <p style="color: #888; margin-bottom: 5px; font-size: 12px;">📁 Click to select a song file for approval</p>
                                 <span id="subMusicRequestFileNameDisplay" style="font-size: 12px; color: #d81b60; display: block;">No file selected</span>
@@ -2972,7 +2976,7 @@
                         <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Schedule a permanent account deletion for the target user. Both the User and their Admin will see a countdown warning at the top of their screen.</p>
                         
                         <div class="admin-form-group" style="background: #fff5f5; padding: 15px; border-radius: 12px; border: 1px solid #ffcdd2;">
-                            <label style="font-size: 12px; font-weight: bold; color: #d32f2f;">Target: <span id="deletionTargetLabel" style="font-family: monospace;">Select a user</span></label>
+                            <label style="font-size: 12px; font-weight: bold; color: #d32f2f;">Target: <span id="deletionTargetLabel" style="font-family: monospace;">KATE</span></label>
                             <input type="datetime-local" id="deletionTime" class="fw-input" style="margin-top: 10px; margin-bottom: 10px; border-color: #ffcdd2;">
                             <label style="font-size: 12px; font-weight: bold; color: #d32f2f;">Deletion Message / Reason:</label>
                             <textarea id="deletionMessage" class="fw-textarea" style="height: 80px; border-color: #ffcdd2;" placeholder="Reason for deletion..."></textarea>
@@ -3396,8 +3400,11 @@
                         </div>
 
                         <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <button id="adminSendConfettiTarget" class="submit-btn" style="width:100%; padding:16px; font-size:15px; background: linear-gradient(135deg,#ff69b4,#ff1493); border-radius:14px; letter-spacing:1px;">
-                                🎊 Confetti → Selected User
+                            <button id="adminSendConfettiKate" class="submit-btn" style="width:100%; padding:16px; font-size:15px; background: linear-gradient(135deg,#ff69b4,#ff1493); border-radius:14px; letter-spacing:1px;">
+                                🎊 Confetti → Kate
+                            </button>
+                            <button id="adminSendConfettiBaby" class="submit-btn" style="width:100%; padding:16px; font-size:15px; background: linear-gradient(135deg,#a78bfa,#7c3aed); border-radius:14px; letter-spacing:1px;">
+                                🎊 Confetti → Baby
                             </button>
                             <button id="adminSendConfettiAll" class="submit-btn" style="width:100%; padding:16px; font-size:15px; background: linear-gradient(135deg,#f97316,#dc2626); border-radius:14px; letter-spacing:1px;">
                                 🎊 Confetti → Everyone
@@ -3427,8 +3434,11 @@
                         <button id="adminPreviewGifBtn" class="submit-btn" style="width:100%; background:#fff0f5; color:#d81b60; border:1px solid #ffb7c5; margin-bottom:16px;">👁️ Preview GIF</button>
 
                         <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <button id="adminSendGifTarget" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#d81b60; border-radius:14px;">
-                                🎀 Send to Selected User
+                            <button id="adminSendGifKate" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#d81b60; border-radius:14px;">
+                                🎀 Send to Kate
+                            </button>
+                            <button id="adminSendGifBaby" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#a78bfa; border-radius:14px;">
+                                🎀 Send to Baby
                             </button>
                             <button id="adminSendGifAll" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#f97316; border-radius:14px;">
                                 🎀 Send to Everyone
@@ -3453,8 +3463,11 @@
                         </div>
 
                         <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
-                            <button id="adminSleepTarget" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#1a1a2e; border-radius:14px; letter-spacing:1px;">
-                                🌙 Sleep Time → Selected User
+                            <button id="adminSleepKate" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#1a1a2e; border-radius:14px; letter-spacing:1px;">
+                                🌙 Sleep Time → Kate
+                            </button>
+                            <button id="adminSleepBaby" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#0f3460; border-radius:14px; letter-spacing:1px;">
+                                🌙 Sleep Time → Baby
                             </button>
                             <button id="adminSleepAll" class="submit-btn" style="width:100%; padding:14px; font-size:14px; background:#16213e; border-radius:14px; letter-spacing:1px;">
                                 🌙 Sleep Time → Everyone
@@ -4535,24 +4548,18 @@
                 const ghTokenInput = document.getElementById('ghTokenInput');
                 const ghTokenSaveBtn = document.getElementById('ghTokenSaveBtn');
 
-                const saveGithubToken = async (token) => {
+                const saveGithubToken = (token) => {
                     if (!token) return;
                     githubToken = token.trim();
                     sessionStorage.setItem('ghToken', githubToken);
-                    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
-                        await setDoc(doc(db, 'settings', 'githubConnection'), {
-                            accessToken: githubToken,
-                            updatedAt: serverTimestamp()
-                        }, { merge: true });
-                    }
                     updateGitHubUI(true);
                     showToast("GitHub Token Saved ✅", "You can now manage repositories.", "✅");
                     if (ghTokenInput) ghTokenInput.value = '';
                 };
 
                 if (ghTokenSaveBtn) {
-                    ghTokenSaveBtn.onclick = async () => {
-                        await saveGithubToken(ghTokenInput?.value || '');
+                    ghTokenSaveBtn.onclick = () => {
+                        saveGithubToken(ghTokenInput?.value || '');
                     };
                 }
 
@@ -4577,7 +4584,7 @@
                                 throw new Error('Access token not found in credential response. Check Firebase GitHub provider settings.');
                             }
                             
-                            await saveGithubToken(credential.accessToken);
+                            saveGithubToken(credential.accessToken);
                             console.log("GitHub token stored successfully:", githubToken.substring(0, 10) + "...");
                         } catch (e) {
                             console.error("GitHub Login Failed - Full Error:", e);
@@ -4595,16 +4602,6 @@
                 
                 const isAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
                 const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
-
-                if (!githubToken && (isAdmin || isSubAdmin)) {
-                    try {
-                        const connectionSnap = await getDoc(doc(db, 'settings', 'githubConnection'));
-                        githubToken = connectionSnap.exists() ? connectionSnap.data().accessToken || null : null;
-                        if (githubToken) sessionStorage.setItem('ghToken', githubToken);
-                    } catch (error) {
-                        console.error('GitHub connection lookup failed:', error);
-                    }
-                }
 
                 if (isAdmin || isSubAdmin) {
                      initAdminConsole();
@@ -5329,7 +5326,7 @@
         window.initAdminConsole = initAdminConsole; 
         
         let githubToken = sessionStorage.getItem('ghToken') || null; 
-        let adminTargetUser = null; 
+        let adminTargetUser = 'kate'; 
 
         function updateGitHubUI(isAuthorized) {
             const musicUI = document.getElementById('ghMusicAuthorizedUI');
@@ -5358,7 +5355,7 @@
             }
 
             if (isAuthorized) {
-                ['music', 'gallery', 'system', 'video', 'profile', 'musicRequest'].forEach((type) => {
+                ['music', 'gallery', 'system', 'video', 'profile'].forEach((type) => {
                     const selectId = type === 'music'
                         ? 'ghRepoSelectMusic'
                         : type === 'gallery'
@@ -5367,9 +5364,7 @@
                                 ? 'ghRepoSelectSystem'
                                 : type === 'video'
                                     ? 'ghRepoSelectVideo'
-                                    : type === 'profile'
-                                        ? 'ghRepoSelectProfile'
-                                        : 'ghRepoSelectMusicRequest';
+                                    : 'ghRepoSelectProfile';
                     const select = document.getElementById(selectId);
                     if (select) fetchRepositories(type);
                 });
@@ -5383,7 +5378,6 @@
             if(type === 'system') selectId = 'ghRepoSelectSystem';
             if(type === 'video') selectId = 'ghRepoSelectVideo';
             if(type === 'profile') selectId = 'ghRepoSelectProfile';
-            if(type === 'musicRequest') selectId = 'ghRepoSelectMusicRequest';
             
             const repoSelect = document.getElementById(selectId);
             
@@ -5756,7 +5750,7 @@
                         `;
                         approvedContainer.appendChild(item);
 
-                        if (dynamicTargets) {
+                        if(dynamicTargets && data.username !== 'kate' && data.username !== 'baby' && data.username !== 'admin') {
                             const btn = document.createElement('button');
                             btn.className = 'admin-target-btn';
                             btn.setAttribute('data-target-user', data.username);
@@ -5769,11 +5763,6 @@
                                 window.updateAdminData(adminTargetUser);
                                 window.loadProfileDetails(adminTargetUser);
                             };
-                            if (!adminTargetUser) {
-                                adminTargetUser = data.username;
-                                btn.classList.add('active');
-                                document.getElementById('adminTargetLabel').textContent = `Target: ${adminTargetUser.toUpperCase()}`;
-                            }
                             dynamicTargets.appendChild(btn);
                         }
                     }
@@ -5853,9 +5842,6 @@
             const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
             updateGitHubUI(!!githubToken);
-            if (isSubAdmin && !githubToken) {
-                alert('The Superadmin GitHub upload server is closed. Ask the Superadmin to log in to GitHub first.');
-            }
 
             const targetLabel = document.getElementById('adminTargetLabel');
             const targetBtns = document.querySelectorAll('.admin-target-btn');
@@ -5964,9 +5950,7 @@
 
                 // ── CONFETTI BUTTONS ──
                 const sendConfetti = async (targetUser) => {
-                    const users = targetUser === 'all'
-                        ? (await getDocs(query(collection(db, 'app_users'), where('status', '==', 'approved'))).then(snapshot => snapshot.docs.map(userDoc => userDoc.data().username).filter(Boolean)))
-                        : [targetUser];
+                    const users = targetUser === 'all' ? ['kate', 'baby'] : [targetUser];
                     const ts = Date.now();
                     for (const u of users) {
                         try {
@@ -5975,7 +5959,8 @@
                     }
                     showToast('🎊 Confetti Sent!', `Blasted to ${targetUser}!`, '🎊');
                 };
-                document.getElementById('adminSendConfettiTarget')?.addEventListener('click', () => adminTargetUser && sendConfetti(adminTargetUser));
+                document.getElementById('adminSendConfettiKate')?.addEventListener('click', () => sendConfetti('kate'));
+                document.getElementById('adminSendConfettiBaby')?.addEventListener('click', () => sendConfetti('baby'));
                 document.getElementById('adminSendConfettiAll')?.addEventListener('click',  () => sendConfetti('all'));
 
                 // ── GIF SENDER ──
@@ -5983,9 +5968,7 @@
                     const url     = urlOverride || document.getElementById('adminGifUrl')?.value.trim();
                     const caption = captionOverride || document.getElementById('adminGifCaption')?.value.trim() || '😊';
                     if (!url) return alert('Please enter a GIF URL first.');
-                    const users = targetUser === 'all'
-                        ? (await getDocs(query(collection(db, 'app_users'), where('status', '==', 'approved'))).then(snapshot => snapshot.docs.map(userDoc => userDoc.data().username).filter(Boolean)))
-                        : [targetUser];
+                    const users = targetUser === 'all' ? ['kate', 'baby'] : [targetUser];
                     const ts = Date.now();
                     for (const u of users) {
                         try {
@@ -5994,10 +5977,13 @@
                     }
                     showToast('🎀 GIF Sent!', `Delivered to ${targetUser}!`, '🎀');
                 };
-                document.getElementById('adminSendGifTarget')?.addEventListener('click', () => adminTargetUser && sendGif(adminTargetUser));
+                document.getElementById('adminSendGifKate')?.addEventListener('click', () => sendGif('kate'));
+                document.getElementById('adminSendGifBaby')?.addEventListener('click', () => sendGif('baby'));
                 document.getElementById('adminSendGifAll')?.addEventListener('click',  () => sendGif('all'));
 
                 // Wire sidebar widget GIF buttons (renamed IDs to avoid duplicates)
+                document.getElementById('widgetSendGifKate')?.addEventListener('click', () => sendGif('kate', document.getElementById('widgetGifUrl')?.value.trim(), document.getElementById('widgetGifCaption')?.value.trim()));
+                document.getElementById('widgetSendGifBaby')?.addEventListener('click', () => sendGif('baby', document.getElementById('widgetGifUrl')?.value.trim(), document.getElementById('widgetGifCaption')?.value.trim()));
                 document.getElementById('widgetSendGifAll')?.addEventListener('click',  () => sendGif('all',  document.getElementById('widgetGifUrl')?.value.trim(), document.getElementById('widgetGifCaption')?.value.trim()));
 
                 // GIF Preview
@@ -6018,7 +6004,8 @@
                         showToast('🌙 Sleep Notification Sent!', `Sent to ${targetUser}`, '🌙');
                     } catch(e) { console.error('Sleep send error:', e); alert('Failed to send sleep notification.'); }
                 };
-                document.getElementById('adminSleepTarget')?.addEventListener('click', () => adminTargetUser && sendSleep(adminTargetUser));
+                document.getElementById('adminSleepKate')?.addEventListener('click', () => sendSleep('kate'));
+                document.getElementById('adminSleepBaby')?.addEventListener('click', () => sendSleep('baby'));
                 document.getElementById('adminSleepAll')?.addEventListener('click',  () => sendSleep('all'));
                 document.getElementById('adminCancelSleep')?.addEventListener('click', async () => {
                     try {
@@ -7513,31 +7500,6 @@
 
                     item.querySelector('.reject-music-btn').onclick = async () => {
                         try {
-                            if (request.githubRepo && request.githubPath) {
-                                if (!githubToken) {
-                                    return alert('The shared GitHub connection is unavailable. The music file cannot be deleted yet.');
-                                }
-                                const branch = request.githubBranch || 'main';
-                                const { sha } = await getShaAndPath(request.githubRepo, request.githubPath, githubToken, branch);
-                                if (sha) {
-                                    const deleteResponse = await fetch(`https://api.github.com/repos/${request.githubRepo}/contents/${request.githubPath}`, {
-                                        method: 'DELETE',
-                                        headers: {
-                                            'Authorization': `token ${githubToken}`,
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            message: `Reject music request: ${request.title || request.githubPath}`,
-                                            sha,
-                                            branch
-                                        })
-                                    });
-                                    if (!deleteResponse.ok) {
-                                        const errorData = await deleteResponse.json();
-                                        throw new Error(errorData.message || deleteResponse.statusText);
-                                    }
-                                }
-                            }
                             await updateDoc(requestDoc.ref, { status: 'rejected', rejectedBy: 'SuperAdmin', rejectedAt: serverTimestamp() });
                             showToast('Rejected', `${request.title} was rejected.`, '❌');
                         } catch (e) {
@@ -7633,20 +7595,9 @@
             const fileInput = document.getElementById('subMusicRequestFileInput');
             const status = document.getElementById('subMusicRequestStatus');
             const submitBtn = document.getElementById('submitSubMusicRequestBtn');
-            const repoSelect = document.getElementById('ghRepoSelectMusicRequest');
-            const repoFullName = repoSelect?.value;
-            const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || 'main';
 
             if (!artistName || !songTitle || !fileInput.files.length) {
                 alert('Please fill in artist name, song title, and select a music file.');
-                return;
-            }
-            if (!githubToken) {
-                alert('The Superadmin GitHub upload server is closed. Ask the Superadmin to log in to GitHub first.');
-                return;
-            }
-            if (!repoFullName) {
-                alert('Select a GitHub repository before submitting the music request.');
                 return;
             }
 
@@ -7659,28 +7610,14 @@
                 submitBtn.textContent = 'Uploading...';
                 status.textContent = 'Processing...';
 
+                // Upload file to Firebase Storage
                 const safeName = `${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9-_.]/g, '_');
-                const filePath = `music/requests/${safeName}`;
-                const [owner, repoName] = repoFullName.split('/');
-                const githubApiUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/${filePath}`;
-                status.textContent = '1/2: Uploading file to GitHub...';
-                const uploadResponse = await fetch(githubApiUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${githubToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Music request: ${artistName} - ${songTitle}`,
-                        content: await toBase64(file),
-                        branch
-                    })
-                });
-                if (!uploadResponse.ok) {
-                    const errorData = await uploadResponse.json();
-                    throw new Error(errorData.message || uploadResponse.statusText);
-                }
-                const url = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${filePath}`;
+                const storagePath = `music_requests/${safeName}`;
+                const fileRef = window.storageRef(window.storage, storagePath);
+                
+                status.textContent = '1/2: Uploading file...';
+                await window.uploadBytes(fileRef, file);
+                const url = await window.getDownloadURL(fileRef);
 
                 // Create Firestore document
                 status.textContent = '2/2: Creating request...';
@@ -7690,9 +7627,6 @@
                     url: url,
                     uploader: requestUploader,
                     status: 'pending',
-                    githubRepo: repoFullName,
-                    githubPath: filePath,
-                    githubBranch: branch,
                     timestamp: window.serverTimestamp()
                 });
 
@@ -7974,7 +7908,9 @@
                 let user = null;
 
                 if (!username) {
-                    if (pass.toLowerCase() === 'admin112003') {
+                    if (pass.toLowerCase() === 'katecutie') user = 'kate';
+                    else if (pass.toLowerCase() === 'babycutie') user = 'baby';
+                    else if (pass.toLowerCase() === 'admin112003') {
                         triggerAdminLogin(true);
                         return;
                     }
@@ -8054,6 +7990,8 @@
                 const p = regPasswordInput.value;
                 
                 if (!u || !p) return alert("Please fill in all fields.");
+                if (u === 'kate' || u === 'baby' || u === 'admin') return alert("This username is reserved.");
+                
                 try {
                     submitRegister.textContent = "Registering...";
                     submitRegister.disabled = true;
@@ -9439,7 +9377,7 @@
             if (activeBtn) {
                 return activeBtn.dataset.targetUser;
             }
-            return adminTargetUser;
+            return null;
         }
         window.getAdminTargetUser = getAdminTargetUser;
 
