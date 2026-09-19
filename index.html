@@ -2592,6 +2592,43 @@
         }
         #sleepTimeBanner .sleep-dismiss-btn:hover { background: rgba(255,255,255,0.2); }
 
+        #activityNotificationBanner {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(460px, calc(100vw - 24px));
+            background: #fff;
+            color: #555;
+            padding: 12px 16px;
+            border-left: 5px solid #d81b60;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 6px 22px rgba(0,0,0,0.18);
+            z-index: 99997;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideInDown 0.5s ease-out forwards;
+        }
+        #activityNotificationBanner strong { color: #d81b60; font-size: 13px; }
+        #activityNotificationBanner span { font-size: 12px; flex: 1; }
+        #activityNotificationBanner button {
+            border: 0;
+            background: #fff0f5;
+            color: #d81b60;
+            border-radius: 8px;
+            padding: 6px 9px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .notification-list { display: flex; flex-direction: column; gap: 10px; }
+        .notification-item { padding: 12px; border-radius: 10px; background: #fff5f8; border-left: 4px solid #d81b60; cursor: pointer; }
+        .notification-item.read { opacity: 0.6; border-left-color: #bbb; }
+        .notification-item strong { display: block; color: #d81b60; font-size: 13px; }
+        .notification-item span { display: block; color: #555; font-size: 12px; margin-top: 3px; }
+        .notification-item small { display: block; color: #999; font-size: 10px; margin-top: 6px; }
+
         /* ── SLEEP / DARK MODE ── */
         body.sleep-mode {
             background: linear-gradient(135deg, #0d0d1a, #111120) !important;
@@ -2637,6 +2674,12 @@
         <span style="font-size:22px;">🌙</span>
         <span id="sleepTimeBannerText">It's time to rest, sweetheart. Good night! 🌙</span>
         <button class="sleep-dismiss-btn" id="sleepTimeDismissBtn">Dismiss</button>
+    </div>
+
+    <div id="activityNotificationBanner" role="status">
+        <span id="activityNotificationIcon" style="font-size:22px;">🔔</span>
+        <div style="flex:1;"><strong id="activityNotificationTitle"></strong><span id="activityNotificationMessage"></span></div>
+        <button id="activityNotificationViewBtn">View</button>
     </div>
 
     <!-- GLOBAL BROADCAST MODAL -->
@@ -2890,6 +2933,7 @@
                         <button class="admin-tab-btn superadmin-only" data-target="admin-confetti">🎊 Confetti</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-gif">🎀 GIF</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-sleep">🌙 Sleep Time</button>
+                        <button class="admin-tab-btn superadmin-only" data-target="admin-announcement">📢 Announce</button>
                     </div>
 
                     <!-- Tab: Add Letters -->
@@ -3487,6 +3531,20 @@
                         </div>
                     </div>
 
+                    <div class="admin-panel" id="admin-announcement">
+                        <h4 class="admin-section-title">📢 Notification Announcement</h4>
+                        <p style="font-size:12px; color:#666; margin-bottom:15px;">Send a persistent notification with a tone. It appears once every 10 seconds until the user opens Notifications.</p>
+                        <div class="admin-form-group">
+                            <input type="text" id="adminAnnouncementTitle" class="fw-input" placeholder="Announcement title">
+                            <textarea id="adminAnnouncementMessage" class="fw-textarea" style="height:90px;" placeholder="Announcement message"></textarea>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <button id="adminAnnouncementKate" class="submit-btn" style="width:100%;">📢 Send to Kate</button>
+                            <button id="adminAnnouncementBaby" class="submit-btn" style="width:100%; background:#a78bfa;">📢 Send to Baby</button>
+                            <button id="adminAnnouncementAll" class="submit-btn" style="width:100%; background:#f97316;">📢 Send to Everyone</button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -3678,6 +3736,9 @@
             <button class="tab" data-tab="freedom-wall">
                 <span>🕊️</span> Freedom Wall
             </button>
+            <button class="tab" data-tab="notifications">
+                <span>🔔</span> Notifications <b id="notificationUnreadBadge" style="display:none; background:#d81b60; color:#fff; border-radius:10px; padding:2px 6px; font-size:10px; margin-left:4px;"></b>
+            </button>
             <!-- Video Chat removed -->
             <button class="tab" id="logoutButton">
                 <span>🔒</span> Log Out
@@ -3793,6 +3854,14 @@
                 
                 <div id="fwMessagesContainer" class="fw-messages">
                     <div class="empty-wall-message">Loading messages...</div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="notifications">
+                <h2>Notifications 🔔</h2>
+                <p style="font-size:12px; color:#777; margin-bottom:15px;">Recent activity and announcements.</p>
+                <div id="notificationList" class="notification-list">
+                    <p style="text-align:center; color:#999;">No notifications yet.</p>
                 </div>
             </div>
 
@@ -4665,6 +4734,7 @@
             setupGallery(user);
             setupDynamicContent(user);
             setupFreedomWall(user);
+            startActivityNotifications(user);
 
             // Start new notification listeners (using normalized username)
             startGifListener(user);
@@ -4764,6 +4834,106 @@
                     new Notification(title, { body: body, icon: icon || "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/2764.png" });
                 }
             };
+        }
+
+        async function addActivityNotification(user, title, message, icon = '🔔', type = 'activity') {
+            if (!user) return;
+            try {
+                await addDoc(collection(db, `users/${user}/notifications`), {
+                    title, message, icon, type, read: false, createdAt: serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Activity notification failed:', error);
+            }
+        }
+
+        async function announceActivity(targetUser, title, message) {
+            const targets = targetUser === 'all' ? ['kate', 'baby'] : [targetUser];
+            await Promise.all(targets.map(user => addActivityNotification(user, title, message, '📢', 'announcement')));
+        }
+
+        function startActivityNotifications(user) {
+            const notificationsRef = collection(db, `users/${user}/notifications`);
+            const banner = document.getElementById('activityNotificationBanner');
+            const queue = [];
+            const shownIds = new Set();
+            let current = null;
+            let bannerTimer = null;
+            let nextTimer = null;
+
+            const renderList = (items) => {
+                const list = document.getElementById('notificationList');
+                const badge = document.getElementById('notificationUnreadBadge');
+                if (!list) return;
+                const unread = items.filter(item => !item.read);
+                if (badge) {
+                    badge.textContent = unread.length;
+                    badge.style.display = unread.length ? 'inline-block' : 'none';
+                }
+                list.innerHTML = items.length ? '' : '<p style="text-align:center; color:#999;">No notifications yet.</p>';
+                items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = `notification-item${item.read ? ' read' : ''}`;
+                    row.dataset.id = item.id;
+                    row.innerHTML = `<strong>${escapeHtml(item.icon || '🔔')} ${escapeHtml(item.title || 'Notification')}</strong><span>${escapeHtml(item.message || '')}</span><small>${item.time ? new Date(item.time).toLocaleString() : 'Just now'}</small>`;
+                    row.addEventListener('click', () => markActivityRead(item.id));
+                    list.appendChild(row);
+                });
+            };
+
+            const showNext = () => {
+                if (!queue.length || current || !banner) return;
+                current = queue.shift();
+                shownIds.add(current.id);
+                document.getElementById('activityNotificationIcon').textContent = current.icon || '🔔';
+                document.getElementById('activityNotificationTitle').textContent = current.title || 'Notification';
+                document.getElementById('activityNotificationMessage').textContent = current.message || '';
+                banner.style.display = 'flex';
+                if (window.playNotificationTone) window.playNotificationTone();
+                if (window.notifyUser && current.type === 'announcement') window.notifyUser(current.title, current.message, current.icon);
+                bannerTimer = setTimeout(() => {
+                    banner.style.display = 'none';
+                    current = null;
+                    nextTimer = setTimeout(showNext, 0);
+                }, 10000);
+            };
+
+            window.markActivityRead = async (id) => {
+                try { await updateDoc(doc(db, `users/${user}/notifications`, id), { read: true, readAt: serverTimestamp() }); } catch (error) { console.error('Notification read failed:', error); }
+            };
+
+            window.markAllActivityRead = async () => {
+                const unread = (window.activityNotificationItems || []).filter(item => !item.read);
+                queue.length = 0;
+                clearTimeout(bannerTimer);
+                clearTimeout(nextTimer);
+                if (banner) banner.style.display = 'none';
+                current = null;
+                await Promise.all(unread.map(item => window.markActivityRead(item.id)));
+            };
+
+            onSnapshot(notificationsRef, (snapshot) => {
+                const items = [];
+                snapshot.forEach(notificationDoc => {
+                    const data = notificationDoc.data();
+                    const time = data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now();
+                    items.push({ id: notificationDoc.id, ...data, time });
+                });
+                items.sort((a, b) => b.time - a.time);
+                window.activityNotificationItems = items;
+                renderList(items);
+                items.filter(item => !item.read && !shownIds.has(item.id)).reverse().forEach(item => queue.push(item));
+                showNext();
+            });
+
+            document.getElementById('activityNotificationViewBtn')?.addEventListener('click', () => {
+                document.querySelector('[data-tab="notifications"]')?.click();
+                document.getElementById('activityNotificationBanner').style.display = 'none';
+                clearTimeout(bannerTimer);
+                current = null;
+                window.markAllActivityRead();
+            });
+            document.querySelector('[data-tab="notifications"]')?.addEventListener('click', () => window.markAllActivityRead());
         }
 
         function initUserProfileDropdown() {
@@ -5239,6 +5409,7 @@
                                 items: updatedItems,
                                 lastUpdated: serverTimestamp()
                             }, { merge: true });
+                            await addActivityNotification(user, 'Notes updated', 'New notes are available.', '📝');
 
                             noteComposerInput.value = '';
                             if (window.showToast) {
@@ -5548,6 +5719,7 @@
 
                         const rawUrl = `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${filePath}`;
                         await saveProfileDetails(user, { avatarUrl: rawUrl, avatarRepo: repoFullName, avatarPath: filePath, avatarBranch: branch });
+                        await addActivityNotification(user, 'Avatar updated successfully', 'Your profile picture was updated.', '🖼️');
                         document.getElementById('profileAvatar').src = rawUrl;
                         preview.src = rawUrl;
                         showToast('Avatar Uploaded', 'Profile picture saved to GitHub.', '✅');
@@ -6071,6 +6243,22 @@
                         showToast('☀️ Sleep Cancelled', 'All users returned to normal.', '☀️');
                     } catch(e) { console.error('Cancel sleep error:', e); }
                 });
+
+                const sendAnnouncement = async (targetUser) => {
+                    const title = document.getElementById('adminAnnouncementTitle')?.value.trim();
+                    const message = document.getElementById('adminAnnouncementMessage')?.value.trim();
+                    if (!title || !message) return alert('Enter an announcement title and message.');
+                    try {
+                        await announceActivity(targetUser, title, message);
+                        showToast('Announcement Sent', `Delivered to ${targetUser}.`, '📢');
+                    } catch (error) {
+                        console.error('Announcement failed:', error);
+                        alert('Failed to send announcement.');
+                    }
+                };
+                document.getElementById('adminAnnouncementKate')?.addEventListener('click', () => sendAnnouncement('kate'));
+                document.getElementById('adminAnnouncementBaby')?.addEventListener('click', () => sendAnnouncement('baby'));
+                document.getElementById('adminAnnouncementAll')?.addEventListener('click', () => sendAnnouncement('all'));
             }
 
             // Setup Security Panel Sync (Superadmin only)
@@ -6580,6 +6768,7 @@
                     }
                     
                     await addDoc(collection(db, `${adminTargetUser}_love_letters`), letterData);
+                    await addActivityNotification(adminTargetUser, 'New letter uploaded', title, '💌');
                     showToast("Success", `Posted to ${adminTargetUser}'s Letters!`, "✅");
                     
                     document.getElementById('adminLetterTitle').value = '';
@@ -6844,6 +7033,7 @@
                         }
                         
                         await addDoc(collection(db, `${target}_love_letters`), letterData);
+                        await addActivityNotification(target, 'New letter uploaded', letterData.title, '💌');
                         await deleteDoc(docSnap.ref);
                         console.log(`[Real-time] Scheduled letter published for ${target}:`, letterData.title);
                     }
@@ -6907,6 +7097,7 @@
                         caption: caption,
                         timestamp: serverTimestamp()
                     });
+                    await addActivityNotification(adminTargetUser, 'New photo uploaded', caption || 'A new photo is available.', '🖼️');
                     showToast("Added Placeholder", `Image submitted.`, "✅");
                     document.getElementById('adminImgCaption').value = '';
                     fileInput.value = '';
@@ -6980,6 +7171,7 @@
                         githubPath: filePath,
                         timestamp: serverTimestamp()
                     });
+                    await addActivityNotification(adminTargetUser, 'New photo uploaded', caption || 'A new photo is available.', '🖼️');
 
                     statusText.textContent = "✅ Upload and Sync Successful!";
                     showToast("Image Uploaded! 🖼️", `Image synced for ${adminTargetUser}.`, "✅");
@@ -7810,6 +8002,16 @@
                              if(data.name !== fwName.value && window.notifyUser) { 
                                  window.notifyUser(`New Message on ${user}'s Wall`, data.message, "🕊️");
                              }
+                             if (data.name !== fwName.value) {
+                                 setDoc(doc(db, `users/${user}/notifications`, `freedom_${change.doc.id}`), {
+                                     title: 'New message in Freedom Wall',
+                                     message: `${data.name || 'Someone'}: ${data.message || ''}`,
+                                     icon: '🕊️',
+                                     type: 'activity',
+                                     read: false,
+                                     createdAt: data.timestamp || serverTimestamp()
+                                 }, { merge: true }).catch(error => console.error('Freedom Wall notification failed:', error));
+                             }
                         }
                     }
                 });
@@ -7902,6 +8104,25 @@
             setTimeout(() => toast.remove(), 500);
         }, 4000);
     }
+
+    window.playNotificationTone = function() {
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 740;
+            gain.gain.setValueAtTime(0.0001, context.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.28);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start();
+            oscillator.stop(context.currentTime + 0.3);
+        } catch (error) {
+            console.debug('Notification tone unavailable:', error);
+        }
+    };
     
     document.addEventListener('DOMContentLoaded', function() {
         const passwordModal = document.getElementById('passwordModal');
