@@ -7212,7 +7212,7 @@
                 const performMusicUpload = async () => {
                     if (!uploadBtnMusic) return;
 
-                    const repoSelect = document.getElementById('ghRepoSelectSubMusic');
+                    const repoSelect = document.getElementById('ghRepoSelectMusic');
                     const repoFullName = repoSelect?.value;
                     const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || 'main';
                     const artistName = document.getElementById('uploadArtistName')?.value?.trim() || '';
@@ -7863,7 +7863,7 @@
             const fileInput = document.getElementById('subMusicRequestFileInput');
             const status = document.getElementById('subMusicRequestStatus');
             const submitBtn = document.getElementById('submitSubMusicRequestBtn');
-            const repoSelect = document.getElementById(selectId);
+            const repoSelect = document.getElementById('ghRepoSelectSubMusic');
 
             if (!artistName || !songTitle || !fileInput.files.length) {
                 alert('Please fill in artist name, song title, and select a music file.');
