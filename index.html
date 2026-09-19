@@ -2594,10 +2594,12 @@
 
         #activityNotificationBanner {
             position: fixed;
-            top: 78px;
+            top: auto;
+            bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: min(1200px, calc(100vw - 24px));
+            width: 100vw;
+            max-width: 100vw;
             background: #fff;
             color: #555;
             padding: 10px 14px;
@@ -4909,15 +4911,18 @@
 
             const showNext = () => {
                 if (!queue.length || current || !banner) return;
-                current = queue.shift();
-                shownIds.add(current.id);
+                const notifications = queue.splice(0);
+                notifications.forEach(item => shownIds.add(item.id));
+                current = notifications[0];
+                const notificationDuration = Math.max(5, notifications.length * 5) * 1000;
                 const tickerTrack = document.getElementById('activityNotificationTickerTrack');
-                document.getElementById('activityNotificationTitle').textContent = `${current.icon || '🔔'} ${current.title || 'Notification'}`;
-                document.getElementById('activityNotificationMessage').textContent = current.message || '';
+                document.getElementById('activityNotificationTitle').textContent = '';
+                document.getElementById('activityNotificationSeparator').textContent = '';
+                document.getElementById('activityNotificationMessage').textContent = notifications.map(item => `${item.icon || '🔔'} ${item.title || 'Notification'}: ${item.message || ''}`).join('   •   ');
                 if (tickerTrack) {
                     tickerTrack.style.animation = 'none';
                     void tickerTrack.offsetWidth;
-                    tickerTrack.style.animation = '';
+                    tickerTrack.style.animation = `notificationTickerCrawl ${notificationDuration / 1000}s linear forwards`;
                 }
                 banner.classList.remove('banner-slide-down');
                 banner.classList.add('banner-slide-up');
@@ -4932,7 +4937,7 @@
                         current = null;
                         showNext();
                     }, 450);
-                }, 5000);
+                }, notificationDuration);
             };
 
             window.markActivityRead = async (id) => {
