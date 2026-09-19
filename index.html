@@ -3537,12 +3537,13 @@
                         <div class="admin-form-group">
                             <input type="text" id="adminAnnouncementTitle" class="fw-input" placeholder="Announcement title">
                             <textarea id="adminAnnouncementMessage" class="fw-textarea" style="height:90px;" placeholder="Announcement message"></textarea>
+                            <select id="adminAnnouncementTarget" class="repo-select">
+                                <option value="kate">Kate</option>
+                                <option value="baby">Baby</option>
+                                <option value="all">Everyone</option>
+                            </select>
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:10px;">
-                            <button id="adminAnnouncementKate" class="submit-btn" style="width:100%;">📢 Send to Kate</button>
-                            <button id="adminAnnouncementBaby" class="submit-btn" style="width:100%; background:#a78bfa;">📢 Send to Baby</button>
-                            <button id="adminAnnouncementAll" class="submit-btn" style="width:100%; background:#f97316;">📢 Send to Everyone</button>
-                        </div>
+                        <button id="adminAnnouncementSend" class="submit-btn" style="width:100%;">📢 Send Announcement</button>
                     </div>
 
                 </div>
@@ -4830,7 +4831,7 @@
         function setupNotificationSystem() {
             window.notifyUser = (title, body, icon) => {
                 showToast(title, body, icon);
-                if (Notification.permission === "granted") {
+                if (typeof Notification !== 'undefined' && Notification.permission === "granted") {
                     new Notification(title, { body: body, icon: icon || "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/2764.png" });
                 }
             };
@@ -4924,6 +4925,10 @@
                 renderList(items);
                 items.filter(item => !item.read && !shownIds.has(item.id)).reverse().forEach(item => queue.push(item));
                 showNext();
+            }, (error) => {
+                console.error('Notification listener failed:', error);
+                const list = document.getElementById('notificationList');
+                if (list) list.innerHTML = '<p style="text-align:center; color:#d81b60;">Notifications are temporarily unavailable.</p>';
             });
 
             document.getElementById('activityNotificationViewBtn')?.addEventListener('click', () => {
@@ -5994,6 +5999,13 @@
                                 window.loadProfileDetails(adminTargetUser);
                             };
                             dynamicTargets.appendChild(btn);
+                            const announcementTarget = document.getElementById('adminAnnouncementTarget');
+                            if (announcementTarget && !Array.from(announcementTarget.options).some(option => option.value === data.username)) {
+                                const option = document.createElement('option');
+                                option.value = data.username;
+                                option.textContent = data.username;
+                                announcementTarget.appendChild(option);
+                            }
                         }
                     }
                     else if (data.status === 'deactivated') {
@@ -6256,9 +6268,10 @@
                         alert('Failed to send announcement.');
                     }
                 };
-                document.getElementById('adminAnnouncementKate')?.addEventListener('click', () => sendAnnouncement('kate'));
-                document.getElementById('adminAnnouncementBaby')?.addEventListener('click', () => sendAnnouncement('baby'));
-                document.getElementById('adminAnnouncementAll')?.addEventListener('click', () => sendAnnouncement('all'));
+                document.getElementById('adminAnnouncementSend')?.addEventListener('click', () => {
+                    const target = document.getElementById('adminAnnouncementTarget')?.value;
+                    sendAnnouncement(target || 'all');
+                });
             }
 
             // Setup Security Panel Sync (Superadmin only)
