@@ -7291,12 +7291,7 @@
                     uploadBtnMusic.disabled = true;
                     
                     try {
-                        const fileExists = await checkFileExists(repoFullName, filePath, githubToken, branch);
-                        if (fileExists) {
-                            if (statusText) statusText.textContent = "❌ Upload Failed: Song already exists on GitHub.";
-                            showToast("Overwrite Blocked!", `"${fileName}" already exists in the repository.`, "🚫");
-                            return;
-                        }
+                        const existingGithubFile = await getShaAndPath(repoFullName, filePath, githubToken, branch);
                         
                         if (statusText) statusText.textContent = "1/3: Reading file...";
                         const base64Content = await toBase64(file);
@@ -7309,6 +7304,7 @@
                             content: base64Content,
                             branch: branch 
                         };
+                        if (existingGithubFile.sha) uploadPayload.sha = existingGithubFile.sha;
 
                         if (statusText) statusText.textContent = "2/3: Uploading to GitHub...";
                         
@@ -7755,10 +7751,7 @@
                                 .replace(/[^a-zA-Z0-9-\.\s]/g, '').replace(/\s+/g, '_') + '.mp3';
                             const filePath = `music/${safeFileName}`;
 
-                            const fileExists = await checkFileExists(repoFullName, filePath, githubToken, branch);
-                            if (fileExists) {
-                                return alert(`A song named "${safeFileName}" already exists in the selected repository.`);
-                            }
+                            const existingGithubFile = await getShaAndPath(repoFullName, filePath, githubToken, branch);
 
                             const fetchResponse = await fetch(request.url);
                             if (!fetchResponse.ok) {
@@ -7771,17 +7764,20 @@
                             const githubApiUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/${filePath}`;
                             const commitMessage = `Approve music request: ${safeFileName}`;
 
+                            const uploadPayload = {
+                                message: commitMessage,
+                                content: base64Content,
+                                branch: branch
+                            };
+                            if (existingGithubFile.sha) uploadPayload.sha = existingGithubFile.sha;
+
                             const uploadResponse = await fetch(githubApiUrl, {
                                 method: 'PUT',
                                 headers: {
                                     'Authorization': `token ${githubToken}`,
                                     'Content-Type': 'application/json'
                                 },
-                                body: JSON.stringify({
-                                    message: commitMessage,
-                                    content: base64Content,
-                                    branch: branch
-                                })
+                                body: JSON.stringify(uploadPayload)
                             });
                             if (!uploadResponse.ok) {
                                 const errorData = await uploadResponse.json();
