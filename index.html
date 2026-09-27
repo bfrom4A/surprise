@@ -2071,6 +2071,7 @@
             font-size: 15px;
             font-family: 'Montserrat', sans-serif;
         }
+        .fw-delivery-receipt { display:block; margin-top:7px; color:#66808a; font-size:10px; text-align:right; }
         
         .empty-wall-message {
             text-align: center;
@@ -3041,6 +3042,7 @@
                         <button class="admin-tab-btn active" data-target="admin-letters">💌 Letters</button>
                         <button class="admin-tab-btn" data-target="admin-notes">📝 Notes</button>
                         <button class="admin-tab-btn" data-target="admin-gallery">🖼️ Gallery</button>
+                        <button class="admin-tab-btn" data-target="admin-freedom-wall">🕊️ Freedom Wall</button>
                         <button class="admin-tab-btn" data-target="admin-music-request">🎵 Request Music</button>
                         <button class="admin-tab-btn" data-target="admin-scheduled-letters">📅 Scheduled Letters</button>
                         <button class="admin-tab-btn superadmin-only" data-target="admin-customization">🎨 Customize</button>
@@ -3082,6 +3084,20 @@
                             </select>
                         </div>
                         <button class="submit-btn" id="postLetterBtn" style="width: 100%">Post Letter</button>
+                    </div>
+
+                    <div class="admin-panel" id="admin-freedom-wall">
+                        <h4 class="admin-section-title">🕊️ User Freedom Wall</h4>
+                        <p style="font-size:12px; color:#666; margin-bottom:12px;">Read wall messages and reply directly to the selected user.</p>
+                        <select id="adminFreedomWallUser" class="repo-select" style="width:100%; margin-bottom:12px;">
+                            <option value="kate">Kate</option>
+                            <option value="baby">Baby</option>
+                        </select>
+                        <div id="adminFreedomWallMessages" class="fw-messages" style="max-height:420px; min-height:180px; margin-bottom:12px;">
+                            <div class="empty-wall-message">Select a user to view their wall.</div>
+                        </div>
+                        <textarea id="adminFreedomWallReply" class="fw-textarea" style="height:80px;" placeholder="Reply on this user's Freedom Wall"></textarea>
+                        <button id="sendAdminFreedomWallReply" class="submit-btn" style="width:100%; margin-top:8px;">Send reply</button>
                     </div>
 
                     <!-- Tab: Scheduled Letters -->
@@ -4157,6 +4173,9 @@
                         document.getElementById('broadcastModalTitle').textContent = data.title || 'Announcement';
                         document.getElementById('broadcastModalMessage').textContent = data.message || '';
                         document.getElementById('globalBroadcastModal').style.display = 'flex';
+                        if (currentUser && window.addActivityNotification) {
+                            window.addActivityNotification(currentUser, data.title || 'New announcement', data.message || '', '📢', 'announcement');
+                        }
                         if(navigator.vibrate) navigator.vibrate([200, 100, 200]); 
                     };
 
@@ -5041,9 +5060,34 @@
                 console.error('Activity notification failed:', error);
             }
         }
+        window.addActivityNotification = addActivityNotification;
+
+        window.addActivityNotificationOnce = async function(user, notificationId, title, message, icon = '🔔', type = 'activity') {
+            if (!user || !notificationId) return;
+            const notificationRef = doc(db, `users/${user}/notifications`, notificationId);
+            try {
+                const existing = await getDoc(notificationRef);
+                if (existing.exists()) return;
+                await setDoc(notificationRef, { title, message, icon, type, read: false, createdAt: serverTimestamp() });
+            } catch (error) {
+                console.error('One-time activity notification failed:', error);
+            }
+        };
 
         async function announceActivity(targetUser, title, message) {
-            const targets = targetUser === 'all' ? ['kate', 'baby'] : [targetUser];
+            let targets = [targetUser];
+            if (targetUser === 'all') {
+                targets = ['kate', 'baby'];
+                try {
+                    const approvedUsers = await getDocs(query(collection(db, 'app_users'), where('status', '==', 'approved')));
+                    approvedUsers.forEach(userDoc => {
+                        const username = (userDoc.data().username || '').toLowerCase();
+                        if (username && !['admin', 'superadmin'].includes(username) && !targets.includes(username)) targets.push(username);
+                    });
+                } catch (error) {
+                    console.error('Could not expand announcement targets:', error);
+                }
+            }
             await Promise.all(targets.map(user => addActivityNotification(user, title, message, '📢', 'announcement')));
         }
 
@@ -6161,6 +6205,7 @@
                     updatedAt: Date.now()
                 };
                 await setDoc(doc(db, 'profiles', user), { featuredPhotos: updatedPhotos, featuredPhotoRepo: repoFullName, updatedAt: serverTimestamp() }, { merge: true });
+                await addActivityNotification(user, 'Featured photos updated', `Featured photo ${slotIndex + 1} was ${previousPhoto ? 'changed' : 'added'}.`, '🖼️');
                 if (previousPhoto?.repo && previousPhoto?.path) {
                     try { await deleteGithubFile(previousPhoto.repo, previousPhoto.path, githubToken, previousPhoto.branch || 'main', `Replace featured photo ${slotIndex + 1}`); }
                     catch (error) { console.warn('Old featured photo cleanup failed:', error); }
@@ -6186,6 +6231,7 @@
                 }
                 updatedPhotos[slotIndex] = null;
                 await setDoc(doc(db, 'profiles', user), { featuredPhotos: updatedPhotos, updatedAt: serverTimestamp() }, { merge: true });
+                await addActivityNotification(user, 'Featured photos updated', `Featured photo ${slotIndex + 1} was deleted.`, '🖼️');
                 renderFeaturedPhotos(user, updatedPhotos);
             } catch (error) {
                 console.error('Featured photo deletion failed:', error);
@@ -6268,6 +6314,7 @@
             try {
                 await setDoc(doc(db, 'profiles', user), payload, { merge: true });
                 await window.loadProfileDetails(user);
+                await addActivityNotification(user, 'Profile information updated', 'Your profile details have been updated.', '🪪');
                 showToast('Profile Saved', 'Your profile details were saved.', '✅');
                 if (closeEditor) closeEditor(false);
             } catch (e) {
@@ -6300,6 +6347,7 @@
                 const displayName = profileDisplayName(payload, user);
                 document.getElementById('profileGreeting').textContent = displayName.split(' ')[0] || displayName;
                 document.getElementById('profileFullName').textContent = displayName;
+                if (!Object.keys(extras).length) await addActivityNotification(user, 'Profile information updated', 'Your profile details have been updated.', '🪪');
                 showToast('Profile Saved', 'User details updated successfully.', '✅');
             } catch (e) {
                 console.error('Failed to save profile details', e);
@@ -6336,6 +6384,154 @@
             
             updateScanner();
             setInterval(updateScanner, 60000); 
+        }
+
+        function setupAdminFreedomWall() {
+            const userSelect = document.getElementById('adminFreedomWallUser');
+            const messagesContainer = document.getElementById('adminFreedomWallMessages');
+            const replyInput = document.getElementById('adminFreedomWallReply');
+            const sendButton = document.getElementById('sendAdminFreedomWallReply');
+            if (!userSelect || !messagesContainer || !replyInput || !sendButton) return;
+
+            const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true' && sessionStorage.getItem('isAdminLoggedIn') !== 'true';
+            const assignedUser = (sessionStorage.getItem('subAdminTarget') || '').toLowerCase();
+            if (isSubAdmin) {
+                if (assignedUser && !Array.from(userSelect.options).some(option => option.value === assignedUser)) {
+                    const assignedOption = document.createElement('option');
+                    assignedOption.value = assignedUser;
+                    assignedOption.textContent = assignedUser;
+                    userSelect.appendChild(assignedOption);
+                }
+                userSelect.value = assignedUser;
+                userSelect.disabled = true;
+            } else {
+                userSelect.disabled = false;
+                onSnapshot(collection(db, 'app_users'), snapshot => {
+                    snapshot.forEach(userDoc => {
+                        const account = userDoc.data();
+                        if (account.status !== 'approved' || !account.username || ['kate', 'baby', 'admin'].includes(account.username)) return;
+                        if (!Array.from(userSelect.options).some(option => option.value === account.username)) {
+                            const option = document.createElement('option');
+                            option.value = account.username;
+                            option.textContent = account.username;
+                            userSelect.appendChild(option);
+                        }
+                    });
+                });
+            }
+
+            let wallUnsubscribe = null;
+            let presenceUnsubscribe = null;
+            let activeTarget = '';
+            const renderMessages = snapshot => {
+                messagesContainer.innerHTML = '';
+                const docs = snapshot.docs.slice().sort((a, b) => {
+                    const aTime = a.data().timestamp?.toMillis ? a.data().timestamp.toMillis() : 0;
+                    const bTime = b.data().timestamp?.toMillis ? b.data().timestamp.toMillis() : 0;
+                    return aTime - bTime;
+                });
+                if (!docs.length) {
+                    messagesContainer.innerHTML = '<div class="empty-wall-message">No messages on this wall yet.</div>';
+                    return;
+                }
+                docs.forEach(messageDoc => {
+                    const message = messageDoc.data();
+                    const card = document.createElement('div');
+                    card.className = 'fw-message-card';
+                    const header = document.createElement('div');
+                    header.className = 'fw-message-header';
+                    const author = document.createElement('span');
+                    author.className = 'fw-author';
+                    author.textContent = message.name || message.senderRole || 'Anonymous';
+                    const time = document.createElement('span');
+                    const timestamp = message.timestamp?.toDate ? message.timestamp.toDate() : null;
+                    time.textContent = timestamp ? timestamp.toLocaleString() : 'Just now';
+                    header.append(author, time);
+                    const text = document.createElement('div');
+                    text.className = 'fw-text';
+                    text.textContent = message.message || '';
+                    card.append(header, text);
+                    if (message.senderRole === 'SuperAdmin' || message.senderRole === 'SubAdmin') {
+                        const receipt = document.createElement('small');
+                        receipt.className = 'fw-delivery-receipt';
+                        const state = message.deliveryStatus || 'sent';
+                        const receiptTime = message.seenAt?.toDate ? message.seenAt.toDate() : message.deliveredAt?.toDate ? message.deliveredAt.toDate() : message.sentAt?.toDate ? message.sentAt.toDate() : timestamp;
+                        receipt.textContent = `${state[0].toUpperCase()}${state.slice(1)}${receiptTime ? ` · ${receiptTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`;
+                        card.appendChild(receipt);
+                    }
+                    messagesContainer.appendChild(card);
+                });
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            };
+
+            const loadWall = target => {
+                target = (target || '').toLowerCase();
+                if (!target || (isSubAdmin && target !== assignedUser)) return;
+                if (wallUnsubscribe) wallUnsubscribe();
+                if (presenceUnsubscribe) presenceUnsubscribe();
+                activeTarget = target;
+                const wallRef = collection(db, `${target}_messages`);
+                let latestSnapshot = null;
+                let userOnline = false;
+                const updateReceipts = async () => {
+                    if (!latestSnapshot || !userOnline) return;
+                    const pending = latestSnapshot.docs.filter(messageDoc => {
+                        const data = messageDoc.data();
+                        return (data.senderRole === 'SuperAdmin' || data.senderRole === 'SubAdmin') && (data.deliveryStatus || 'sent') === 'sent';
+                    });
+                    for (const messageDoc of pending) {
+                        updateDoc(messageDoc.ref, { deliveryStatus: 'delivered', deliveredAt: serverTimestamp() }).catch(error => console.error('Freedom Wall delivery receipt failed:', error));
+                    }
+                };
+                wallUnsubscribe = onSnapshot(query(wallRef, orderBy('timestamp', 'asc')), snapshot => {
+                    latestSnapshot = snapshot;
+                    renderMessages(snapshot);
+                    updateReceipts();
+                }, error => {
+                    console.error('Admin Freedom Wall load failed:', error);
+                    messagesContainer.innerHTML = '<div class="empty-wall-message">Unable to load this wall.</div>';
+                });
+                presenceUnsubscribe = onSnapshot(doc(db, 'presence', target), presenceSnap => {
+                    const presence = presenceSnap.exists() ? presenceSnap.data() : {};
+                    const lastActive = presence.lastActive?.toMillis ? presence.lastActive.toMillis() : 0;
+                    userOnline = presence.online === true && Date.now() - lastActive < 120000;
+                    updateReceipts();
+                });
+            };
+
+            userSelect.onchange = () => loadWall(userSelect.value);
+            const targetOnLoad = isSubAdmin ? assignedUser : userSelect.value;
+            loadWall(targetOnLoad);
+            sendButton.onclick = async () => {
+                const text = replyInput.value.trim();
+                const target = isSubAdmin ? assignedUser : activeTarget;
+                if (!text || !target) return;
+                sendButton.disabled = true;
+                try {
+                    const presenceSnap = await getDoc(doc(db, 'presence', target));
+                    const presence = presenceSnap.exists() ? presenceSnap.data() : {};
+                    const lastActive = presence.lastActive?.toMillis ? presence.lastActive.toMillis() : 0;
+                    const userOnline = presence.online === true && Date.now() - lastActive < 120000;
+                    const role = isSubAdmin ? 'SubAdmin' : 'SuperAdmin';
+                    await addDoc(collection(db, `${target}_messages`), {
+                        name: role === 'SubAdmin' ? 'Subadmin' : 'Superadmin',
+                        senderRole: role,
+                        sender: role,
+                        message: text,
+                        timestamp: serverTimestamp(),
+                        sentAt: serverTimestamp(),
+                        deliveryStatus: userOnline ? 'delivered' : 'sent',
+                        ...(userOnline ? { deliveredAt: serverTimestamp() } : {})
+                    });
+                    await addActivityNotification(target, 'New message in Freedom Wall', text, '🕊️');
+                    replyInput.value = '';
+                } catch (error) {
+                    console.error('Admin Freedom Wall reply failed:', error);
+                    alert('Could not send the Freedom Wall reply.');
+                } finally {
+                    sendButton.disabled = false;
+                }
+            };
         }
 
         // --- ADMIN USER MANAGEMENT SUB-ROUTINE ---
@@ -6543,6 +6739,7 @@
             const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
             updateGitHubUI(!!githubToken);
+            setupAdminFreedomWall();
 
             const targetLabel = document.getElementById('adminTargetLabel');
             const targetBtns = document.querySelectorAll('.admin-target-btn');
@@ -7445,6 +7642,7 @@
                         fileName: selectedVideoFile.name,
                         timestamp: serverTimestamp()
                     });
+                    await addActivityNotification(adminTargetUser, 'Surprise video broadcast', 'A new video message is waiting for you.', '🎬');
                     
                     console.log('Video broadcast sent to:', adminTargetUser);
                     
@@ -7550,6 +7748,7 @@
                     await setDoc(doc(db, 'content', `${adminTargetUser}_daily_notes`), {
                         items, lastUpdated: serverTimestamp()
                     }, { merge: true });
+                    await addActivityNotification(adminTargetUser, 'Notes updated', 'New notes are available.', '📝');
                     showToast("Success", `Updated ${adminTargetUser}'s Notes!`, "✅");
                 } catch (e) { alert("Error"); }
             };
@@ -8436,6 +8635,22 @@
             const messagesCol = collection(db, collectionName);
             let isInitialLoad = true;
             let latestMessageTime = Date.now(); 
+            const markWallRepliesSeen = async () => {
+                if (document.visibilityState !== 'visible' || !document.getElementById('freedom-wall')?.classList.contains('active')) return;
+                try {
+                    const wallSnapshot = await getDocs(messagesCol);
+                    await Promise.all(wallSnapshot.docs.map(messageDoc => {
+                        const data = messageDoc.data();
+                        if ((data.senderRole === 'SuperAdmin' || data.senderRole === 'SubAdmin') && data.deliveryStatus !== 'seen') {
+                            return updateDoc(messageDoc.ref, { deliveryStatus: 'seen', seenAt: serverTimestamp() });
+                        }
+                        return Promise.resolve();
+                    }));
+                } catch (error) {
+                    console.error('Freedom Wall seen receipt update failed:', error);
+                }
+            };
+            window.markCurrentFreedomWallSeen = markWallRepliesSeen;
 
             const newBtn = fwPostBtn.cloneNode(true);
             fwPostBtn.parentNode.replaceChild(newBtn, fwPostBtn);
@@ -8447,7 +8662,7 @@
                 newBtn.textContent = "Posting...";
                 newBtn.disabled = true;
                 try {
-                    await addDoc(messagesCol, { name, message: text, timestamp: serverTimestamp() });
+                    await addDoc(messagesCol, { name, message: text, senderRole: 'User', authorUser: user, timestamp: serverTimestamp() });
                     fwMessage.value = '';
                     newBtn.textContent = "Post Message";
                     newBtn.disabled = false;
@@ -8470,15 +8685,17 @@
 
             onSnapshot(messagesCol, (snapshot) => {
                 const messages = [];
+                const wallIsVisible = document.visibilityState === 'visible' && document.getElementById('freedom-wall')?.classList.contains('active');
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         const data = change.doc.data();
                         const msgTime = data.timestamp ? (data.timestamp.toMillis ? data.timestamp.toMillis() : Date.now()) : Date.now();
                         if (!isInitialLoad && msgTime > latestMessageTime) {
-                             if(data.name !== fwName.value && window.notifyUser) { 
+                             const isAdminReply = data.senderRole === 'SuperAdmin' || data.senderRole === 'SubAdmin';
+                             if (!isAdminReply && data.name !== fwName.value && window.notifyUser) {
                                  window.notifyUser(`New Message on ${user}'s Wall`, data.message, "🕊️");
                              }
-                             if (data.name !== fwName.value) {
+                             if (!isAdminReply && data.name !== fwName.value) {
                                  setDoc(doc(db, `users/${user}/notifications`, `freedom_${change.doc.id}`), {
                                      title: 'New message in Freedom Wall',
                                      message: `${data.name || 'Someone'}: ${data.message || ''}`,
@@ -8491,10 +8708,18 @@
                         }
                     }
                 });
+                if (wallIsVisible) {
+                    snapshot.docs.forEach(messageDoc => {
+                        const data = messageDoc.data();
+                        if ((data.senderRole === 'SuperAdmin' || data.senderRole === 'SubAdmin') && data.deliveryStatus !== 'seen') {
+                            updateDoc(messageDoc.ref, { deliveryStatus: 'seen', seenAt: serverTimestamp() }).catch(error => console.error('Freedom Wall seen receipt failed:', error));
+                        }
+                    });
+                }
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     const time = data.timestamp ? (data.timestamp.toMillis ? data.timestamp.toMillis() : Date.now()) : Date.now();
-                    messages.push({ id: doc.id, name: data.name || 'Anonymous', message: data.message || '', time });
+                    messages.push({ id: doc.id, ...data, name: data.name || 'Anonymous', message: data.message || '', time });
                 });
                 if(messages.length > 0) {
                      const maxTime = Math.max(...messages.map(m => m.time));
@@ -8503,6 +8728,7 @@
                 renderFreedomWallMessages(messages, messagesContainer, user, fwName.value, isInitialLoad);
                 isInitialLoad = false;
             });
+            document.addEventListener('visibilitychange', markWallRepliesSeen);
         }
 
         function renderFreedomWallMessages(messages, messagesContainer, user, currentName, isInitialLoad) {
@@ -8517,6 +8743,14 @@
                     const card = document.createElement('div');
                     card.className = 'fw-message-card';
                     card.innerHTML = `<div class="fw-message-header"><span class="fw-author">${escapeHtml(msg.name)}</span><span>${dateStr}</span></div><div class="fw-text">${escapeHtml(msg.message)}</div>`;
+                    if (msg.senderRole === 'SuperAdmin' || msg.senderRole === 'SubAdmin') {
+                        const receipt = document.createElement('small');
+                        receipt.className = 'fw-delivery-receipt';
+                        const state = msg.deliveryStatus || 'sent';
+                        const receiptTime = msg.seenAt?.toDate ? msg.seenAt.toDate() : msg.deliveredAt?.toDate ? msg.deliveredAt.toDate() : msg.sentAt?.toDate ? msg.sentAt.toDate() : null;
+                        receipt.textContent = `${state[0].toUpperCase()}${state.slice(1)}${receiptTime ? ` · ${receiptTime.toLocaleString()}` : ''}`;
+                        card.appendChild(receipt);
+                    }
                     messagesContainer.appendChild(card);
                 });
             }
@@ -9332,6 +9566,8 @@
                     }
                 });
 
+                if (targetTab === 'freedom-wall' && window.markCurrentFreedomWallSeen) window.markCurrentFreedomWallSeen();
+
                 if (targetTab === 'gallery') {
                     startTulipRain();
                 } else {
@@ -9895,7 +10131,7 @@
             if (window.db && window.collection && window.addDoc) {
                 try {
                     window.addDoc(window.collection(window.db, 'videoBroadcasts'), broadcast)
-                        .then((docRef) => {
+                        .then(async (docRef) => {
                             // Also save to localStorage for backup, storing Firestore doc id
                             const broadcastWithFsId = { ...broadcast, firestoreId: docRef.id };
                             videoBroadcasts.push(broadcastWithFsId);
@@ -10095,6 +10331,9 @@
                         if (playerModal && playerModal.classList.contains('active')) return;
                         const notif = document.getElementById('videoNotifFloat');
                         if (notif && notif.style.display === 'flex') return;
+                        if (window.addActivityNotificationOnce) {
+                            window.addActivityNotificationOnce(currentUser, `video_${uid}`, 'Surprise video broadcast', `${b.title || 'A new video'} is ready to watch.`, '🎬');
+                        }
                         showVideoNotification(b);
                     }, delay);
                 }
