@@ -18,6 +18,7 @@
 
     <!-- PeerJS for WebRTC -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <title id="dynamicPageTitle">For You</title>
     
@@ -425,29 +426,81 @@
 
         .user-profile-card {
             position: fixed;
-            top: 76px;
-            left: 16px;
-            z-index: 1800;
-            width: min(340px, calc(100vw - 24px));
-            height: calc(100vh - 94px);
-            max-height: 900px;
-            background: linear-gradient(160deg, #fff 0%, #fff4f8 55%, #eefaff 100%);
-            border: 1px solid #f0c6d7;
-            border-top: 3px solid #d81b60;
-            border-radius: 14px;
+            inset: 0;
+            z-index: 99998;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
             padding: 18px;
-            display: flex;
-            align-items: stretch;
-            flex-direction: column;
-            gap: 14px;
             margin: 0;
             overflow-y: auto;
-            box-shadow: 0 14px 38px rgba(33, 56, 77, 0.14);
-            transition: box-shadow 0.2s ease;
+            background: rgba(8, 23, 33, 0.76);
+            backdrop-filter: blur(8px);
         }
 
-        .user-profile-card:hover {
-            box-shadow: 0 18px 44px rgba(33, 56, 77, 0.18);
+        .profile-avatar-open-button {
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            z-index: 1800;
+            width: 54px;
+            height: 54px;
+            padding: 0;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 4px 18px rgba(17, 46, 61, 0.25);
+            cursor: pointer;
+        }
+        .profile-avatar-open-button img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+        .profile-avatar-open-button:focus-visible { outline:3px solid #d81b60; outline-offset:3px; }
+        .license-modal { width:min(760px, 100%); max-height:calc(100vh - 36px); overflow-y:auto; }
+        .license-toolbar { display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px; }
+        .license-toolbar button { border:1px solid rgba(255,255,255,.65); border-radius:7px; padding:8px 12px; background:#173848; color:#fff; cursor:pointer; }
+        .license-scene { width:100%; perspective:1400px; }
+        .license-flipper { position:relative; width:100%; aspect-ratio:1.58; transform-style:preserve-3d; transition:transform .75s cubic-bezier(.2,.75,.25,1); }
+        .license-flipper.is-flipped { transform:rotateY(180deg); }
+        .license-face {
+            position:absolute;
+            inset:0;
+            display:flex;
+            flex-direction:column;
+            overflow:hidden;
+            padding:clamp(14px, 3vw, 25px);
+            border:1px solid rgba(255,255,255,.7);
+            border-radius:17px;
+            backface-visibility:hidden;
+            box-shadow:0 22px 60px rgba(0,0,0,.28);
+        }
+        .license-front { color:#193642; background:linear-gradient(135deg,#f9ffff 0%,#e6f4f5 45%,#fff0f5 100%); }
+        .license-back { align-items:center; justify-content:center; color:#e9f7fa; background:linear-gradient(145deg,#102f3d,#1b4857 62%,#663448); transform:rotateY(180deg); text-align:center; }
+        .license-brand { display:flex; justify-content:space-between; align-items:center; padding-bottom:9px; border-bottom:1px solid rgba(27,67,81,.2); color:#557985; font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+        .license-front-content { display:grid; grid-template-columns:110px minmax(0,1fr); gap:16px; align-items:start; padding-top:14px; min-height:0; }
+        .license-portrait { width:100px; height:120px; object-fit:cover; border:3px solid white; border-radius:9px; box-shadow:0 4px 14px rgba(24,55,71,.18); }
+        .license-data { min-width:0; }
+        .license-data .user-profile-kicker { font-size:9px; }
+        .license-data .profile-greeting { color:#687e88; font-size:11px; }
+        .license-data .profile-name { color:#183747; font-size:clamp(18px, 3vw, 25px); line-height:1.1; overflow-wrap:anywhere; }
+        .license-data .profile-info-heading { margin:8px 0 3px; }
+        .license-data .profile-info-table th, .license-data .profile-info-table td { padding:4px 6px; }
+        .license-data .profile-info-table th { width:27%; font-size:10px; }
+        .license-data .profile-info-table td { font-size:11px; }
+        .license-serial { margin-top:auto; color:#68838d; font-family:monospace; font-size:9px; text-align:right; }
+        .license-back h3 { margin:0 0 8px; font-size:19px; }
+        .license-back p { margin:0 0 15px; color:#bad0d7; font-size:12px; }
+        #profileQrCode { display:grid; place-items:center; min-width:148px; min-height:148px; padding:9px; border-radius:10px; background:#fff; }
+        #profileQrCode img, #profileQrCode canvas { display:block; width:144px !important; height:144px !important; max-width:none; }
+        .profile-photo-manager { margin-top:14px; padding:14px; border:1px solid #e5d5df; border-radius:12px; background:#fff; }
+        .profile-photo-manager .featured-photo-grid { grid-template-columns:repeat(4, minmax(0,1fr)); }
+        .profile-qr-note { margin-top:12px; color:#bad0d7; font-size:10px; }
+        @media (max-width: 560px) {
+            .license-modal { max-height:calc(100vh - 20px); }
+            .license-flipper { aspect-ratio:.78; }
+            .license-front-content { grid-template-columns:75px minmax(0,1fr); gap:9px; padding-top:10px; }
+            .license-portrait { width:70px; height:88px; }
+            .license-data .profile-info-table th, .license-data .profile-info-table td { padding:3px 4px; font-size:9px; }
+            .license-face { padding:12px; border-radius:13px; }
+            .profile-photo-manager { padding:10px; }
         }
 
         .user-profile-avatar {
@@ -497,14 +550,6 @@
         #featuredPhotoViewer.active { display:flex; }
         #featuredPhotoViewer img { max-width:min(92vw,1100px); max-height:82vh; object-fit:contain; border-radius:8px; }
         #featuredPhotoViewerTimer { position:absolute; top:18px; right:22px; color:#fff; font-size:14px; font-weight:700; }
-        @media (min-width: 901px) {
-            #mainContent { width:calc(100% - 380px); max-width:none; margin-left:364px; margin-right:16px; }
-        }
-        @media (max-width: 900px) {
-            .user-profile-card { position:relative; top:auto; left:auto; width:calc(100% - 24px); height:auto; max-height:none; margin:12px auto; }
-            #mainContent { width:100%; margin-left:0; margin-right:0; }
-        }
-
         .user-profile-edit-btn {
             margin-top: 10px;
             border: 0;
@@ -595,7 +640,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
-            z-index: 2999;
+            z-index: 100002;
         }
 
         .profile-drawer-overlay.active {
@@ -613,7 +658,7 @@
             box-shadow: 10px 0 40px rgba(0,0,0,0.12);
             transform: translateX(-100%);
             transition: transform 0.3s ease;
-            z-index: 3000;
+            z-index: 100003;
             overflow-y: auto;
         }
 
@@ -3761,36 +3806,60 @@
     <!-- Main Content -->
      <div id="phClock"></div>
 
-    <aside class="user-profile-card" id="userProfileCard" style="display: none;" aria-label="Your profile">
-        <div class="user-profile-identity">
-            <img id="userProfileAvatar" class="user-profile-avatar" src="https://placehold.co/100x100/ffb7c5/d81b60?text=U" alt="Your Avatar">
-            <div class="user-profile-content">
-                <p class="user-profile-kicker">Personal profile / active</p>
-                <p class="profile-greeting">Welcome, <span id="userProfileGreeting">Friend</span></p>
-                <p class="profile-name" id="userProfileFullName">Guest</p>
+    <button type="button" id="profileAvatarOpenButton" class="profile-avatar-open-button" style="display:none;" aria-label="Open profile card" title="Open profile">
+        <img id="profileAvatarButtonImage" src="https://placehold.co/100x100/ffb7c5/d81b60?text=U" alt="Open your profile">
+    </button>
+
+    <div class="user-profile-card" id="userProfileCard" style="display:none;" aria-label="Your profile">
+        <div class="license-modal">
+            <div class="license-toolbar">
+                <button type="button" id="flipUserProfileCard">Flip card</button>
+                <button type="button" id="closeUserProfileCard">Close</button>
             </div>
+            <div class="license-scene">
+                <div class="license-flipper" id="userLicenseFlipper">
+                    <section class="license-face license-front" aria-label="Profile card front">
+                        <div class="license-brand"><span>For You · Personal ID</span><span>Profile / 01</span></div>
+                        <div class="license-front-content">
+                            <img id="userProfileAvatar" class="license-portrait" src="https://placehold.co/100x120/ffb7c5/d81b60?text=U" alt="Profile portrait">
+                            <div class="license-data">
+                                <p class="user-profile-kicker">Personal profile / active</p>
+                                <p class="profile-greeting">Welcome, <span id="userProfileGreeting">Friend</span></p>
+                                <p class="profile-name" id="userProfileFullName">Guest</p>
+                                <h3 class="profile-info-heading">Profile data</h3>
+                                <table class="profile-info-table" aria-label="Profile details"><tbody>
+                                    <tr><th>Gender</th><td id="userProfileGender">—</td></tr>
+                                    <tr><th>Birthdate</th><td id="userProfileBirthdate">—</td></tr>
+                                    <tr><th>Favorites</th><td id="userProfileFavorites">—</td></tr>
+                                    <tr><th>Likes</th><td id="userProfileLikes">—</td></tr>
+                                    <tr><th>Dislikes</th><td id="userProfileDislikes">—</td></tr>
+                                    <tr><th>Dream place</th><td id="userProfileDreamPlace">—</td></tr>
+                                    <tr><th>Dreams</th><td id="userProfileDreamLife">—</td></tr>
+                                </tbody></table>
+                            </div>
+                        </div>
+                        <div class="license-serial" id="userProfileSerial">PROFILE ID · —</div>
+                    </section>
+                    <section class="license-face license-back" aria-label="Profile card back">
+                        <h3>Profile QR</h3>
+                        <p>Scan to identify this profile</p>
+                        <div id="profileQrCode" aria-label="Profile QR code"></div>
+                        <div class="profile-qr-note">Personal profile card · Keep this code private</div>
+                    </section>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:9px;">
+                <button type="button" id="openUserProfileEditor" class="user-profile-edit-btn">Edit profile</button>
+            </div>
+            <section class="profile-photo-manager" aria-labelledby="featuredPhotoHeading">
+                <h3 class="featured-photo-heading" id="featuredPhotoHeading">Featured photos · 4 slots</h3>
+                <select id="featuredPhotoRepoSelect" class="repo-select" style="width:100%; margin-bottom:8px;">
+                    <option value="">Connect GitHub and choose a repository</option>
+                </select>
+                <div id="featuredPhotoGrid" class="featured-photo-grid"></div>
+                <p id="featuredPhotoStatus" aria-live="polite"></p>
+            </section>
         </div>
-        <div class="user-profile-meta">
-            <h3 class="profile-info-heading">Profile data</h3>
-            <table class="profile-info-table" aria-label="Profile details"><tbody>
-                <tr><th>Gender</th><td id="userProfileGender">—</td></tr>
-                <tr><th>Birthdate</th><td id="userProfileBirthdate">—</td></tr>
-                <tr><th>Favorites</th><td id="userProfileFavorites">—</td></tr>
-                <tr><th>Likes</th><td id="userProfileLikes">—</td></tr>
-                <tr><th>Dislikes</th><td id="userProfileDislikes">—</td></tr>
-                <tr><th>Dream place</th><td id="userProfileDreamPlace">—</td></tr>
-                <tr><th>Dreams</th><td id="userProfileDreamLife">—</td></tr>
-            </tbody></table>
-            <button type="button" id="openUserProfileEditor" class="user-profile-edit-btn">Edit profile</button>
-        </div>
-        <section aria-labelledby="featuredPhotoHeading">
-            <h3 class="featured-photo-heading" id="featuredPhotoHeading">Featured photos · 4 slots</h3>
-            <select id="featuredPhotoRepoSelect" class="repo-select" style="width:100%; margin-bottom:8px;">
-                <option value="">Connect GitHub and choose a repository</option>
-            </select>
-            <div id="featuredPhotoGrid" class="featured-photo-grid"></div>
-            <p id="featuredPhotoStatus" aria-live="polite"></p>
-        </section>
     </div>
 
     <div id="featuredPhotoViewer" role="dialog" aria-label="Featured photo preview">
@@ -5090,7 +5159,32 @@
         }
 
         function initUserProfileDropdown() {
-            if (!document.getElementById('userProfileCard')) return;
+            const card = document.getElementById('userProfileCard');
+            if (!card) return;
+            const avatarButton = document.getElementById('profileAvatarOpenButton');
+            const closeButton = document.getElementById('closeUserProfileCard');
+            const flipButton = document.getElementById('flipUserProfileCard');
+            const flipper = document.getElementById('userLicenseFlipper');
+            const closeCard = () => {
+                card.style.display = 'none';
+                flipper?.classList.remove('is-flipped');
+            };
+            avatarButton?.addEventListener('click', () => {
+                card.style.display = 'flex';
+                flipper?.classList.remove('is-flipped');
+                renderProfileQr(currentUser);
+            });
+            closeButton?.addEventListener('click', closeCard);
+            card.addEventListener('click', event => {
+                if (event.target === card) closeCard();
+            });
+            flipButton?.addEventListener('click', () => {
+                flipper?.classList.toggle('is-flipped');
+                if (currentUser) renderProfileQr(currentUser);
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && card.style.display !== 'none') closeCard();
+            });
 
             const editor = document.getElementById('userProfileDrawer');
             const editorOverlay = document.getElementById('userProfileDrawerOverlay');
@@ -5110,6 +5204,20 @@
             if (closeEditor) closeEditor.addEventListener('click', () => toggleEditor(false));
             if (editorOverlay) editorOverlay.addEventListener('click', () => toggleEditor(false));
             if (saveEditor) saveEditor.addEventListener('click', () => window.saveUserProfileOnce(currentUser, toggleEditor));
+        }
+
+        function renderProfileQr(user) {
+            const qrContainer = document.getElementById('profileQrCode');
+            if (!qrContainer || !user || typeof QRCode === 'undefined') return;
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: `FOR-YOU-PROFILE:${user}`,
+                width: 144,
+                height: 144,
+                colorDark: '#132f3a',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
         }
 
         function getProfileRole() {
@@ -5903,10 +6011,15 @@
             const userLikes = document.getElementById('userProfileLikes');
             const userDreamLife = document.getElementById('userProfileDreamLife');
             const userCard = document.getElementById('userProfileCard');
+            const avatarButton = document.getElementById('profileAvatarOpenButton');
+            const avatarButtonImage = document.getElementById('profileAvatarButtonImage');
 
             if (userAvatar) userAvatar.src = avatarUrl;
+            if (avatarButtonImage) avatarButtonImage.src = avatarUrl;
             if (userGreeting) userGreeting.textContent = displayName.split(' ')[0] || displayName;
             if (userFullName) userFullName.textContent = displayName;
+            const serial = document.getElementById('userProfileSerial');
+            if (serial) serial.textContent = `PROFILE ID · ${user.toUpperCase()}`;
             if (userFavorites) userFavorites.textContent = data.favorites || '—';
             if (userLikes) userLikes.textContent = data.likes || '—';
             const userDislikes = document.getElementById('userProfileDislikes');
@@ -5919,10 +6032,9 @@
             if (userDreamPlace) userDreamPlace.textContent = data.dreamCountry || '—';
             if (userDreamLife) userDreamLife.textContent = data.dreamLife || '—';
             if (userCard) {
-                userCard.style.display = 'flex';
-                userCard.classList.remove('active');
-                userCard.setAttribute('aria-expanded', 'false');
+                userCard.style.display = 'none';
             }
+            if (avatarButton && getProfileRole() === 'user') avatarButton.style.display = 'block';
 
             if (data.avatarRepo) {
                 const profileRepoSelect = document.getElementById('ghRepoSelectProfile');
