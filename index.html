@@ -2046,6 +2046,43 @@
             border-left: 5px solid #d81b60; 
         }
 
+        #adminFreedomWallMessages {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            height: min(48vh, 420px);
+            min-height: 180px;
+            margin: 0 0 12px;
+            padding: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            border: 1px solid #eadde4;
+            border-radius: 10px;
+            background: #fffafd;
+        }
+        #adminFreedomWallMessages .fw-message-card { flex: 0 0 auto; width:100%; margin:0; }
+        #admin-freedom-wall #adminFreedomWallReply {
+            position: relative;
+            display: block;
+            z-index: 1;
+            width: 100%;
+            min-height: 90px;
+            margin: 0;
+            overflow-y: auto;
+            resize: vertical;
+        }
+        #admin-freedom-wall #sendAdminFreedomWallReply {
+            position: relative;
+            display: block;
+            z-index: 1;
+            width: 100%;
+            min-height: 44px;
+            margin: 9px 0 0;
+        }
+
         .fw-message-header {
             display: flex;
             justify-content: space-between;
@@ -6470,6 +6507,9 @@
                 if (wallUnsubscribe) wallUnsubscribe();
                 if (presenceUnsubscribe) presenceUnsubscribe();
                 activeTarget = target;
+                messagesContainer.dataset.targetUser = target;
+                messagesContainer.innerHTML = `<div class="empty-wall-message">Loading ${escapeHtml(target)}'s Freedom Wall...</div>`;
+                replyInput.placeholder = `Reply on ${target}'s Freedom Wall`;
                 const wallRef = collection(db, `${target}_messages`);
                 let latestSnapshot = null;
                 let userOnline = false;
