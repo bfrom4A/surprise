@@ -2820,6 +2820,44 @@
             background: linear-gradient(135deg, #0d0d1a, #111120) !important;
             transition: background 2s ease;
         }
+
+        #emergencyRequestButton {
+            position:fixed;
+            left:18px;
+            bottom:18px;
+            z-index:99991;
+            display:none;
+            min-height:48px;
+            padding:12px 18px;
+            border:2px solid #fff;
+            border-radius:999px;
+            background:#b71550;
+            color:#fff;
+            font-weight:800;
+            box-shadow:0 6px 22px rgba(150,0,48,.35);
+            cursor:pointer;
+        }
+        #emergencyRequestButton:disabled { opacity:.72; cursor:wait; }
+        #superAdminEmergencyAlerts {
+            position:fixed;
+            top:18px;
+            left:50%;
+            transform:translateX(-50%);
+            z-index:100005;
+            display:none;
+            width:min(600px, calc(100vw - 24px));
+            max-height:min(55vh, 440px);
+            overflow-y:auto;
+            padding:15px;
+            border:2px solid #e22443;
+            border-radius:12px;
+            background:#fff;
+            box-shadow:0 12px 40px rgba(120,0,24,.35);
+        }
+        #enableEmergencyAlarm { border:0; border-radius:6px; padding:7px 9px; background:#a91537; color:#fff; font-size:11px; cursor:pointer; }
+        .emergency-alert-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0; border-top:1px solid #f1d8dd; }
+        .emergency-alert-row strong { color:#a91537; }
+        .emergency-alert-meta { color:#65747a; font-size:12px; margin-top:3px; }
         body.sleep-mode #mainContent {
             filter: brightness(0.35) saturate(0.4);
             transition: filter 2s ease;
@@ -3881,6 +3919,15 @@
     
     <!-- Main Content -->
      <div id="phClock"></div>
+
+    <button type="button" id="emergencyRequestButton">🚨 Emergency</button>
+    <section id="superAdminEmergencyAlerts" aria-live="assertive" aria-label="Active emergency requests">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <h3 style="margin:0 0 8px; color:#a91537;">🚨 Emergency alerts</h3>
+            <button type="button" id="enableEmergencyAlarm">Enable alarm sound</button>
+        </div>
+        <div id="superAdminEmergencyAlertList"></div>
+    </section>
 
     <button type="button" id="profileAvatarOpenButton" class="profile-avatar-open-button" style="display:none;" aria-label="Open profile card" title="Open profile">
         <img id="profileAvatarButtonImage" src="https://placehold.co/100x100/ffb7c5/d81b60?text=U" alt="Open your profile">
@@ -5032,6 +5079,7 @@
             // Normalize username to lowercase to ensure listeners and admin targets match
             user = (user || '').toLowerCase();
             currentUser = user; 
+            setupEmergencyRequestButton();
 
             const playerAudio = document.getElementById('nowPlayingAudio');
             if (playerAudio) {
@@ -5163,6 +5211,181 @@
             }
         }
         window.addActivityNotification = addActivityNotification;
+
+        let emergencyAlarmContext = null;
+        let emergencyAlarmOscillator = null;
+        let emergencyAlarmGain = null;
+        let emergencyAlarmInterval = null;
+
+        function startEmergencyAlarm() {
+            if (emergencyAlarmOscillator) {
+                if (emergencyAlarmContext?.state === 'suspended') emergencyAlarmContext.resume().catch(error => console.warn('Emergency alarm audio resume blocked:', error));
+                return;
+            }
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return;
+                emergencyAlarmContext = new AudioContextClass();
+                emergencyAlarmOscillator = emergencyAlarmContext.createOscillator();
+                emergencyAlarmGain = emergencyAlarmContext.createGain();
+                emergencyAlarmOscillator.type = 'square';
+                emergencyAlarmOscillator.frequency.value = 720;
+                emergencyAlarmGain.gain.setValueAtTime(0.0001, emergencyAlarmContext.currentTime);
+                emergencyAlarmGain.gain.exponentialRampToValueAtTime(0.14, emergencyAlarmContext.currentTime + 0.08);
+                emergencyAlarmOscillator.connect(emergencyAlarmGain);
+                emergencyAlarmGain.connect(emergencyAlarmContext.destination);
+                emergencyAlarmOscillator.start();
+                let highTone = false;
+                emergencyAlarmInterval = setInterval(() => {
+                    if (!emergencyAlarmContext || !emergencyAlarmOscillator || !emergencyAlarmGain) return;
+                    const now = emergencyAlarmContext.currentTime;
+                    highTone = !highTone;
+                    emergencyAlarmOscillator.frequency.setTargetAtTime(highTone ? 980 : 620, now, 0.06);
+                    emergencyAlarmGain.gain.setTargetAtTime(highTone ? 0.15 : 0.07, now, 0.04);
+                }, 450);
+                emergencyAlarmContext.resume().catch(error => console.warn('Emergency alarm audio resume blocked:', error));
+            } catch (error) {
+                console.error('Emergency alarm could not start:', error);
+            }
+        }
+
+        function stopEmergencyAlarm() {
+            if (emergencyAlarmInterval) clearInterval(emergencyAlarmInterval);
+            emergencyAlarmInterval = null;
+            if (emergencyAlarmContext && emergencyAlarmGain && emergencyAlarmOscillator) {
+                try {
+                    emergencyAlarmGain.gain.setTargetAtTime(0.0001, emergencyAlarmContext.currentTime, 0.04);
+                    emergencyAlarmOscillator.stop(emergencyAlarmContext.currentTime + 0.2);
+                    const context = emergencyAlarmContext;
+                    setTimeout(() => context.close().catch(() => {}), 250);
+                } catch (error) {
+                    console.debug('Emergency alarm stop cleanup:', error);
+                }
+            }
+            emergencyAlarmContext = null;
+            emergencyAlarmGain = null;
+            emergencyAlarmOscillator = null;
+        }
+
+        function setupEmergencyRequestButton() {
+            const button = document.getElementById('emergencyRequestButton');
+            if (!button) return;
+            const isSuperAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+            const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
+            if (isSuperAdmin) {
+                button.style.display = 'none';
+                return;
+            }
+            button.style.display = isSubAdmin || currentUser ? 'block' : 'none';
+            if (button.dataset.emergencyBound) return;
+            button.dataset.emergencyBound = 'true';
+            button.onclick = async () => {
+                const role = sessionStorage.getItem('isSubAdminLoggedIn') === 'true' ? 'SubAdmin' : 'User';
+                const requestedUser = role === 'SubAdmin'
+                    ? (sessionStorage.getItem('subAdminTarget') || '').toLowerCase()
+                    : (sessionStorage.getItem('loggedInUser') || currentUser || '').toLowerCase();
+                if (!requestedUser) return alert('Your account could not be identified. Please sign in again.');
+                if (button.dataset.alertActive === 'true') return;
+                button.disabled = true;
+                button.textContent = 'Sending emergency alert…';
+                try {
+                    const requestKey = `${role.toLowerCase()}:${requestedUser}`;
+                    const existing = await getDocs(query(collection(db, 'emergency_requests'), where('requestKey', '==', requestKey)));
+                    if (existing.docs.some(requestDoc => requestDoc.data().status === 'active')) {
+                        button.dataset.alertActive = 'true';
+                        button.textContent = '🚨 Emergency active';
+                        showToast('Emergency already active', 'Superadmin has already been notified.', '🚨');
+                        return;
+                    }
+                    await addDoc(collection(db, 'emergency_requests'), {
+                        requestKey,
+                        requestedUser,
+                        requestedByRole: role,
+                        status: 'active',
+                        createdAt: serverTimestamp()
+                    });
+                    button.dataset.alertActive = 'true';
+                    button.textContent = '🚨 Emergency active';
+                    showToast('Emergency sent', 'Superadmin has been notified.', '🚨');
+                } catch (error) {
+                    console.error('Emergency request failed:', error);
+                    button.textContent = '🚨 Emergency';
+                    alert('The emergency alert could not be sent. Please try again or contact Superadmin.');
+                } finally {
+                    button.disabled = false;
+                }
+            };
+            const requestKey = `${isSubAdmin ? 'subadmin' : 'user'}:${isSubAdmin ? (sessionStorage.getItem('subAdminTarget') || '').toLowerCase() : (sessionStorage.getItem('loggedInUser') || currentUser || '').toLowerCase()}`;
+            if (window._emergencyRequesterUnsub) window._emergencyRequesterUnsub();
+            window._emergencyRequesterUnsub = onSnapshot(query(collection(db, 'emergency_requests'), where('requestKey', '==', requestKey)), snapshot => {
+                const isActive = snapshot.docs.some(requestDoc => requestDoc.data().status === 'active');
+                button.dataset.alertActive = String(isActive);
+                button.textContent = isActive ? '🚨 Emergency active' : '🚨 Emergency';
+                button.style.background = isActive ? '#7e1538' : '#b71550';
+            }, error => console.error('Requester emergency state listener failed:', error));
+        }
+
+        function setupSuperAdminEmergencyAlerts() {
+            const alertPanel = document.getElementById('superAdminEmergencyAlerts');
+            const alertList = document.getElementById('superAdminEmergencyAlertList');
+            if (!alertPanel || !alertList || window._superAdminEmergencyUnsub) return;
+            document.getElementById('enableEmergencyAlarm')?.addEventListener('click', startEmergencyAlarm);
+            window._superAdminEmergencyUnsub = onSnapshot(
+                query(collection(db, 'emergency_requests'), where('status', '==', 'active')),
+                snapshot => {
+                    alertList.innerHTML = '';
+                    alertPanel.style.display = snapshot.empty ? 'none' : 'block';
+                    if (snapshot.empty) {
+                        stopEmergencyAlarm();
+                        const button = document.getElementById('emergencyRequestButton');
+                        if (button && button.textContent.includes('Emergency active')) {
+                            button.textContent = '🚨 Emergency';
+                        }
+                        return;
+                    }
+                    startEmergencyAlarm();
+                    snapshot.docs.forEach(requestDoc => {
+                        const request = requestDoc.data();
+                        const row = document.createElement('div');
+                        row.className = 'emergency-alert-row';
+                        const details = document.createElement('div');
+                        const who = document.createElement('strong');
+                        who.textContent = `${request.requestedByRole || 'User'} · ${request.requestedUser || 'Unknown user'}`;
+                        const time = document.createElement('div');
+                        time.className = 'emergency-alert-meta';
+                        const createdAt = request.createdAt?.toDate ? request.createdAt.toDate().toLocaleString() : 'Just now';
+                        time.textContent = `Active since ${createdAt}`;
+                        details.append(who, time);
+                        const resolveButton = document.createElement('button');
+                        resolveButton.type = 'button';
+                        resolveButton.className = 'submit-btn';
+                        resolveButton.textContent = 'Resolve';
+                        resolveButton.style.cssText = 'padding:8px 12px; background:#218451; white-space:nowrap;';
+                        resolveButton.onclick = async () => {
+                            resolveButton.disabled = true;
+                            try {
+                                await updateDoc(requestDoc.ref, {
+                                    status: 'resolved',
+                                    resolvedAt: serverTimestamp(),
+                                    resolvedBy: 'SuperAdmin'
+                                });
+                            } catch (error) {
+                                console.error('Emergency resolution failed:', error);
+                                resolveButton.disabled = false;
+                                alert('Could not resolve this emergency alert.');
+                            }
+                        };
+                        row.append(details, resolveButton);
+                        alertList.appendChild(row);
+                    });
+                },
+                error => {
+                    console.error('Emergency alert listener failed:', error);
+                    alertPanel.style.display = 'block';
+                    alertList.textContent = 'Unable to load emergency alerts.';
+                }
+            );
+        }
 
         window.addActivityNotificationOnce = async function(user, notificationId, title, message, icon = '🔔', type = 'activity') {
             if (!user || !notificationId) return;
@@ -6855,6 +7078,8 @@
 
             updateGitHubUI(!!githubToken);
             setupAdminFreedomWall();
+            setupEmergencyRequestButton();
+            if (isSuperAdmin) setupSuperAdminEmergencyAlerts();
 
             const targetLabel = document.getElementById('adminTargetLabel');
             const targetBtns = document.querySelectorAll('.admin-target-btn');
