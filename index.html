@@ -1022,6 +1022,39 @@
             animation: pulse 2s infinite, float 3s ease-in-out infinite;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
+
+        #loginSecurityCheck {
+            width: min(440px, calc(100vw - 36px));
+            margin-top: 20px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #ffd6e7;
+            border-radius: 12px;
+            color: #555;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(216,27,96,0.1);
+        }
+        #loginSecurityCheck strong { display: block; color: #d81b60; margin-bottom: 6px; }
+        #loginSecurityStatus { font-size: 12px; }
+        #securityWaitingScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 1500;
+            display: none;
+            overflow-y: auto;
+            padding: 24px 14px;
+            background: linear-gradient(135deg, #ffd1dc, #ffb7c5);
+        }
+        .security-waiting-content {
+            width: min(640px, 100%);
+            margin: 0 auto;
+            padding: 22px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+        }
+        #securityPublicList { max-height: 180px; overflow-y: auto; margin: 12px 0 18px; }
+        .security-ticket-row { display:flex; justify-content:space-between; gap:10px; padding:8px 10px; border-bottom:1px solid #f4dce5; font-size:12px; }
         
         /* Logout Screen */
         .logout-screen {
@@ -3328,6 +3361,11 @@
                         <div id="adminPendingUsers" class="admin-list-container">
                             <p style="text-align:center; font-size:12px; color:#999;">Loading pending users...</p>
                         </div>
+
+                        <h5 style="color:#ff9800; margin-top:20px;">Security Review Tickets</h5>
+                        <div id="adminSecurityReviewTickets" class="admin-list-container">
+                            <p style="text-align:center; font-size:12px; color:#999;">Loading security tickets...</p>
+                        </div>
                         
                         <h5 style="color: #28a745; margin-top: 20px;">Approved Accounts</h5>
                         <div id="adminApprovedUsers" class="admin-list-container">
@@ -3671,6 +3709,29 @@
     <!-- Welcome Screen -->
     <div class="welcome-screen" id="welcomeScreen">
         <h1 class="welcome-message" id="welcomeMsg">Welcome, enjoy your stay!!</h1>
+        <div id="loginSecurityCheck" style="display:none;">
+            <strong>Initial security check</strong>
+            <span id="loginSecurityStatus">Preparing device check...</span>
+        </div>
+    </div>
+
+    <div id="securityWaitingScreen">
+        <div class="security-waiting-content">
+            <h2 style="color:#d81b60;">Access review waiting list</h2>
+            <p style="font-size:13px; color:#555; margin:10px 0;">Your sign-in needs a manual security review. Keep this ticket for updates.</p>
+            <div style="background:#fff5f8; padding:12px; border-radius:8px; margin:14px 0; font-size:13px;">
+                Ticket: <strong id="securityTicketNumber">Pending</strong><br>
+                Status: <strong id="securityTicketStatus">Waiting for Superadmin</strong>
+            </div>
+            <h3 style="font-size:15px; color:#d81b60;">Public waiting list</h3>
+            <p style="font-size:11px; color:#777;">Names are masked; ticket numbers and statuses are visible.</p>
+            <div id="securityPublicList"><p style="color:#999; font-size:12px;">Loading tickets...</p></div>
+            <h3 style="font-size:15px; color:#d81b60;">Message Superadmin</h3>
+            <textarea id="securitySupportMessage" class="fw-textarea" style="height:75px;" placeholder="Write a message about your access review"></textarea>
+            <button id="sendSecuritySupportMessage" class="submit-btn" style="width:100%; margin:8px 0 12px;">Send message</button>
+            <div id="securitySupportThread" style="max-height:150px; overflow:auto; font-size:12px;"></div>
+            <button id="securityWaitingBackBtn" class="submit-btn" style="width:100%; margin-top:12px; background:#999;">Back to login</button>
+        </div>
     </div>
     
     <!-- Logout Screen -->
@@ -5980,6 +6041,49 @@
             const approvedContainer = document.getElementById('adminApprovedUsers');
             const deactivatedContainer = document.getElementById('adminDeactivatedUsers');
             const dynamicTargets = document.getElementById('dynamicAdminTargets');
+            const securityTicketsContainer = document.getElementById('adminSecurityReviewTickets');
+
+            if (securityTicketsContainer) {
+                onSnapshot(collection(db, 'security_review'), (snapshot) => {
+                    const tickets = snapshot.docs.slice().sort((a, b) => {
+                        const aTime = a.data().createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
+                        const bTime = b.data().createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
+                        return bTime - aTime;
+                    });
+                    securityTicketsContainer.innerHTML = tickets.length ? '' : '<p style="text-align:center; font-size:12px; color:#999;">No security review tickets.</p>';
+                    tickets.forEach(ticketDoc => {
+                        const ticket = ticketDoc.data();
+                        const row = document.createElement('div');
+                        row.className = 'admin-list-item';
+                        const maskedName = `${(ticket.username || '?').charAt(0)}${'*'.repeat(Math.max(3, (ticket.username || '').length - 1))}`;
+                        row.innerHTML = `<div class="admin-item-info"><strong>${escapeHtml(ticket.ticketNumber || ticketDoc.id)}</strong><span>${escapeHtml(maskedName)} · ${escapeHtml(ticket.status || 'pending')}</span><small>${escapeHtml(ticket.reason || 'Security review requested')}</small></div>`;
+                        if (ticket.status === 'pending') {
+                            const actions = document.createElement('div');
+                            actions.style.cssText = 'display:flex; gap:6px;';
+                            actions.innerHTML = `<button class="submit-btn" data-review="approved" style="padding:5px 8px; font-size:11px; background:#28a745;">Approve</button><button class="submit-btn" data-review="rejected" style="padding:5px 8px; font-size:11px; background:#ff4d4d;">Reject</button>`;
+                            actions.querySelectorAll('button').forEach(button => {
+                                button.onclick = async () => {
+                                    try {
+                                        await updateDoc(doc(db, 'security_review', ticketDoc.id), {
+                                            status: button.dataset.review,
+                                            reviewedAt: serverTimestamp(),
+                                            reviewedBy: 'SuperAdmin'
+                                        });
+                                    } catch (error) {
+                                        console.error('Security ticket update failed:', error);
+                                        alert('Could not update the security ticket.');
+                                    }
+                                };
+                            });
+                            row.appendChild(actions);
+                        }
+                        securityTicketsContainer.appendChild(row);
+                    });
+                }, error => {
+                    console.error('Security review list failed:', error);
+                    securityTicketsContainer.innerHTML = '<p style="color:#d81b60; font-size:12px;">Unable to load security tickets.</p>';
+                });
+            }
 
             let isInitialLoad = true;
 
@@ -8172,6 +8276,29 @@
         }, 4000);
     }
 
+    window.playLoginShine = function() {
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const now = context.currentTime;
+            [880, 1320, 1760].forEach((frequency, index) => {
+                const oscillator = context.createOscillator();
+                const gain = context.createGain();
+                const start = now + index * 0.09;
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(frequency, start);
+                gain.gain.setValueAtTime(0.0001, start);
+                gain.gain.exponentialRampToValueAtTime(0.11, start + 0.025);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.45);
+                oscillator.connect(gain);
+                gain.connect(context.destination);
+                oscillator.start(start);
+                oscillator.stop(start + 0.46);
+            });
+        } catch (error) {
+            console.debug('Login sound unavailable:', error);
+        }
+    };
+
     window.playNotificationTone = function() {
         try {
             const context = new (window.AudioContext || window.webkitAudioContext)();
@@ -8288,7 +8415,7 @@
                     if (pass.toLowerCase() === 'katecutie') user = 'kate';
                     else if (pass.toLowerCase() === 'babycutie') user = 'baby';
                     else if (pass.toLowerCase() === 'admin112003') {
-                        triggerAdminLogin(true);
+                        if (await runLoginSecurityCheck('superadmin')) triggerAdminLogin(true, false);
                         return;
                     }
                     
@@ -8301,7 +8428,7 @@
                 }
 
                 if (pass === 'admin112003') {
-                    triggerAdminLogin(true);
+                    if (await runLoginSecurityCheck('superadmin')) triggerAdminLogin(true, false);
                     return;
                 }
 
@@ -8339,10 +8466,12 @@
                         const userData = userDoc.data();
 
                         if (userData.status === 'approved') {
+                            const securityPassed = await runLoginSecurityCheck(userData.username);
+                            if (!securityPassed) return;
                             sessionStorage.setItem('isSubAdminLoggedIn', 'true');
                             sessionStorage.setItem('subAdminTarget', userData.username);
                             sessionStorage.setItem('subAdminDocId', userDoc.id);
-                            triggerAdminLogin(false); 
+                            triggerAdminLogin(false, false); 
                         } else {
                             alert("The associated user account is not currently active.");
                         }
@@ -8427,7 +8556,162 @@
             });
         }
 
-        function doLogin(user, userData = null, userDocId = null) {
+        async function runLoginSecurityCheck(user) {
+            const checkPanel = document.getElementById('loginSecurityCheck');
+            const checkStatus = document.getElementById('loginSecurityStatus');
+            passwordModal.style.opacity = '0';
+            passwordModal.style.display = 'none';
+            welcomeMsg.textContent = 'Welcome';
+            welcomeScreen.style.display = 'flex';
+            welcomeScreen.style.opacity = '1';
+            checkPanel.style.display = 'block';
+            if (window.playLoginShine) window.playLoginShine();
+
+            const checks = [
+                { label: 'Checking browser integrity...', flagged: !!navigator.webdriver },
+                { label: 'Checking local device storage...', flagged: false, run: () => {
+                    const key = `security-check-${Date.now()}`;
+                    localStorage.setItem(key, 'ok');
+                    localStorage.removeItem(key);
+                } },
+                { label: 'Checking secure browser capabilities...', flagged: !window.crypto || !window.crypto.getRandomValues },
+                { label: 'Checking session consistency...', flagged: false },
+                { label: 'Completing security review...', flagged: false }
+            ];
+            let flagged = false;
+            for (const check of checks) {
+                checkStatus.textContent = check.label;
+                try {
+                    if (check.run) check.run();
+                    flagged = flagged || check.flagged;
+                } catch (error) {
+                    flagged = true;
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                checkStatus.textContent = `✓ ${check.label.replace('...', '')} complete`;
+            }
+            checkStatus.textContent = flagged && user !== 'superadmin'
+                ? 'Review required. Opening secure waiting list...'
+                : flagged ? 'Checks completed. Admin review access retained.' : '✓ Status completed. Device checks passed.';
+            await new Promise(resolve => setTimeout(resolve, 250));
+            checkPanel.style.display = 'none';
+            welcomeScreen.style.display = 'none';
+
+            try {
+                const priorTickets = await window.getDocs(window.query(
+                    window.collection(window.db, 'security_review'),
+                    window.where('username', '==', user)
+                ));
+                const tickets = priorTickets.docs.map(ticketDoc => ({ id: ticketDoc.id, ...ticketDoc.data() }));
+                if (tickets.some(ticket => ticket.status === 'pending')) {
+                    showSecurityWaitingRoom(tickets.find(ticket => ticket.status === 'pending').id, user);
+                    return false;
+                }
+                if (tickets.some(ticket => ticket.status === 'approved')) flagged = false;
+            } catch (error) {
+                console.error('Could not check previous security tickets:', error);
+            }
+
+            if (flagged && user === 'superadmin') return true;
+
+            if (flagged) {
+                const ticketNumber = `SR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+                try {
+                    const ticketRef = await window.addDoc(window.collection(window.db, 'security_review'), {
+                        username: user,
+                        ticketNumber,
+                        status: 'pending',
+                        reason: navigator.webdriver ? 'Automated browser signal detected' : (!window.crypto || !window.crypto.getRandomValues) ? 'Secure browser capability unavailable' : 'Device storage check failed',
+                        createdAt: window.serverTimestamp()
+                    });
+                    showSecurityWaitingRoom(ticketRef.id, user);
+                    return false;
+                } catch (error) {
+                    console.error('Could not create security review ticket:', error);
+                    alert('The security review could not be saved. Please try again later.');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function maskWaitingName(username) {
+            if (!username) return '***';
+            return `${username.charAt(0)}${'*'.repeat(Math.max(3, username.length - 1))}`;
+        }
+
+        function showSecurityWaitingRoom(ticketId, username) {
+            const waitingScreen = document.getElementById('securityWaitingScreen');
+            const ticketNumberEl = document.getElementById('securityTicketNumber');
+            const statusEl = document.getElementById('securityTicketStatus');
+            const publicList = document.getElementById('securityPublicList');
+            const ticketRef = window.doc(window.db, 'security_review', ticketId);
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            waitingScreen.style.display = 'block';
+            document.getElementById('securityWaitingBackBtn').onclick = () => {
+                waitingScreen.style.display = 'none';
+                document.getElementById('passwordModal').style.opacity = '1';
+                document.getElementById('passwordModal').style.display = 'flex';
+                document.getElementById('loginContent').style.display = 'block';
+            };
+
+            window.onSnapshot(ticketRef, (ticketSnap) => {
+                if (!ticketSnap.exists()) return;
+                const ticket = ticketSnap.data();
+                ticketNumberEl.textContent = ticket.ticketNumber || ticketId;
+                statusEl.textContent = ticket.status === 'approved' ? 'Approved. Please sign in again.' : ticket.status === 'rejected' ? 'Rejected. Contact Superadmin.' : 'Waiting for Superadmin';
+            });
+
+            window.onSnapshot(window.collection(window.db, 'security_review'), (snapshot) => {
+                const tickets = snapshot.docs.map(ticketDoc => ({ id: ticketDoc.id, ...ticketDoc.data() }))
+                    .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+                publicList.innerHTML = tickets.length ? '' : '<p style="font-size:12px; color:#999;">No active tickets.</p>';
+                tickets.forEach(ticket => {
+                    const row = document.createElement('div');
+                    row.className = 'security-ticket-row';
+                    row.textContent = `${maskWaitingName(ticket.username)} | ${ticket.ticketNumber || ticket.id} | ${ticket.status || 'pending'}`;
+                    publicList.appendChild(row);
+                });
+            });
+
+            const chatMessages = window.collection(window.db, 'admin_chats', username, 'messages');
+            window.onSnapshot(window.query(chatMessages, window.orderBy('timestamp', 'asc')), (snapshot) => {
+                const thread = document.getElementById('securitySupportThread');
+                thread.innerHTML = '';
+                snapshot.forEach(messageDoc => {
+                    const message = messageDoc.data();
+                    const line = document.createElement('p');
+                    line.textContent = `${message.sender === 'SuperAdmin' ? 'Superadmin' : 'You'}: ${message.text}`;
+                    thread.appendChild(line);
+                });
+                thread.scrollTop = thread.scrollHeight;
+            });
+
+            document.getElementById('sendSecuritySupportMessage').onclick = async () => {
+                const input = document.getElementById('securitySupportMessage');
+                const text = input.value.trim();
+                if (!text) return;
+                try {
+                    const chatRoom = window.doc(window.db, 'admin_chats', username);
+                    const chatRoomSnap = await window.getDoc(chatRoom);
+                    await window.setDoc(window.doc(window.db, 'admin_chats', username), {
+                        lastMessage: text,
+                        lastMessageTime: window.serverTimestamp(),
+                        superAdminUnread: (chatRoomSnap.exists() ? chatRoomSnap.data().superAdminUnread || 0 : 0) + 1
+                    }, { merge: true });
+                    await window.addDoc(chatMessages, { sender: 'User', text, seen: false, timestamp: window.serverTimestamp() });
+                    input.value = '';
+                } catch (error) {
+                    console.error('Security review message failed:', error);
+                    alert('Could not send your message.');
+                }
+            };
+        }
+
+        async function doLogin(user, userData = null, userDocId = null) {
+            const securityPassed = await runLoginSecurityCheck(user);
+            if (!securityPassed) return;
             sessionStorage.setItem('loggedInUser', user);
             setUserUI(user);
             
@@ -8478,7 +8762,8 @@
             }, 2500);
         }
 
-        function triggerAdminLogin(isSuper = true) {
+        function triggerAdminLogin(isSuper = true, playSound = true) {
+            if (playSound && window.playLoginShine) window.playLoginShine();
             if (isSuper) sessionStorage.setItem('isAdminLoggedIn', 'true');
             
             passwordModal.style.opacity = '0';
