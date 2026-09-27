@@ -19,6 +19,7 @@
     <!-- PeerJS for WebRTC -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
     <title id="dynamicPageTitle">For You</title>
     
@@ -2792,6 +2793,28 @@
         .notification-item span { display: block; color: #555; font-size: 12px; margin-top: 3px; }
         .notification-item small { display: block; color: #999; font-size: 10px; margin-top: 6px; }
 
+            .friends-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; }
+            .friends-layout { display:grid; grid-template-columns:minmax(190px, 260px) minmax(0,1fr); gap:16px; }
+            .friends-sidebar, .friends-chat-panel { min-width:0; padding:14px; border:1px solid #eadde4; border-radius:10px; background:#fffafd; }
+            .friend-list { display:flex; flex-direction:column; gap:7px; margin:8px 0 16px; }
+            .friend-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px; border-radius:7px; background:#fff1f6; font-size:13px; }
+            .friend-row button { border:0; border-radius:6px; padding:6px 8px; background:#183747; color:white; cursor:pointer; }
+            #friendChatMessages { height:min(48vh,420px); min-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:10px; border:1px solid #eadde4; border-radius:8px; background:#fff; }
+            .friend-chat-message { max-width:85%; padding:9px 11px; border-radius:9px; background:#eef7f8; color:#24434e; overflow-wrap:anywhere; }
+            .friend-chat-message.mine { align-self:flex-end; background:#fff0f5; }
+            .friend-chat-message img { display:block; max-width:min(240px,100%); max-height:220px; object-fit:cover; border-radius:6px; }
+            .friend-chat-message audio { max-width:100%; }
+            .friend-chat-compose { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; margin-top:10px; }
+            .friend-chat-compose textarea { min-width:0; min-height:46px; max-height:120px; }
+            #friendScannerVideo { display:none; width:100%; max-width:420px; aspect-ratio:4/3; object-fit:cover; border-radius:9px; background:#142d37; margin-top:10px; }
+            #friendScanStatus, #friendRequestStatus, #voiceRecordingStatus { min-height:17px; color:#687f88; font-size:12px; margin-top:7px; }
+            @media (max-width:720px) {
+                .friends-layout { grid-template-columns:1fr; }
+                #friendChatMessages { height:40vh; }
+                .friend-chat-compose { grid-template-columns:1fr 1fr; }
+                .friend-chat-compose textarea { grid-column:1 / -1; }
+            }
+
         /* ── SLEEP / DARK MODE ── */
         body.sleep-mode {
             background: linear-gradient(135deg, #0d0d1a, #111120) !important;
@@ -3984,6 +4007,9 @@
             <button class="tab" data-tab="freedom-wall">
                 <span>🕊️</span> Freedom Wall
             </button>
+            <button class="tab" data-tab="friends">
+                <span>👥</span> Friends
+            </button>
             <button class="tab" data-tab="notifications">
                 <span>🔔</span> Notifications <b id="notificationUnreadBadge" style="display:none; background:#d81b60; color:#fff; border-radius:10px; padding:2px 6px; font-size:10px; margin-left:4px;"></b>
             </button>
@@ -4102,6 +4128,44 @@
                 
                 <div id="fwMessagesContainer" class="fw-messages">
                     <div class="empty-wall-message">Loading messages...</div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="friends">
+                <h2>Friends & Messages</h2>
+                <div class="friends-toolbar">
+                    <button type="button" id="startFriendScanner" class="submit-btn">Scan a profile QR</button>
+                    <button type="button" id="stopFriendScanner" class="submit-btn" style="display:none; background:#667b84;">Stop scanner</button>
+                </div>
+                <video id="friendScannerVideo" playsinline></video>
+                <p id="friendScanStatus" aria-live="polite">Scan another user's profile card to send a friend request.</p>
+                <div id="friendScanResult" style="display:none; margin:10px 0; padding:12px; background:#eef7f8; border-radius:8px;">
+                    <strong id="friendScannedUsername"></strong>
+                    <button type="button" id="sendFriendRequest" class="submit-btn" style="margin-left:8px; padding:8px 12px;">Send friend request</button>
+                </div>
+                <p id="friendRequestStatus" aria-live="polite"></p>
+
+                <div class="friends-layout">
+                    <aside class="friends-sidebar">
+                        <h3 style="font-size:15px; color:#183747;">Incoming requests</h3>
+                        <div id="incomingFriendRequests" class="friend-list"><p style="font-size:12px; color:#888;">Loading requests…</p></div>
+                        <h3 style="font-size:15px; color:#183747;">Your friends</h3>
+                        <div id="acceptedFriendsList" class="friend-list"><p style="font-size:12px; color:#888;">Loading friends…</p></div>
+                    </aside>
+                    <section class="friends-chat-panel">
+                        <h3 id="friendChatHeading" style="font-size:16px; color:#183747;">Choose a friend to chat</h3>
+                        <div id="friendChatMessages"><p style="font-size:12px; color:#888;">Your accepted friend conversations appear here.</p></div>
+                        <div class="friend-chat-compose">
+                            <textarea id="friendMessageInput" class="fw-textarea" placeholder="Write a message…" disabled></textarea>
+                            <button type="button" id="sendFriendMessage" class="submit-btn" disabled>Send</button>
+                            <div style="display:flex; gap:6px;">
+                                <input type="file" id="friendPhotoInput" accept="image/*" hidden>
+                                <button type="button" id="sendFriendPhoto" class="submit-btn" title="Send photo" disabled>Photo</button>
+                                <button type="button" id="recordFriendVoice" class="submit-btn" title="Record voice message up to 60 seconds" disabled>Voice</button>
+                            </div>
+                        </div>
+                        <p id="voiceRecordingStatus" aria-live="polite"></p>
+                    </section>
                 </div>
             </div>
 
@@ -4985,6 +5049,7 @@
             setupGallery(user);
             setupDynamicContent(user);
             setupFreedomWall(user);
+            setupUserFriends(user);
             startActivityNotifications(user);
 
             // Start new notification listeners (using normalized username)
@@ -5292,13 +5357,23 @@
             if (!qrContainer || !user || typeof QRCode === 'undefined') return;
             qrContainer.innerHTML = '';
             new QRCode(qrContainer, {
-                text: `FOR-YOU-PROFILE:${user}`,
+                text: `FY-FRIEND|${encodeURIComponent(user)}|${profileSerialForUser(user)}`,
                 width: 144,
                 height: 144,
                 colorDark: '#132f3a',
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.M
             });
+        }
+
+        function profileSerialForUser(username) {
+            const normalized = (username || '').toLowerCase();
+            const label = normalized.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+            const encodedUsername = window.btoa(unescape(encodeURIComponent(normalized)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/g, '');
+            return `FY-${label}-${encodedUsername}`;
         }
 
         function getProfileRole() {
@@ -6100,7 +6175,7 @@
             if (userGreeting) userGreeting.textContent = displayName.split(' ')[0] || displayName;
             if (userFullName) userFullName.textContent = displayName;
             const serial = document.getElementById('userProfileSerial');
-            if (serial) serial.textContent = `PROFILE ID · ${user.toUpperCase()}`;
+            if (serial) serial.textContent = `PROFILE ID · ${profileSerialForUser(user)}`;
             if (userFavorites) userFavorites.textContent = data.favorites || '—';
             if (userLikes) userLikes.textContent = data.likes || '—';
             const userDislikes = document.getElementById('userProfileDislikes');
@@ -8651,6 +8726,395 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Music Request';
             }
+        }
+
+        function friendPairDocumentId(firstUser, secondUser) {
+            return [firstUser.toLowerCase(), secondUser.toLowerCase()]
+                .sort()
+                .map(name => encodeURIComponent(name).replace(/_/g, '%5F'))
+                .join('__');
+        }
+
+        function setupUserFriends(user) {
+            const scannerVideo = document.getElementById('friendScannerVideo');
+            const startScanButton = document.getElementById('startFriendScanner');
+            const stopScanButton = document.getElementById('stopFriendScanner');
+            const scanStatus = document.getElementById('friendScanStatus');
+            const scanResult = document.getElementById('friendScanResult');
+            const scannedUsername = document.getElementById('friendScannedUsername');
+            const sendRequestButton = document.getElementById('sendFriendRequest');
+            const requestStatus = document.getElementById('friendRequestStatus');
+            const incomingList = document.getElementById('incomingFriendRequests');
+            const friendsList = document.getElementById('acceptedFriendsList');
+            const chatMessages = document.getElementById('friendChatMessages');
+            const chatHeading = document.getElementById('friendChatHeading');
+            const messageInput = document.getElementById('friendMessageInput');
+            const sendMessageButton = document.getElementById('sendFriendMessage');
+            const photoInput = document.getElementById('friendPhotoInput');
+            const photoButton = document.getElementById('sendFriendPhoto');
+            const voiceButton = document.getElementById('recordFriendVoice');
+            const voiceStatus = document.getElementById('voiceRecordingStatus');
+            if (!scannerVideo || !incomingList || !friendsList || !chatMessages) return;
+
+            if (window._friendRequestUnsub) window._friendRequestUnsub();
+            if (window._friendListUnsub) window._friendListUnsub();
+            if (window._friendChatUnsub) window._friendChatUnsub();
+            window._friendRequestUnsub = onSnapshot(query(collection(db, 'friend_requests'), where('toUser', '==', user)), snapshot => {
+                const incoming = snapshot.docs.filter(requestDoc => requestDoc.data().status === 'pending');
+                incomingList.innerHTML = incoming.length ? '' : '<p style="font-size:12px; color:#888;">No pending requests.</p>';
+                incoming.forEach(requestDoc => {
+                    const request = requestDoc.data();
+                    const row = document.createElement('div');
+                    row.className = 'friend-row';
+                    const label = document.createElement('span');
+                    label.textContent = request.fromUser || 'User';
+                    const actions = document.createElement('div');
+                    actions.style.display = 'flex';
+                    actions.style.gap = '5px';
+                    const accept = document.createElement('button');
+                    accept.textContent = 'Accept';
+                    accept.onclick = async () => {
+                        accept.disabled = true;
+                        try {
+                            const friend = request.fromUser;
+                            const pairId = friendPairDocumentId(user, friend);
+                            await setDoc(doc(db, 'friendships', pairId), {
+                                users: [user, friend].sort(),
+                                status: 'accepted',
+                                createdAt: request.createdAt || serverTimestamp(),
+                                acceptedAt: serverTimestamp()
+                            }, { merge: true });
+                            await updateDoc(requestDoc.ref, { status: 'accepted', acceptedAt: serverTimestamp() });
+                            await addActivityNotification(friend, 'Friend request accepted', `${user} accepted your friend request.`, '👥');
+                        } catch (error) {
+                            console.error('Friend request acceptance failed:', error);
+                            alert('Could not accept this friend request.');
+                            accept.disabled = false;
+                        }
+                    };
+                    const reject = document.createElement('button');
+                    reject.textContent = 'Decline';
+                    reject.style.background = '#697b82';
+                    reject.onclick = () => updateDoc(requestDoc.ref, { status: 'rejected', rejectedAt: serverTimestamp() }).catch(error => console.error('Friend request decline failed:', error));
+                    actions.append(accept, reject);
+                    row.append(label, actions);
+                    incomingList.appendChild(row);
+                });
+            }, error => {
+                console.error('Friend request listener failed:', error);
+                incomingList.innerHTML = '<p style="font-size:12px; color:#a22;">Unable to load requests.</p>';
+            });
+
+            window._friendListUnsub = onSnapshot(query(collection(db, 'friendships'), where('users', 'array-contains', user)), snapshot => {
+                const friends = snapshot.docs.filter(friendDoc => friendDoc.data().status === 'accepted');
+                friendsList.innerHTML = friends.length ? '' : '<p style="font-size:12px; color:#888;">Accepted friends appear here.</p>';
+                friends.forEach(friendDoc => {
+                    const friendship = friendDoc.data();
+                    const friend = (friendship.users || []).find(name => name !== user);
+                    if (!friend) return;
+                    const row = document.createElement('div');
+                    row.className = 'friend-row';
+                    const label = document.createElement('span');
+                    label.textContent = friend;
+                    const openButton = document.createElement('button');
+                    openButton.textContent = 'Message';
+                    openButton.onclick = () => openFriendChat(friend, friendDoc.id);
+                    row.append(label, openButton);
+                    friendsList.appendChild(row);
+                });
+            }, error => {
+                console.error('Friend list listener failed:', error);
+                friendsList.innerHTML = '<p style="font-size:12px; color:#a22;">Unable to load friends.</p>';
+            });
+
+            let candidateUser = '';
+            let scannerStream = null;
+            let scanFrame = null;
+            const scannerCanvas = document.createElement('canvas');
+            const scannerContext = scannerCanvas.getContext('2d', { willReadFrequently: true });
+            let activeFriend = '';
+            let activePairId = '';
+            let mediaRecorder = null;
+            let voiceStream = null;
+            let voiceChunks = [];
+            let voiceStopTimer = null;
+            let voiceClock = null;
+            let voiceStartedAt = 0;
+
+            const stopScanner = () => {
+                if (scanFrame) cancelAnimationFrame(scanFrame);
+                scanFrame = null;
+                if (scannerStream) scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+                scannerVideo.srcObject = null;
+                scannerVideo.style.display = 'none';
+                startScanButton.style.display = '';
+                stopScanButton.style.display = 'none';
+            };
+
+            const handleQrValue = async value => {
+                const parts = value.split('|');
+                if (parts.length !== 3 || parts[0] !== 'FY-FRIEND') {
+                    scanStatus.textContent = 'That QR is not a For You friend profile.';
+                    return false;
+                }
+                let targetUser = '';
+                try { targetUser = decodeURIComponent(parts[1]).toLowerCase(); } catch { return false; }
+                if (!targetUser || parts[2] !== profileSerialForUser(targetUser)) {
+                    scanStatus.textContent = 'Profile QR serial did not validate.';
+                    return false;
+                }
+                if (targetUser === user) {
+                    scanStatus.textContent = 'That is your own profile QR.';
+                    return false;
+                }
+                candidateUser = targetUser;
+                scannedUsername.textContent = targetUser;
+                scanResult.style.display = 'block';
+                sendRequestButton.textContent = 'Send friend request';
+                sendRequestButton.disabled = false;
+                scanStatus.textContent = 'Profile verified. You can send a friend request.';
+                stopScanner();
+                return true;
+            };
+
+            const scanFrameLoop = () => {
+                if (!scannerStream || scannerVideo.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
+                    scanFrame = requestAnimationFrame(scanFrameLoop);
+                    return;
+                }
+                scannerCanvas.width = scannerVideo.videoWidth;
+                scannerCanvas.height = scannerVideo.videoHeight;
+                scannerContext.drawImage(scannerVideo, 0, 0, scannerCanvas.width, scannerCanvas.height);
+                const image = scannerContext.getImageData(0, 0, scannerCanvas.width, scannerCanvas.height);
+                const decoded = typeof jsQR === 'function' ? jsQR(image.data, image.width, image.height, { inversionAttempts: 'attemptBoth' }) : null;
+                if (decoded?.data) {
+                    handleQrValue(decoded.data);
+                    if (scannerStream) scanFrame = requestAnimationFrame(scanFrameLoop);
+                    return;
+                }
+                scanFrame = requestAnimationFrame(scanFrameLoop);
+            };
+
+            startScanButton.onclick = async () => {
+                scanResult.style.display = 'none';
+                candidateUser = '';
+                if (!navigator.mediaDevices?.getUserMedia) {
+                    scanStatus.textContent = 'Camera scanning is unavailable in this browser.';
+                    return;
+                }
+                if (typeof jsQR !== 'function') {
+                    scanStatus.textContent = 'QR scanner could not load. Refresh and try again.';
+                    return;
+                }
+                try {
+                    scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+                    scannerVideo.srcObject = scannerStream;
+                    scannerVideo.style.display = 'block';
+                    startScanButton.style.display = 'none';
+                    stopScanButton.style.display = '';
+                    scanStatus.textContent = 'Point the camera at a profile QR code.';
+                    await scannerVideo.play();
+                    scanFrameLoop();
+                } catch (error) {
+                    stopScanner();
+                    console.error('Friend QR camera failed:', error);
+                    scanStatus.textContent = 'Camera permission was denied or unavailable.';
+                }
+            };
+            stopScanButton.onclick = () => {
+                stopScanner();
+                scanStatus.textContent = 'QR scanning stopped.';
+            };
+            sendRequestButton.onclick = async () => {
+                if (!candidateUser) return;
+                sendRequestButton.disabled = true;
+                try {
+                    const pairId = friendPairDocumentId(user, candidateUser);
+                    const existingFriendship = await getDoc(doc(db, 'friendships', pairId));
+                    if (existingFriendship.exists() && existingFriendship.data().status === 'accepted') {
+                        requestStatus.textContent = `${candidateUser} is already your friend.`;
+                        return;
+                    }
+                    const outgoing = await getDocs(query(collection(db, 'friend_requests'), where('fromUser', '==', user)));
+                    const alreadyPending = outgoing.docs.some(requestDoc => requestDoc.data().toUser === candidateUser && requestDoc.data().status === 'pending');
+                    if (alreadyPending) {
+                        requestStatus.textContent = `Friend request to ${candidateUser} is already pending.`;
+                        return;
+                    }
+                    const requestRef = await addDoc(collection(db, 'friend_requests'), {
+                        fromUser: user,
+                        toUser: candidateUser,
+                        status: 'pending',
+                        createdAt: serverTimestamp()
+                    });
+                    await addActivityNotification(candidateUser, 'New friend request', `${user} sent you a friend request.`, '👥');
+                    requestStatus.textContent = `Friend request sent to ${candidateUser}.`;
+                    sendRequestButton.textContent = 'Request sent';
+                } catch (error) {
+                    console.error('Friend request failed:', error);
+                    requestStatus.textContent = 'Could not send the friend request.';
+                } finally {
+                    if (sendRequestButton.textContent !== 'Request sent') sendRequestButton.disabled = false;
+                }
+            };
+
+            const openFriendChat = (friend, pairId) => {
+                if (window._friendChatUnsub) window._friendChatUnsub();
+                activeFriend = friend;
+                activePairId = pairId;
+                chatHeading.textContent = `Chat with ${friend}`;
+                messageInput.disabled = false;
+                sendMessageButton.disabled = false;
+                photoButton.disabled = false;
+                voiceButton.disabled = false;
+                chatMessages.innerHTML = '<p style="font-size:12px; color:#888;">Loading conversation…</p>';
+                const messagesRef = collection(db, 'friend_chats', pairId, 'messages');
+                window._friendChatUnsub = onSnapshot(query(messagesRef, orderBy('createdAt', 'asc')), snapshot => {
+                    chatMessages.innerHTML = '';
+                    if (snapshot.empty) chatMessages.innerHTML = '<p style="font-size:12px; color:#888;">Start your conversation.</p>';
+                    snapshot.forEach(messageDoc => {
+                        const message = messageDoc.data();
+                        const bubble = document.createElement('div');
+                        bubble.className = `friend-chat-message${message.fromUser === user ? ' mine' : ''}`;
+                        if (message.type === 'photo') {
+                            const image = document.createElement('img');
+                            image.src = message.url;
+                            image.alt = 'Photo message';
+                            bubble.appendChild(image);
+                        } else if (message.type === 'voice') {
+                            const audio = document.createElement('audio');
+                            audio.controls = true;
+                            audio.src = message.url;
+                            bubble.appendChild(audio);
+                            const duration = document.createElement('small');
+                            duration.textContent = `Voice · ${Math.min(Number(message.duration) || 0, 60)}s`;
+                            bubble.appendChild(duration);
+                        } else {
+                            bubble.textContent = message.text || '';
+                        }
+                        chatMessages.appendChild(bubble);
+                    });
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, error => {
+                    console.error('Friend chat listener failed:', error);
+                    chatMessages.innerHTML = '<p style="font-size:12px; color:#a22;">Unable to load this conversation.</p>';
+                });
+            };
+
+            const sendFriendChatMessage = async (message, conversationId = activePairId, recipient = activeFriend) => {
+                if (!recipient || !conversationId) throw new Error('Choose an accepted friend first.');
+                await addDoc(collection(db, 'friend_chats', conversationId, 'messages'), {
+                    ...message,
+                    fromUser: user,
+                    toUser: recipient,
+                    createdAt: serverTimestamp()
+                });
+            };
+
+            sendMessageButton.onclick = async () => {
+                const text = messageInput.value.trim();
+                if (!text || !activeFriend) return;
+                sendMessageButton.disabled = true;
+                try {
+                    await sendFriendChatMessage({ type: 'text', text });
+                    messageInput.value = '';
+                } catch (error) {
+                    console.error('Friend message send failed:', error);
+                    alert(error.message || 'Could not send message.');
+                } finally {
+                    sendMessageButton.disabled = !activeFriend;
+                }
+            };
+            messageInput.addEventListener('keydown', event => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    sendMessageButton.click();
+                }
+            });
+            photoButton.onclick = () => photoInput.click();
+            photoInput.onchange = async () => {
+                const file = photoInput.files?.[0];
+                photoInput.value = '';
+                if (!file || !activeFriend) return;
+                if (!file.type.startsWith('image/')) return alert('Choose an image file.');
+                if (file.size > 10 * 1024 * 1024) return alert('Photos must be smaller than 10 MB.');
+                const photoPairId = activePairId;
+                const photoFriend = activeFriend;
+                photoButton.disabled = true;
+                try {
+                    const path = `friend_messages/${photoPairId}/${Date.now()}_${encodeURIComponent(user)}_photo`;
+                    const uploaded = await uploadBytes(storageRef(storage, path), file);
+                    const url = await getDownloadURL(uploaded.ref);
+                    await sendFriendChatMessage({ type: 'photo', url, storagePath: path }, photoPairId, photoFriend);
+                } catch (error) {
+                    console.error('Friend photo upload failed:', error);
+                    alert('Could not send photo.');
+                } finally {
+                    photoButton.disabled = !activeFriend;
+                }
+            };
+
+            const stopVoiceRecording = () => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+                clearTimeout(voiceStopTimer);
+                clearInterval(voiceClock);
+                voiceStopTimer = null;
+                voiceClock = null;
+            };
+            voiceButton.onclick = async () => {
+                if (mediaRecorder?.state === 'recording') {
+                    stopVoiceRecording();
+                    return;
+                }
+                if (!activeFriend || !navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+                    voiceStatus.textContent = 'Voice recording is unavailable in this browser.';
+                    return;
+                }
+                try {
+                    const recordingPairId = activePairId;
+                    const recordingFriend = activeFriend;
+                    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(type => MediaRecorder.isTypeSupported?.(type));
+                    mediaRecorder = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined);
+                    voiceChunks = [];
+                    voiceStartedAt = Date.now();
+                    mediaRecorder.ondataavailable = event => { if (event.data?.size) voiceChunks.push(event.data); };
+                    mediaRecorder.onstop = async () => {
+                        const duration = Math.min(60, Math.max(1, Math.round((Date.now() - voiceStartedAt) / 1000)));
+                        const blob = new Blob(voiceChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        voiceStream?.getTracks().forEach(track => track.stop());
+                        voiceStream = null;
+                        mediaRecorder = null;
+                        voiceButton.textContent = 'Voice';
+                        voiceButton.style.background = '';
+                        voiceStatus.textContent = 'Uploading voice message…';
+                        try {
+                            const extension = blob.type.includes('mp4') ? 'm4a' : 'webm';
+                            const path = `friend_messages/${recordingPairId}/${Date.now()}_${encodeURIComponent(user)}_voice.${extension}`;
+                            const uploaded = await uploadBytes(storageRef(storage, path), blob, { contentType: blob.type });
+                            const url = await getDownloadURL(uploaded.ref);
+                            await sendFriendChatMessage({ type: 'voice', url, duration, storagePath: path }, recordingPairId, recordingFriend);
+                            voiceStatus.textContent = 'Voice message sent.';
+                        } catch (error) {
+                            console.error('Friend voice upload failed:', error);
+                            voiceStatus.textContent = 'Could not send voice message.';
+                        }
+                    };
+                    mediaRecorder.start();
+                    voiceButton.textContent = 'Stop';
+                    voiceButton.style.background = '#b71550';
+                    voiceStatus.textContent = 'Recording · 0:00 / 1:00';
+                    voiceClock = setInterval(() => {
+                        const elapsed = Math.min(60, Math.floor((Date.now() - voiceStartedAt) / 1000));
+                        voiceStatus.textContent = `Recording · 0:${String(elapsed).padStart(2, '0')} / 1:00`;
+                    }, 250);
+                    voiceStopTimer = setTimeout(stopVoiceRecording, 60000);
+                } catch (error) {
+                    console.error('Microphone permission failed:', error);
+                    voiceStatus.textContent = 'Microphone permission was denied.';
+                }
+            };
         }
 
         async function setupFreedomWall(user) {
