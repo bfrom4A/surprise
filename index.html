@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; media-src 'self' data: blob: https:; frame-src 'self' https:; worker-src 'self' blob: https:; object-src 'none'; base-uri 'self'; form-action 'self' https:; upgrade-insecure-requests">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -3511,6 +3513,8 @@
                             </div>
                             <p id="clientReadOnlyModeStatus" style="font-size:11px; color:#667b84; margin-top:8px;">Normal editing enabled.</p>
                         </div>
+
+                        <p style="font-size:11px; color:#8b4b20; margin:0 0 18px;">Bootstrap client lookups require Firestore documents <code>login_credentials/superadmin</code>, <code>login_credentials/kate</code>, and <code>login_credentials/baby</code>, each with <code>role</code> and <code>password</code> fields. Client-side Firestore lookup exposes readable credential values to authorized clients; it is not a secure substitute for server-side authentication.</p>
                         
                         <div class="admin-widget" style="margin-bottom: 20px;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -4637,14 +4641,24 @@
         });
 
         let maintSecretClicks = 0;
-        document.getElementById('maint-secret-icon')?.addEventListener('click', () => {
+        document.getElementById('maint-secret-icon')?.addEventListener('click', async () => {
             maintSecretClicks++;
             if (maintSecretClicks >= 5) {
                 maintSecretClicks = 0;
                 const pwd = prompt("Admin Bypass Code:");
-                if (pwd === "admin112003") {
-                    sessionStorage.setItem('isAdminLoggedIn', 'true');
-                    location.reload();
+                if (!pwd) return;
+                try {
+                    const credentialSnapshot = await getDoc(doc(db, 'login_credentials', 'superadmin'));
+                    const credential = credentialSnapshot.exists() ? credentialSnapshot.data() : null;
+                    if (credential?.role === 'superadmin' && credential.password === pwd) {
+                        sessionStorage.setItem('isAdminLoggedIn', 'true');
+                        location.reload();
+                    } else {
+                        alert('Invalid admin bypass code.');
+                    }
+                } catch (error) {
+                    console.error('Admin bypass credential lookup failed:', error);
+                    alert('Could not verify the admin bypass code in Firestore.');
                 }
             }
         });
@@ -7165,17 +7179,23 @@
             try {
                 const response = await fetch(location.href, { method: 'HEAD', cache: 'no-store', credentials: 'same-origin' });
                 const headers = response.headers;
-                const csp = headers.get('content-security-policy') || document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || '';
-                const frameProtection = headers.has('x-frame-options') || /frame-ancestors/i.test(csp);
+                const cspHeader = headers.get('content-security-policy') || '';
+                const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || '';
+                const csp = cspHeader || cspMeta;
+                const frameProtection = headers.has('x-frame-options') || /frame-ancestors/i.test(cspHeader);
+                const referrerPolicy = headers.get('referrer-policy') || document.querySelector('meta[name="referrer"]')?.content || '';
                 const headerChecks = [
-                    ['Content Security Policy', !!csp, 'A CSP response header or meta policy was detected.', 'No CSP is visible. Configure a restrictive Content-Security-Policy at the hosting layer.'],
-                    ['Clickjacking protection', frameProtection, 'X-Frame-Options or CSP frame-ancestors was detected.', 'No frame restriction is visible. Configure frame-ancestors or X-Frame-Options at the host.'],
-                    ['MIME sniffing protection', headers.get('x-content-type-options')?.toLowerCase() === 'nosniff', 'X-Content-Type-Options: nosniff is present.', 'Add X-Content-Type-Options: nosniff at the hosting layer.'],
-                    ['Referrer policy', !!headers.get('referrer-policy'), 'A Referrer-Policy response header was detected.', 'Set a restrictive Referrer-Policy at the hosting layer.'],
-                    ['Permissions policy', !!headers.get('permissions-policy'), 'A Permissions-Policy response header was detected.', 'Restrict camera, microphone, and geolocation to the features that need them.']
+                    { name:'Content Security Policy', passed:!!csp, detail:cspHeader ? 'A CSP response header is active.' : cspMeta ? 'A CSP meta policy is active for this page; frame-ancestors must still be set by the host.' : 'No CSP is visible. Configure a policy at the hosting layer.', level:'warning' },
+                    { name:'Clickjacking response protection', passed:frameProtection, detail:frameProtection ? 'X-Frame-Options or CSP frame-ancestors is present in the response.' : 'Not enforceable from index.html. Configure CSP frame-ancestors or X-Frame-Options at the host.', level:'info' },
+                    { name:'MIME sniffing protection', passed:headers.get('x-content-type-options')?.toLowerCase() === 'nosniff', detail:headers.get('x-content-type-options')?.toLowerCase() === 'nosniff' ? 'X-Content-Type-Options: nosniff is present.' : 'Not enforceable from index.html. Set X-Content-Type-Options: nosniff at the host.', level:'info' },
+                    { name:'Referrer policy', passed:!!referrerPolicy, detail:headers.get('referrer-policy') ? 'A Referrer-Policy response header is active.' : referrerPolicy ? `Page policy active: ${referrerPolicy}.` : 'No page or response referrer policy is visible.', level:'warning' },
+                    { name:'Permissions policy', passed:!!headers.get('permissions-policy'), detail:headers.get('permissions-policy') ? 'A Permissions-Policy response header is present.' : 'Not enforceable from index.html. Restrict camera, microphone, and geolocation in the host response header.', level:'info' }
                 ];
-                if (location.protocol === 'https:') headerChecks.push(['HSTS', !!headers.get('strict-transport-security'), 'Strict-Transport-Security is present.', 'HSTS is not visible; enable it at the hosting/CDN layer after confirming HTTPS works.']);
-                headerChecks.forEach(([name, passed, passText, failText]) => addResult(passed ? 'pass' : 'warning', name, passed ? passText : failText));
+                if (location.protocol === 'https:') {
+                    const hasHsts = !!headers.get('strict-transport-security');
+                    headerChecks.push({ name:'HSTS', passed:hasHsts, detail:hasHsts ? 'Strict-Transport-Security is present.' : 'Host-only control: enable HSTS at the hosting/CDN layer after confirming HTTPS works.', level:'info' });
+                }
+                headerChecks.forEach(check => addResult(check.passed ? 'pass' : check.level, check.name, check.detail));
                 if (!response.ok) addResult('warning', 'Hosting response', `Same-origin header probe returned HTTP ${response.status}.`);
             } catch (error) {
                 addResult('warning', 'Hosting response headers', 'The browser could not inspect same-origin response headers. Configure and verify security headers at the hosting/CDN layer.');
@@ -7199,10 +7219,10 @@
             }
 
             const pageSource = Array.from(document.scripts).map(script => script.textContent || '').join('\n');
-            const hardcodedCredentialPattern = /\badmin\s*112003\b|\bkatecutie\b|\bbabycutie\b/i;
+            const hardcodedCredentialPattern = /\b(?:const|let|var)\s+\w*(?:password|secret|credential)\w*\s*=\s*(['"])[^'"]{8,}\1/i;
             addResult(hardcodedCredentialPattern.test(pageSource) ? 'critical' : 'pass', 'Credentials in downloaded code',
-                hardcodedCredentialPattern.test(pageSource) ? 'A hardcoded login credential pattern is present in the downloaded page. Replace static credentials with a server-side identity provider; do not reuse these credentials.'
-                    : 'No known hardcoded login credential pattern was found by this limited check.');
+                hardcodedCredentialPattern.test(pageSource) ? 'A credential-like string literal is present in the downloaded page. Move it to server-side authentication.'
+                    : 'No long password/secret string literal was found by this limited source scan.');
 
             addResult('info', 'Backend access rules', 'Firestore/Storage rules, App Check, backups, rate limits, and server-side secrets cannot be verified or enforced by this browser test.');
             const counts = checks.reduce((result, check) => (result[check.level]++, result), { pass: 0, warning: 0, critical: 0, info: 0 });
@@ -9795,6 +9815,16 @@
         const logoutMsg = document.getElementById('logoutMsg');
         const pageTitle = document.getElementById('dynamicPageTitle');
 
+        async function getFirestoreLoginCredential(documentId) {
+            const credentialSnapshot = await window.getDoc(window.doc(window.db, 'login_credentials', documentId));
+            return credentialSnapshot.exists() ? credentialSnapshot.data() : null;
+        }
+
+        async function verifyFirestoreLoginCredential(documentId, password, expectedRole) {
+            const credential = await getFirestoreLoginCredential(documentId);
+            return credential && credential.role === expectedRole && credential.password === password ? credential : null;
+        }
+
         document.getElementById('showRegisterBtn').onclick = () => {
             loginContent.style.display = 'none';
             registerContent.style.display = 'block';
@@ -9860,29 +9890,41 @@
                 let user = null;
 
                 if (!username) {
-                    if (pass.toLowerCase() === 'katecutie') user = 'kate';
-                    else if (pass.toLowerCase() === 'babycutie') user = 'baby';
-                    else if (pass.toLowerCase() === 'admin112003') {
-                        if (await runLoginSecurityCheck('superadmin')) triggerAdminLogin(true, false);
-                        return;
-                    }
-                    
-                    if (user) {
-                        doLogin(user);
-                    } else {
+                    try {
+                        for (const defaultUser of ['kate', 'baby']) {
+                            const credential = await verifyFirestoreLoginCredential(defaultUser, pass, 'user');
+                            if (credential) {
+                                doLogin(defaultUser);
+                                return;
+                            }
+                        }
+                        const superAdminCredential = await verifyFirestoreLoginCredential('superadmin', pass, 'superadmin');
+                        if (superAdminCredential) {
+                            if (await runLoginSecurityCheck('superadmin')) triggerAdminLogin(true, false);
+                            return;
+                        }
                         showLoginError();
+                    } catch (error) {
+                        console.error('Firestore login credential lookup failed:', error);
+                        alert('Could not verify login credentials from Firestore. Check connectivity and login_credentials setup.');
                     }
-                    return;
-                }
-
-                if (pass === 'admin112003') {
-                    if (await runLoginSecurityCheck('superadmin')) triggerAdminLogin(true, false);
                     return;
                 }
 
                 try {
                     submitPassword.textContent = "Checking...";
                     submitPassword.disabled = true;
+
+                    const superAdminCredential = await verifyFirestoreLoginCredential('superadmin', pass, 'superadmin');
+                    if (superAdminCredential) {
+                        if (await runLoginSecurityCheck('superadmin')) triggerAdminLogin(true, false);
+                        return;
+                    }
+                    const bootstrapUserCredential = await verifyFirestoreLoginCredential(username, pass, 'user');
+                    if (bootstrapUserCredential) {
+                        doLogin(username);
+                        return;
+                    }
                     
                     let q = window.query(window.collection(window.db, 'app_users'), window.where('username', '==', username), window.where('password', '==', pass));
                     let snap = await window.getDocs(q);
