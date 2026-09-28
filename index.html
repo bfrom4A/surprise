@@ -1182,6 +1182,51 @@
             color: #d81b60;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
+
+        #mainContent {
+            width:calc(100% - 92px);
+            max-width:none;
+            min-height:100vh;
+            margin:0 12px 0 80px;
+            padding:78px 16px 28px;
+            border-radius:0;
+            background:transparent;
+            box-shadow:none;
+        }
+        #mainContent > br { display:none; }
+        #mainContent > .tabs {
+            position:fixed;
+            top:82px;
+            bottom:86px;
+            left:8px;
+            z-index:1700;
+            display:flex;
+            flex-direction:column;
+            flex-wrap:nowrap;
+            justify-content:flex-start;
+            align-items:stretch;
+            width:64px;
+            gap:7px;
+            margin:0;
+            padding:4px;
+            overflow-x:hidden;
+            overflow-y:auto;
+        }
+        #mainContent > .tabs .tab {
+            width:100%;
+            min-height:54px;
+            padding:7px 3px;
+            flex-direction:column;
+            justify-content:center;
+            gap:4px;
+            border-radius:10px;
+            font-size:9px;
+            line-height:1.1;
+            text-align:center;
+            white-space:normal;
+        }
+        #mainContent > .tabs .tab span { font-size:16px; }
+        #mainContent > .tabs #logoutButton { margin-top:auto; }
         
         .content-area {
             background: white;
@@ -1190,12 +1235,79 @@
             min-height: 600px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
+            display:grid;
+            grid-template-columns:minmax(0,1fr) 230px;
+            align-items:start;
+            gap:18px;
         }
         
         .tab-content {
             display: none;
             animation: fadeIn 0.5s ease forwards;
+            grid-column:1;
+            min-width:0;
+        }
+
+        #friendStoriesStrip {
+            display:flex;
+            align-items:center;
+            gap:12px;
+            min-height:104px;
+            margin:0 0 14px;
+            padding:10px 12px;
+            overflow-x:auto;
+            border-bottom:1px solid rgba(134,72,99,.2);
+            background:rgba(255,255,255,.62);
+        }
+        .friend-story-item { flex:0 0 76px; width:76px; border:0; background:transparent; color:#526a73; cursor:pointer; text-align:center; font-size:10px; }
+        .friend-story-avatar { display:grid; place-items:center; width:58px; height:58px; margin:0 auto 5px; padding:3px; border:2px solid #d81b60; border-radius:50%; background:white; overflow:hidden; }
+        .friend-story-avatar img, .friend-story-avatar video { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+        .friend-story-add .friend-story-avatar { border-style:dashed; color:#d81b60; font-size:24px; }
+        #friendStoryFileInput { display:none; }
+        #friendStoryStatus { flex:0 0 auto; color:#647b84; font-size:11px; }
+        .friend-story-item.story-video .friend-story-avatar::after { content:'▶'; position:absolute; display:grid; place-items:center; color:white; background:#102e39aa; width:22px; height:22px; border-radius:50%; }
+        .friend-story-avatar { position:relative; }
+        .friend-story-expiry { display:block; color:#7a8990; font-size:9px; margin-top:2px; }
+        #activeFriendsRail { grid-column:2; grid-row:1; min-width:0; padding:0 0 0 14px; border-left:1px solid #eee2e8; }
+        #activeFriendsRail h3 { margin:0 0 12px; color:#243f4a; font-size:15px; }
+        #activeFriendsList { display:flex; flex-direction:column; gap:8px; }
+        .active-friend-row { display:flex; align-items:center; gap:9px; width:100%; padding:8px; border:0; border-radius:8px; background:#f5fbfa; text-align:left; cursor:pointer; animation:activeFriendEnter .42s ease both; }
+        .active-friend-row img { width:34px; height:34px; border-radius:50%; object-fit:cover; }
+        .active-friend-dot { width:8px; height:8px; margin-left:auto; border-radius:50%; background:#24a76b; box-shadow:0 0 0 3px #dbf4e8; }
+        @keyframes activeFriendEnter { from { opacity:0; transform:translateX(-24px); } to { opacity:1; transform:translateX(0); } }
+        #friendStoryViewer { position:fixed; inset:0; z-index:100004; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(9,24,32,.94); }
+        #friendStoryViewer.active { display:flex; }
+        #friendStoryViewer img, #friendStoryViewer video { max-width:min(92vw,780px); max-height:84vh; border-radius:10px; object-fit:contain; }
+        #friendStoryViewerClose { position:absolute; top:20px; right:20px; padding:9px 13px; border:0; border-radius:8px; background:white; color:#183747; cursor:pointer; }
+        #friendStoryViewerOwner { position:absolute; top:22px; left:22px; color:white; font-weight:700; }
+        @media (max-width: 900px) {
+            #mainContent { width:100%; margin:0; padding:78px 10px 146px; }
+            #mainContent > .tabs {
+                top:auto;
+                bottom:72px;
+                left:8px;
+                right:8px;
+                width:auto;
+                height:62px;
+                flex-direction:row;
+                align-items:stretch;
+                gap:5px;
+                padding:5px;
+                overflow-x:auto;
+                overflow-y:hidden;
+                background:rgba(255,255,255,.97);
+                border:1px solid #ecdde4;
+                border-radius:12px;
+                box-shadow:0 8px 24px rgba(0,0,0,.12);
+            }
+            #mainContent > .tabs .tab { flex:0 0 64px; min-height:48px; }
+            #mainContent > .tabs #logoutButton { margin-top:0; }
+            .content-area { grid-template-columns:minmax(0,1fr); gap:14px; padding:16px; }
+            #activeFriendsRail { grid-column:1; grid-row:auto; padding:12px 0 0; border-left:0; border-top:1px solid #eee2e8; }
+            #activeFriendsList { flex-direction:row; overflow-x:auto; padding-bottom:5px; }
+            .active-friend-row { flex:0 0 150px; }
+            #emergencyRequestButton { right:14px; left:auto; bottom:12px; }
         }
         
         @keyframes slideInOpposite {
@@ -4069,9 +4181,6 @@
     </aside>
 
     <div class="container" id="mainContent" style="display: none;">
-        
-        <br>
-        <br>
         <div class="tabs">
             <button class="tab active" data-tab="love-letter">
                 <span>❤️</span> Love Letter
@@ -4099,6 +4208,16 @@
                 <span>🔒</span> Log Out
             </button>
         </div>
+
+        <section id="friendStoriesStrip" aria-label="Friends' featured photos and 24-hour stories">
+            <button type="button" id="addFriendStoryButton" class="friend-story-item friend-story-add">
+                <span class="friend-story-avatar">+</span>
+                <span>Your story</span>
+            </button>
+            <input type="file" id="friendStoryFileInput" accept="image/*,video/*">
+            <div id="friendStoriesItems" style="display:flex; align-items:center; gap:10px;"></div>
+            <span id="friendStoryStatus" aria-live="polite"></span>
+        </section>
         
         <div class="content-area">
             <!-- Love Letter Tab -->
@@ -4260,9 +4379,20 @@
 
             <!-- Video Chat content removed -->
 
+            <aside id="activeFriendsRail" aria-label="Friends currently online">
+                <h3>Active friends</h3>
+                <div id="activeFriendsList"><p style="font-size:12px; color:#89979c;">No friends online.</p></div>
+            </aside>
+
         </div>
     </div>
-    
+
+    <div id="friendStoryViewer" role="dialog" aria-label="Friend story">
+        <span id="friendStoryViewerOwner"></span>
+        <button type="button" id="friendStoryViewerClose">Close</button>
+        <div id="friendStoryViewerMedia"></div>
+    </div>
+
     <!-- Decorative elements -->
     <div id="floatingElementsContainer"></div>
     <div id="heartDropContainer"></div>
@@ -4281,7 +4411,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithPopup, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
@@ -5145,6 +5275,7 @@
             setupDynamicContent(user);
             setupFreedomWall(user);
             setupUserFriends(user);
+            setupFriendStories(user);
             startActivityNotifications(user);
 
             // Start new notification listeners (using normalized username)
@@ -9230,13 +9361,16 @@
                 incomingList.innerHTML = '<p style="font-size:12px; color:#a22;">Unable to load requests.</p>';
             });
 
+            const friendPairIds = new Map();
             window._friendListUnsub = onSnapshot(query(collection(db, 'friendships'), where('users', 'array-contains', user)), snapshot => {
                 const friends = snapshot.docs.filter(friendDoc => friendDoc.data().status === 'accepted');
+                friendPairIds.clear();
                 friendsList.innerHTML = friends.length ? '' : '<p style="font-size:12px; color:#888;">Accepted friends appear here.</p>';
                 friends.forEach(friendDoc => {
                     const friendship = friendDoc.data();
                     const friend = (friendship.users || []).find(name => name !== user);
                     if (!friend) return;
+                    friendPairIds.set(friend, friendDoc.id);
                     const row = document.createElement('div');
                     row.className = 'friend-row';
                     const label = document.createElement('span');
@@ -9247,6 +9381,7 @@
                     row.append(label, openButton);
                     friendsList.appendChild(row);
                 });
+                window.dispatchEvent(new CustomEvent('useracceptedfriendschange', { detail: { friends: [...friendPairIds.keys()] } }));
             }, error => {
                 console.error('Friend list listener failed:', error);
                 friendsList.innerHTML = '<p style="font-size:12px; color:#a22;">Unable to load friends.</p>';
@@ -9427,6 +9562,11 @@
                 });
             };
 
+            window.openFriendConversation = friend => {
+                const pairId = friendPairIds.get(friend);
+                if (pairId) openFriendChat(friend, pairId);
+            };
+
             const sendFriendChatMessage = async (message, conversationId = activePairId, recipient = activeFriend) => {
                 if (!recipient || !conversationId) throw new Error('Choose an accepted friend first.');
                 await addDoc(collection(db, 'friend_chats', conversationId, 'messages'), {
@@ -9540,6 +9680,223 @@
                     voiceStatus.textContent = 'Microphone permission was denied.';
                 }
             };
+        }
+
+        function setupFriendStories(user) {
+            const storiesStrip = document.getElementById('friendStoriesItems');
+            const storyButton = document.getElementById('addFriendStoryButton');
+            const storyInput = document.getElementById('friendStoryFileInput');
+            const storyStatus = document.getElementById('friendStoryStatus');
+            const viewer = document.getElementById('friendStoryViewer');
+            const viewerMedia = document.getElementById('friendStoryViewerMedia');
+            const viewerOwner = document.getElementById('friendStoryViewerOwner');
+            const viewerClose = document.getElementById('friendStoryViewerClose');
+            const activeList = document.getElementById('activeFriendsList');
+            if (!storiesStrip || !storyInput || !activeList) return;
+
+            if (window._friendStoriesChangeHandler) document.removeEventListener('useracceptedfriendschange', window._friendStoriesChangeHandler);
+            (window._friendStoryUnsubs || []).forEach(unsubscribe => unsubscribe());
+            (window._activeFriendPresenceUnsubs || []).forEach(unsubscribe => unsubscribe());
+            window._friendStoryUnsubs = [];
+            window._activeFriendPresenceUnsubs = [];
+
+            const friends = new Set();
+            const featuredByFriend = new Map();
+            const storiesByFriend = new Map();
+            const presenceByFriend = new Map();
+            const now = () => Date.now();
+            const toMillis = value => value?.toMillis ? value.toMillis() : value instanceof Date ? value.getTime() : 0;
+            let storyExpiryTimer = null;
+
+            const closeStory = () => {
+                viewer?.classList.remove('active');
+                if (viewerMedia) {
+                    const video = viewerMedia.querySelector('video');
+                    if (video) video.pause();
+                    viewerMedia.innerHTML = '';
+                }
+            };
+            viewerClose?.addEventListener('click', closeStory);
+            viewer?.addEventListener('click', event => { if (event.target === viewer) closeStory(); });
+
+            const openStory = (owner, url, type) => {
+                if (!viewer || !viewerMedia || !url) return;
+                viewerMedia.innerHTML = '';
+                viewerOwner.textContent = owner === user ? 'Your story' : owner;
+                if (type === 'video') {
+                    const video = document.createElement('video');
+                    video.src = url;
+                    video.controls = true;
+                    video.autoplay = true;
+                    video.playsInline = true;
+                    viewerMedia.appendChild(video);
+                    video.play().catch(() => {});
+                } else {
+                    const image = document.createElement('img');
+                    image.src = url;
+                    image.alt = `Story from ${owner}`;
+                    viewerMedia.appendChild(image);
+                }
+                viewer.classList.add('active');
+            };
+
+            const makeStoryItem = (owner, url, type, label, expiry = 0) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `friend-story-item${type === 'video' ? ' story-video' : ''}`;
+                const avatar = document.createElement('span');
+                avatar.className = 'friend-story-avatar';
+                const media = type === 'video' ? document.createElement('video') : document.createElement('img');
+                media.src = url;
+                media.alt = `${label} from ${owner}`;
+                if (type === 'video') { media.muted = true; media.playsInline = true; }
+                avatar.appendChild(media);
+                const caption = document.createElement('span');
+                caption.textContent = label;
+                button.append(avatar, caption);
+                if (expiry) {
+                    const expiryLabel = document.createElement('small');
+                    expiryLabel.className = 'friend-story-expiry';
+                    const hoursLeft = Math.max(1, Math.ceil((expiry - now()) / 3600000));
+                    expiryLabel.textContent = `${hoursLeft}h left`;
+                    button.appendChild(expiryLabel);
+                }
+                button.onclick = () => openStory(owner, url, type);
+                return button;
+            };
+
+            const renderStories = () => {
+                if (storyExpiryTimer) clearTimeout(storyExpiryTimer);
+                storiesStrip.innerHTML = '';
+                storiesStrip.appendChild(storyButton);
+                let soonestExpiry = Infinity;
+                friends.forEach(friend => {
+                    const featuredPhotos = featuredByFriend.get(friend) || [];
+                    featuredPhotos.slice(0, 4).forEach((photo, index) => {
+                        if (photo?.url) storiesStrip.appendChild(makeStoryItem(friend, photo.url, 'image', `Photo ${index + 1}`));
+                    });
+                    const friendStories = (storiesByFriend.get(friend) || [])
+                        .filter(story => toMillis(story.expiresAt) > now())
+                        .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+                    friendStories.forEach(story => {
+                        const expiry = toMillis(story.expiresAt);
+                        soonestExpiry = Math.min(soonestExpiry, expiry);
+                        storiesStrip.appendChild(makeStoryItem(friend, story.url, story.type || 'image', 'Story', expiry));
+                    });
+                });
+                if (soonestExpiry < Infinity) storyExpiryTimer = setTimeout(renderStories, Math.max(1000, soonestExpiry - now() + 1000));
+            };
+
+            const renderActiveFriends = () => {
+                const activeFriends = [...friends].filter(friend => {
+                    const presence = presenceByFriend.get(friend) || {};
+                    const lastActive = toMillis(presence.lastActive);
+                    return presence.online === true && now() - lastActive < 120000;
+                });
+                activeList.innerHTML = activeFriends.length ? '' : '<p style="font-size:12px; color:#89979c;">No friends online.</p>';
+                activeFriends.forEach((friend, index) => {
+                    const row = document.createElement('button');
+                    row.type = 'button';
+                    row.className = 'active-friend-row';
+                    row.style.animationDelay = `${Math.min(index * 55, 330)}ms`;
+                    const avatar = document.createElement('img');
+                    avatar.src = featuredByFriend.get(friend)?.find(photo => photo?.url)?.url || 'https://placehold.co/72x72/e6f4f5/426a7b?text=U';
+                    avatar.alt = '';
+                    const name = document.createElement('span');
+                    name.textContent = friend;
+                    const dot = document.createElement('span');
+                    dot.className = 'active-friend-dot';
+                    row.append(avatar, name, dot);
+                    row.onclick = () => {
+                        document.querySelector('[data-tab="friends"]')?.click();
+                        window.openFriendConversation?.(friend);
+                    };
+                    activeList.appendChild(row);
+                });
+            };
+
+            window._friendStoriesChangeHandler = event => {
+                const nextFriends = new Set(event.detail?.friends || []);
+                for (const friend of [...friends]) {
+                    if (!nextFriends.has(friend)) {
+                        friends.delete(friend);
+                        featuredByFriend.delete(friend);
+                        storiesByFriend.delete(friend);
+                        presenceByFriend.delete(friend);
+                    }
+                }
+                friends.clear();
+                nextFriends.forEach(friend => friends.add(friend));
+                (window._friendStoryUnsubs || []).forEach(unsubscribe => unsubscribe());
+                (window._activeFriendPresenceUnsubs || []).forEach(unsubscribe => unsubscribe());
+                window._friendStoryUnsubs = [];
+                window._activeFriendPresenceUnsubs = [];
+                friends.forEach(friend => {
+                    getDoc(doc(db, 'profiles', friend)).then(profileSnapshot => {
+                        featuredByFriend.set(friend, profileSnapshot.exists() && Array.isArray(profileSnapshot.data().featuredPhotos) ? profileSnapshot.data().featuredPhotos : []);
+                        renderStories();
+                        renderActiveFriends();
+                    }).catch(error => console.warn('Friend featured photos could not load:', error));
+
+                    const friendStoryUnsub = onSnapshot(collection(db, 'users', friend, 'stories'), snapshot => {
+                        const stories = snapshot.docs.map(storyDoc => ({ id: storyDoc.id, ...storyDoc.data() }));
+                        storiesByFriend.set(friend, stories);
+                        renderStories();
+                    }, error => console.warn('Friend stories could not load:', error));
+                    window._friendStoryUnsubs.push(friendStoryUnsub);
+
+                    const presenceUnsub = onSnapshot(doc(db, 'presence', friend), snapshot => {
+                        presenceByFriend.set(friend, snapshot.exists() ? snapshot.data() : {});
+                        renderActiveFriends();
+                    }, error => console.warn('Friend presence could not load:', error));
+                    window._activeFriendPresenceUnsubs.push(presenceUnsub);
+                });
+                renderStories();
+                renderActiveFriends();
+            };
+            document.addEventListener('useracceptedfriendschange', window._friendStoriesChangeHandler);
+
+            storyButton.onclick = () => storyInput.click();
+            storyInput.onchange = async () => {
+                const file = storyInput.files?.[0];
+                storyInput.value = '';
+                if (!file) return;
+                if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return alert('Choose an image or video for your story.');
+                if (file.size > 25 * 1024 * 1024) return alert('Stories must be smaller than 25 MB.');
+                storyButton.disabled = true;
+                if (storyStatus) storyStatus.textContent = 'Uploading your story…';
+                try {
+                    const storyId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                    const path = `friend_stories/${user}/${storyId}_${encodeURIComponent(file.name)}`;
+                    const upload = await uploadBytes(storageRef(storage, path), file);
+                    const url = await getDownloadURL(upload.ref);
+                    const createdAt = new Date();
+                    const expiresAt = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
+                    await addDoc(collection(db, 'users', user, 'stories'), {
+                        owner: user,
+                        url,
+                        storagePath: path,
+                        type: file.type.startsWith('video/') ? 'video' : 'image',
+                        createdAt: serverTimestamp(),
+                        expiresAt
+                    });
+                    if (storyStatus) storyStatus.textContent = 'Your story is live for 24 hours.';
+                    showToast('Story added', 'Your friends can view it for 24 hours.', '📸');
+                } catch (error) {
+                    console.error('Friend story upload failed:', error);
+                    if (storyStatus) storyStatus.textContent = 'Could not publish your story.';
+                    alert('Could not upload story. Check your Firebase Storage rules and connection.');
+                } finally {
+                    storyButton.disabled = false;
+                }
+            };
+
+            viewerClose?.addEventListener('click', () => {
+                const video = viewerMedia?.querySelector('video');
+                if (video) video.pause();
+                viewer?.classList.remove('active');
+                if (viewerMedia) viewerMedia.innerHTML = '';
+            });
         }
 
         async function setupFreedomWall(user) {
