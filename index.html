@@ -1266,7 +1266,6 @@
         .friend-story-add .friend-story-avatar { border-style:dashed; color:#d81b60; font-size:24px; }
         #friendStoryFileInput { display:none; }
         #friendStoryStatus { flex:0 0 auto; color:#647b84; font-size:11px; }
-        #friendMediaRepoSelect { flex:0 0 190px; max-width:210px; padding:7px; border:1px solid #d4e0e4; border-radius:7px; background:white; color:#37545f; font-size:11px; }
         .friend-story-item.story-video .friend-story-avatar::after { content:'▶'; position:absolute; display:grid; place-items:center; color:white; background:#102e39aa; width:22px; height:22px; border-radius:50%; }
         .friend-story-avatar { position:relative; }
         .friend-story-expiry { display:block; color:#7a8990; font-size:9px; margin-top:2px; }
@@ -2938,7 +2937,6 @@
                 #friendChatMessages { height:40vh; }
                 .friend-chat-compose { grid-template-columns:1fr 1fr; }
                 .friend-chat-compose textarea { grid-column:1 / -1; }
-                #friendMediaRepoSelect { flex:0 0 170px; }
             }
 
         /* ── SLEEP / DARK MODE ── */
@@ -4102,6 +4100,7 @@
                                 <h3 class="profile-info-heading">Profile data</h3>
                                 <table class="profile-info-table" aria-label="Profile details"><tbody>
                                     <tr><th>Gender</th><td id="userProfileGender">—</td></tr>
+                                    <tr><th>Active status</th><td id="userProfileActiveStatus">Checking…</td></tr>
                                     <tr><th>Birthdate</th><td id="userProfileBirthdate">—</td></tr>
                                     <tr><th>Favorites</th><td id="userProfileFavorites">—</td></tr>
                                     <tr><th>Likes</th><td id="userProfileLikes">—</td></tr>
@@ -4219,9 +4218,6 @@
                 <span>Your story</span>
             </button>
             <input type="file" id="friendStoryFileInput" accept="image/*,video/*">
-            <select id="friendMediaRepoSelect" aria-label="GitHub repository for friend media">
-                <option value="">Select GitHub repository for stories and messages</option>
-            </select>
             <div id="friendStoriesItems" style="display:flex; align-items:center; gap:10px;"></div>
             <span id="friendStoryStatus" aria-live="polite"></span>
         </section>
@@ -5264,6 +5260,7 @@
             user = (user || '').toLowerCase();
             currentUser = user; 
             setupEmergencyRequestButton();
+            setupUserProfilePresence(user);
 
             const playerAudio = document.getElementById('nowPlayingAudio');
             if (playerAudio) {
@@ -5375,6 +5372,31 @@
                 console.error('Fireworks listener setup error:', e);
             }
         };
+
+        function setupUserProfilePresence(user) {
+            const statusCell = document.getElementById('userProfileActiveStatus');
+            if (!statusCell || !user) return;
+            if (window._userProfilePresenceUnsub) window._userProfilePresenceUnsub();
+            window._userProfilePresenceUnsub = onSnapshot(doc(db, 'presence', user), snapshot => {
+                const presence = snapshot.exists() ? snapshot.data() : {};
+                const lastActive = presence.lastActive?.toMillis ? presence.lastActive.toMillis() : typeof presence.lastActive === 'number' ? presence.lastActive : 0;
+                const isOnline = presence.online === true && lastActive > 0 && Date.now() - lastActive < 90000;
+                if (isOnline) {
+                    statusCell.textContent = 'Online · active now';
+                    statusCell.style.color = '#168353';
+                    statusCell.title = 'Presence updates live';
+                    return;
+                }
+                const lastSeen = presence.lastSeen?.toDate ? presence.lastSeen.toDate() : lastActive ? new Date(lastActive) : null;
+                statusCell.textContent = lastSeen ? `Offline · last seen ${lastSeen.toLocaleString()}` : 'Offline · no recent activity';
+                statusCell.style.color = '#697b82';
+                statusCell.title = 'Presence updates live';
+            }, error => {
+                console.warn('Profile active status listener failed:', error);
+                statusCell.textContent = 'Status unavailable';
+                statusCell.style.color = '#697b82';
+            });
+        }
         
         function setupNotificationSystem() {
             window.notifyUser = (title, body, icon) => {
@@ -6381,7 +6403,7 @@
             }
 
             if (isAuthorized) {
-                ['music', 'gallery', 'system', 'video', 'profile', 'submusic', 'friendmedia'].forEach((type) => {
+                ['music', 'gallery', 'system', 'video', 'profile', 'submusic'].forEach((type) => {
                     const selectId = type === 'music'
                         ? 'ghRepoSelectMusic'
                         : type === 'gallery'
@@ -6392,9 +6414,7 @@
                                     ? 'ghRepoSelectVideo'
                                     : type === 'profile'
                                         ? 'ghRepoSelectProfile'
-                                                : type === 'submusic'
-                                                    ? 'ghRepoSelectSubMusic'
-                                                    : 'friendMediaRepoSelect';
+                                                : 'ghRepoSelectSubMusic';
                     const select = document.getElementById(selectId);
                     if (select) fetchRepositories(type);
                 });
@@ -6410,7 +6430,6 @@
             if(type === 'profile') selectId = 'ghRepoSelectProfile';
             if(type === 'submusic') selectId = 'ghRepoSelectSubMusic';
             if(type === 'featured') selectId = 'featuredPhotoRepoSelect';
-            if(type === 'friendmedia') selectId = 'friendMediaRepoSelect';
             
             const repoSelect = document.getElementById(selectId);
             
@@ -6439,14 +6458,30 @@
             }
         }
 
-        async function uploadFriendMediaToGithub(ownerUser, folder, file) {
+        async function getSurpriseRepository() {
             if (!githubToken) throw new Error('GitHub authorization is not active.');
-            const repoSelect = document.getElementById('friendMediaRepoSelect');
-            const profileSnapshot = await getDoc(doc(db, 'profiles', ownerUser));
-            const profile = profileSnapshot.exists() ? profileSnapshot.data() : {};
-            const repoName = repoSelect?.value || profile.friendMediaRepo || profile.featuredPhotoRepo;
-            if (!repoName) throw new Error('Choose a GitHub repository in the stories bar first.');
-            const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || profile.friendMediaBranch || 'main';
+            if (window._surpriseRepositoryCache?.token === githubToken && window._surpriseRepositoryCache.expiresAt > Date.now()) {
+                return window._surpriseRepositoryCache.repository;
+            }
+            const repositoriesResponse = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100', {
+                headers: { 'Authorization': `token ${githubToken}` }
+            });
+            if (!repositoriesResponse.ok) throw new Error('Could not list repositories available to the authorized GitHub account.');
+            const repositories = await repositoriesResponse.json();
+            const repository = Array.isArray(repositories)
+                ? repositories.find(item => item.name?.toLowerCase() === 'surprise')
+                : null;
+            if (!repository) throw new Error('A GitHub repository named "surprise" was not found for this account.');
+            if (repository.private) throw new Error('The surprise repository must be public so friends can view shared media.');
+            const result = { fullName: repository.full_name, branch: repository.default_branch || 'main' };
+            window._surpriseRepositoryCache = { token: githubToken, repository: result, expiresAt: Date.now() + 5 * 60 * 1000 };
+            return result;
+        }
+
+        async function uploadFriendMediaToGithub(ownerUser, folder, file) {
+            const surpriseRepo = await getSurpriseRepository();
+            const repoName = surpriseRepo.fullName;
+            const branch = surpriseRepo.branch;
             const safeOwner = ownerUser.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
             const safeFile = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
             const path = `${folder}/${safeOwner}/${Date.now()}_${safeFile}`;
@@ -9425,24 +9460,6 @@
             processFriendMediaCleanup(user);
             if (window._friendMediaCleanupTimer) clearInterval(window._friendMediaCleanupTimer);
             window._friendMediaCleanupTimer = setInterval(() => processFriendMediaCleanup(user), 6 * 60 * 60 * 1000);
-            const mediaRepoSelect = document.getElementById('friendMediaRepoSelect');
-            if (githubToken && mediaRepoSelect) fetchRepositories('friendmedia');
-            getDoc(doc(db, 'profiles', user)).then(profileSnapshot => {
-                const savedRepo = profileSnapshot.exists() ? profileSnapshot.data().friendMediaRepo || profileSnapshot.data().featuredPhotoRepo : '';
-                if (savedRepo && mediaRepoSelect) {
-                    mediaRepoSelect.dataset.savedRepo = savedRepo;
-                    if (Array.from(mediaRepoSelect.options).some(option => option.value === savedRepo)) mediaRepoSelect.value = savedRepo;
-                }
-            }).catch(error => console.debug('Could not load friend media repository:', error));
-            if (mediaRepoSelect && !mediaRepoSelect.dataset.friendMediaBound) {
-                mediaRepoSelect.dataset.friendMediaBound = 'true';
-                mediaRepoSelect.addEventListener('change', () => {
-                    if (!mediaRepoSelect.value) return;
-                    mediaRepoSelect.dataset.savedRepo = mediaRepoSelect.value;
-                    setDoc(doc(db, 'profiles', user), { friendMediaRepo: mediaRepoSelect.value, friendMediaBranch: mediaRepoSelect.selectedOptions?.[0]?.dataset.defaultBranch || 'main' }, { merge: true })
-                        .catch(error => console.error('Could not save friend media repository:', error));
-                });
-            }
 
             if (window._friendRequestUnsub) window._friendRequestUnsub();
             if (window._friendListUnsub) window._friendListUnsub();
@@ -9917,7 +9934,6 @@
             const storyButton = document.getElementById('addFriendStoryButton');
             const storyInput = document.getElementById('friendStoryFileInput');
             const storyStatus = document.getElementById('friendStoryStatus');
-            const mediaRepoSelect = document.getElementById('friendMediaRepoSelect');
             const viewer = document.getElementById('friendStoryViewer');
             const viewerMedia = document.getElementById('friendStoryViewerMedia');
             const viewerOwner = document.getElementById('friendStoryViewerOwner');
@@ -9943,32 +9959,6 @@
             if (!window._friendStoryExpiryCleanupTimer) {
                 window._friendStoryExpiryCleanupTimer = setInterval(() => processExpiredOwnStories(user), 60 * 60 * 1000);
             }
-            const loadStoryRepository = async () => {
-                if (githubToken && mediaRepoSelect) await fetchRepositories('friendmedia');
-                try {
-                    const profileSnapshot = await getDoc(doc(db, 'profiles', user));
-                    const profile = profileSnapshot.exists() ? profileSnapshot.data() : {};
-                    const savedRepo = profile.friendMediaRepo || profile.featuredPhotoRepo || profile.featuredPhotos?.find(photo => photo?.repo)?.repo || '';
-                    if (savedRepo && mediaRepoSelect) {
-                        mediaRepoSelect.dataset.savedRepo = savedRepo;
-                        if (Array.from(mediaRepoSelect.options).some(option => option.value === savedRepo)) mediaRepoSelect.value = savedRepo;
-                    }
-                } catch (error) {
-                    console.debug('Could not load story repository:', error);
-                }
-            };
-            loadStoryRepository();
-            if (mediaRepoSelect && !mediaRepoSelect.dataset.storyRepoBound) {
-                mediaRepoSelect.dataset.storyRepoBound = 'true';
-                mediaRepoSelect.addEventListener('change', () => {
-                    if (!mediaRepoSelect.value) return;
-                    setDoc(doc(db, 'profiles', user), {
-                        friendMediaRepo: mediaRepoSelect.value,
-                        friendMediaBranch: mediaRepoSelect.selectedOptions?.[0]?.dataset.defaultBranch || 'main'
-                    }, { merge: true }).catch(error => console.warn('Could not save story repository:', error));
-                });
-            }
-
             const closeStory = () => {
                 viewer?.classList.remove('active');
                 if (viewerMedia) {
