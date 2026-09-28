@@ -783,6 +783,14 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
+        .security-test-row { display:flex; align-items:flex-start; gap:8px; padding:8px 10px; border-bottom:1px solid #eee; font-size:12px; line-height:1.45; }
+        .security-test-badge { min-width:72px; font-weight:800; text-transform:uppercase; }
+        .security-test-badge.pass { color:#218451; }
+        .security-test-badge.warning { color:#a96500; }
+        .security-test-badge.critical { color:#b71550; }
+        .security-test-badge.info { color:#426a7b; }
+        body.client-read-only [data-security-write="blocked"] { opacity:.5 !important; cursor:not-allowed !important; }
+
         /* Admin Transition Screen */
         #adminTransitionScreen {
             position: fixed;
@@ -3481,6 +3489,28 @@
                     <!-- Security Tab -->
                     <div class="admin-panel" id="admin-security">
                         <h4 class="admin-section-title">Global Security Settings</h4>
+
+                        <div class="admin-widget" style="margin-bottom:20px;">
+                            <h4 style="color:#183747; margin-bottom:8px;">Security self-test</h4>
+                            <p style="font-size:12px; color:#667b84; margin-bottom:12px;">Runs browser-visible checks only. It does not attack the site or verify Firebase server rules.</p>
+                            <button type="button" id="runSecuritySelfTest" class="submit-btn" style="width:100%;">Run security checks</button>
+                            <p id="securitySelfTestSummary" role="status" style="margin:10px 0; font-size:12px; color:#526a73;">No test has been run this session.</p>
+                            <div id="securitySelfTestResults" class="admin-list-container" aria-live="polite">
+                                <p style="font-size:12px; color:#888;">Test results will appear here.</p>
+                            </div>
+                            <p style="font-size:11px; color:#8b4b20; margin-top:10px;">Firebase Firestore/Storage rules, App Check, backups, and server-side secrets require separate console/server verification.</p>
+                        </div>
+
+                        <div class="admin-widget" style="margin-bottom:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                                <div>
+                                    <strong style="color:#333; font-size:15px;">Emergency read-only safe mode</strong>
+                                    <p style="font-size:12px; color:#888; margin-top:4px;">Blocks app controls that change data in this page. This is a client-side safeguard; Firebase rules remain authoritative.</p>
+                                </div>
+                                <button type="button" id="toggleClientReadOnlyMode" class="submit-btn" style="background:#667b84; white-space:nowrap;">Disabled</button>
+                            </div>
+                            <p id="clientReadOnlyModeStatus" style="font-size:11px; color:#667b84; margin-top:8px;">Normal editing enabled.</p>
+                        </div>
                         
                         <div class="admin-widget" style="margin-bottom: 20px;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -4273,7 +4303,8 @@
         
         // --- GLOBAL SECURITY & BLOCKING LOGIC ---
         let userIPAddress = 'Unknown IP';
-        let globalSecurityConfig = { antiScreenshot: false, blockedIPs: [] };
+        let globalSecurityConfig = { antiScreenshot: false, blockedIPs: [], readOnlyMode: false };
+        let clientReadOnlyMode = false;
 
         fetch('https://ipapi.co/json/')
             .then(res => res.ok ? res.json() : {})
@@ -4302,9 +4333,11 @@
             if(docSnap.exists()) {
                 globalSecurityConfig = docSnap.data();
                 if(!globalSecurityConfig.blockedIPs) globalSecurityConfig.blockedIPs = [];
-                applyBlockCheck();
-                applyAntiScreenshotFeatures();
             }
+            clientReadOnlyMode = globalSecurityConfig.readOnlyMode === true;
+            applyClientReadOnlyMode(clientReadOnlyMode);
+            applyBlockCheck();
+            applyAntiScreenshotFeatures();
         });
 
         // Listen for Global Broadcasts
@@ -7072,10 +7105,157 @@
             }
         };
 
+        let readOnlyGuardInstalled = false;
+        function applyClientReadOnlyMode(enabled) {
+            clientReadOnlyMode = !!enabled;
+            document.body.classList.toggle('client-read-only', clientReadOnlyMode);
+            const toggle = document.getElementById('toggleClientReadOnlyMode');
+            const status = document.getElementById('clientReadOnlyModeStatus');
+            if (toggle) {
+                toggle.textContent = clientReadOnlyMode ? 'Enabled · release' : 'Disabled';
+                toggle.style.background = clientReadOnlyMode ? '#b71550' : '#667b84';
+            }
+            if (status) status.textContent = clientReadOnlyMode
+                ? 'Read-only mode is active in this page. Server rules are still required to block direct requests.'
+                : 'Normal editing enabled.';
+            if (readOnlyGuardInstalled) return;
+            readOnlyGuardInstalled = true;
+
+            const isAllowedControl = target => !!target.closest(
+                '#toggleClientReadOnlyMode, #runSecuritySelfTest, #passwordModal, #securityWaitingScreen, .tab, .admin-tab-btn, #logoutButton, #adminLogoutBtn, #emergencyRequestButton, #closeUserProfileCard, #closeProfileDrawer, #closeUserProfileDrawer, [data-tab], [data-target]'
+            );
+            document.addEventListener('click', event => {
+                if (!clientReadOnlyMode || isAllowedControl(event.target)) return;
+                if (event.target.closest('button, input, textarea, select, [contenteditable="true"]')) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    if (typeof showToast === 'function') showToast('Read-only safe mode', 'Data-changing controls are temporarily blocked.', '🛡️');
+                }
+            }, true);
+            document.addEventListener('beforeinput', event => {
+                if (!clientReadOnlyMode || isAllowedControl(event.target)) return;
+                if (event.target.matches('input, textarea, [contenteditable="true"]')) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }, true);
+            document.addEventListener('submit', event => {
+                if (!clientReadOnlyMode) return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }, true);
+        }
+
+        async function runSecuritySelfTest() {
+            const button = document.getElementById('runSecuritySelfTest');
+            const summary = document.getElementById('securitySelfTestSummary');
+            const results = document.getElementById('securitySelfTestResults');
+            if (!summary || !results) return;
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Checking…';
+            }
+            results.innerHTML = '';
+            const checks = [];
+            const addResult = (level, label, detail) => checks.push({ level, label, detail });
+            const isLocalSecureHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+            addResult(window.isSecureContext ? 'pass' : isLocalSecureHost ? 'pass' : 'critical', 'Secure context',
+                window.isSecureContext ? 'The page is running in a secure browser context.' : isLocalSecureHost ? 'Localhost is treated as secure for development.' : 'Use HTTPS before entering account data or using camera/microphone features.');
+
+            try {
+                const response = await fetch(location.href, { method: 'HEAD', cache: 'no-store', credentials: 'same-origin' });
+                const headers = response.headers;
+                const csp = headers.get('content-security-policy') || document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || '';
+                const frameProtection = headers.has('x-frame-options') || /frame-ancestors/i.test(csp);
+                const headerChecks = [
+                    ['Content Security Policy', !!csp, 'A CSP response header or meta policy was detected.', 'No CSP is visible. Configure a restrictive Content-Security-Policy at the hosting layer.'],
+                    ['Clickjacking protection', frameProtection, 'X-Frame-Options or CSP frame-ancestors was detected.', 'No frame restriction is visible. Configure frame-ancestors or X-Frame-Options at the host.'],
+                    ['MIME sniffing protection', headers.get('x-content-type-options')?.toLowerCase() === 'nosniff', 'X-Content-Type-Options: nosniff is present.', 'Add X-Content-Type-Options: nosniff at the hosting layer.'],
+                    ['Referrer policy', !!headers.get('referrer-policy'), 'A Referrer-Policy response header was detected.', 'Set a restrictive Referrer-Policy at the hosting layer.'],
+                    ['Permissions policy', !!headers.get('permissions-policy'), 'A Permissions-Policy response header was detected.', 'Restrict camera, microphone, and geolocation to the features that need them.']
+                ];
+                if (location.protocol === 'https:') headerChecks.push(['HSTS', !!headers.get('strict-transport-security'), 'Strict-Transport-Security is present.', 'HSTS is not visible; enable it at the hosting/CDN layer after confirming HTTPS works.']);
+                headerChecks.forEach(([name, passed, passText, failText]) => addResult(passed ? 'pass' : 'warning', name, passed ? passText : failText));
+                if (!response.ok) addResult('warning', 'Hosting response', `Same-origin header probe returned HTTP ${response.status}.`);
+            } catch (error) {
+                addResult('warning', 'Hosting response headers', 'The browser could not inspect same-origin response headers. Configure and verify security headers at the hosting/CDN layer.');
+            }
+
+            try {
+                const sensitiveKeys = [];
+                for (const storageArea of [localStorage, sessionStorage]) {
+                    for (let index = 0; index < storageArea.length; index++) {
+                        const key = storageArea.key(index) || '';
+                        if (/(token|secret|password|credential|private.?key)/i.test(key)) sensitiveKeys.push(key);
+                    }
+                }
+                const hasGithubToken = !!sessionStorage.getItem('ghToken') || !!localStorage.getItem('ghToken');
+                addResult(hasGithubToken || sensitiveKeys.length ? 'warning' : 'pass', 'Browser-stored credentials',
+                    hasGithubToken ? 'A GitHub access token is stored in browser storage. It was not displayed. Prefer short-lived, least-privilege credentials and revoke exposed tokens.'
+                        : sensitiveKeys.length ? 'Credential-like browser storage keys were found. Values were not displayed; review and remove secrets from browser storage.'
+                            : 'No credential-like browser storage keys were found.');
+            } catch (error) {
+                addResult('warning', 'Browser storage', 'Storage could not be inspected in this browser context.');
+            }
+
+            const pageSource = Array.from(document.scripts).map(script => script.textContent || '').join('\n');
+            const hardcodedCredentialPattern = /\badmin\s*112003\b|\bkatecutie\b|\bbabycutie\b/i;
+            addResult(hardcodedCredentialPattern.test(pageSource) ? 'critical' : 'pass', 'Credentials in downloaded code',
+                hardcodedCredentialPattern.test(pageSource) ? 'A hardcoded login credential pattern is present in the downloaded page. Replace static credentials with a server-side identity provider; do not reuse these credentials.'
+                    : 'No known hardcoded login credential pattern was found by this limited check.');
+
+            addResult('info', 'Backend access rules', 'Firestore/Storage rules, App Check, backups, rate limits, and server-side secrets cannot be verified or enforced by this browser test.');
+            const counts = checks.reduce((result, check) => (result[check.level]++, result), { pass: 0, warning: 0, critical: 0, info: 0 });
+            checks.forEach(check => {
+                const row = document.createElement('div');
+                row.className = 'security-test-row';
+                const badge = document.createElement('span');
+                badge.className = `security-test-badge ${check.level}`;
+                badge.textContent = check.level;
+                const text = document.createElement('span');
+                const title = document.createElement('strong');
+                title.textContent = `${check.label}: `;
+                text.append(title, document.createTextNode(check.detail));
+                row.append(badge, text);
+                results.appendChild(row);
+            });
+            summary.textContent = `Completed ${new Date().toLocaleString()} · ${counts.pass} pass · ${counts.warning} warning · ${counts.critical} critical · ${counts.info} not testable here`;
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Run security checks again';
+            }
+        }
+
+        function setupSecurityDashboard(isSuperAdmin) {
+            if (!isSuperAdmin) return;
+            const runButton = document.getElementById('runSecuritySelfTest');
+            const readOnlyButton = document.getElementById('toggleClientReadOnlyMode');
+            if (runButton && !runButton.dataset.bound) {
+                runButton.dataset.bound = 'true';
+                runButton.addEventListener('click', runSecuritySelfTest);
+            }
+            if (readOnlyButton && !readOnlyButton.dataset.bound) {
+                readOnlyButton.dataset.bound = 'true';
+                readOnlyButton.addEventListener('click', async () => {
+                    const nextValue = !clientReadOnlyMode;
+                    if (nextValue && !confirm('Enable client-side read-only safe mode for all open app sessions? Data-changing controls will be blocked in this page.')) return;
+                    applyClientReadOnlyMode(nextValue);
+                    try {
+                        await setDoc(doc(db, 'settings', 'security'), { readOnlyMode: nextValue }, { merge: true });
+                    } catch (error) {
+                        console.error('Read-only safe mode save failed:', error);
+                        applyClientReadOnlyMode(!nextValue);
+                        alert('Could not save safe mode. Check Firestore settings permissions.');
+                    }
+                });
+            }
+        }
+
         function initAdminConsole() {
             const isSuperAdmin = sessionStorage.getItem('isAdminLoggedIn') === 'true';
             const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
+            setupSecurityDashboard(isSuperAdmin);
             updateGitHubUI(!!githubToken);
             setupAdminFreedomWall();
             setupEmergencyRequestButton();
