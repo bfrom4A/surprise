@@ -1266,6 +1266,7 @@
         .friend-story-add .friend-story-avatar { border-style:dashed; color:#d81b60; font-size:24px; }
         #friendStoryFileInput { display:none; }
         #friendStoryStatus { flex:0 0 auto; color:#647b84; font-size:11px; }
+        #friendMediaRepoSelect { flex:0 0 190px; max-width:210px; padding:7px; border:1px solid #d4e0e4; border-radius:7px; background:white; color:#37545f; font-size:11px; }
         .friend-story-item.story-video .friend-story-avatar::after { content:'▶'; position:absolute; display:grid; place-items:center; color:white; background:#102e39aa; width:22px; height:22px; border-radius:50%; }
         .friend-story-avatar { position:relative; }
         .friend-story-expiry { display:block; color:#7a8990; font-size:9px; margin-top:2px; }
@@ -2921,6 +2922,8 @@
             .friend-list { display:flex; flex-direction:column; gap:7px; margin:8px 0 16px; }
             .friend-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px; border-radius:7px; background:#fff1f6; font-size:13px; }
             .friend-row button { border:0; border-radius:6px; padding:6px 8px; background:#183747; color:white; cursor:pointer; }
+            .friend-row .friend-action-muted { background:#697b82; }
+            .friend-row .friend-action-danger { background:#b71550; }
             #friendChatMessages { height:min(48vh,420px); min-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:10px; border:1px solid #eadde4; border-radius:8px; background:#fff; }
             .friend-chat-message { max-width:85%; padding:9px 11px; border-radius:9px; background:#eef7f8; color:#24434e; overflow-wrap:anywhere; }
             .friend-chat-message.mine { align-self:flex-end; background:#fff0f5; }
@@ -2935,6 +2938,7 @@
                 #friendChatMessages { height:40vh; }
                 .friend-chat-compose { grid-template-columns:1fr 1fr; }
                 .friend-chat-compose textarea { grid-column:1 / -1; }
+                #friendMediaRepoSelect { flex:0 0 170px; }
             }
 
         /* ── SLEEP / DARK MODE ── */
@@ -4215,6 +4219,9 @@
                 <span>Your story</span>
             </button>
             <input type="file" id="friendStoryFileInput" accept="image/*,video/*">
+            <select id="friendMediaRepoSelect" aria-label="GitHub repository for friend media">
+                <option value="">Select GitHub repository for stories and messages</option>
+            </select>
             <div id="friendStoriesItems" style="display:flex; align-items:center; gap:10px;"></div>
             <span id="friendStoryStatus" aria-live="polite"></span>
         </section>
@@ -4411,7 +4418,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithPopup, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
@@ -6374,7 +6381,7 @@
             }
 
             if (isAuthorized) {
-                ['music', 'gallery', 'system', 'video', 'profile', 'submusic'].forEach((type) => {
+                ['music', 'gallery', 'system', 'video', 'profile', 'submusic', 'friendmedia'].forEach((type) => {
                     const selectId = type === 'music'
                         ? 'ghRepoSelectMusic'
                         : type === 'gallery'
@@ -6385,7 +6392,9 @@
                                     ? 'ghRepoSelectVideo'
                                     : type === 'profile'
                                         ? 'ghRepoSelectProfile'
-                                        : 'ghRepoSelectSubMusic';
+                                                : type === 'submusic'
+                                                    ? 'ghRepoSelectSubMusic'
+                                                    : 'friendMediaRepoSelect';
                     const select = document.getElementById(selectId);
                     if (select) fetchRepositories(type);
                 });
@@ -6401,6 +6410,7 @@
             if(type === 'profile') selectId = 'ghRepoSelectProfile';
             if(type === 'submusic') selectId = 'ghRepoSelectSubMusic';
             if(type === 'featured') selectId = 'featuredPhotoRepoSelect';
+            if(type === 'friendmedia') selectId = 'friendMediaRepoSelect';
             
             const repoSelect = document.getElementById(selectId);
             
@@ -6426,6 +6436,106 @@
             } catch (e) { 
                 console.error("Error fetching repos:", e);
                 repoSelect.innerHTML = '<option value="">Failed to load repos</option>';
+            }
+        }
+
+        async function uploadFriendMediaToGithub(ownerUser, folder, file) {
+            if (!githubToken) throw new Error('GitHub authorization is not active.');
+            const repoSelect = document.getElementById('friendMediaRepoSelect');
+            const profileSnapshot = await getDoc(doc(db, 'profiles', ownerUser));
+            const profile = profileSnapshot.exists() ? profileSnapshot.data() : {};
+            const repoName = repoSelect?.value || profile.friendMediaRepo || profile.featuredPhotoRepo;
+            if (!repoName) throw new Error('Choose a GitHub repository in the stories bar first.');
+            const branch = repoSelect?.selectedOptions?.[0]?.dataset.defaultBranch || profile.friendMediaBranch || 'main';
+            const safeOwner = ownerUser.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+            const safeFile = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const path = `${folder}/${safeOwner}/${Date.now()}_${safeFile}`;
+            const [owner, repository] = repoName.split('/');
+            const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repository}`, {
+                headers: { 'Authorization': `token ${githubToken}` }
+            });
+            if (!repoResponse.ok) throw new Error('GitHub repository could not be verified.');
+            const repositoryDetails = await repoResponse.json();
+            if (repositoryDetails.private) throw new Error('Choose a public GitHub repository so your friends can view its media.');
+            const apiPath = path.split('/').map(encodeURIComponent).join('/');
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repository}/contents/${apiPath}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `Upload ${folder} media for ${safeOwner}`,
+                    content: await toBase64(file),
+                    branch
+                })
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || response.statusText);
+            }
+            const url = `https://raw.githubusercontent.com/${owner}/${repository}/${branch}/${apiPath}`;
+            return { url, repo: repoName, path, branch };
+        }
+
+        async function queueFriendMediaDeletion(ownerUser, media) {
+            if (!media?.repo || !media?.path) return;
+            await addDoc(collection(db, 'media_cleanup'), {
+                owner: ownerUser,
+                repo: media.repo,
+                path: media.path,
+                branch: media.branch || 'main',
+                deleteAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+                status: 'scheduled',
+                scheduledAt: serverTimestamp()
+            });
+        }
+
+        async function processFriendMediaCleanup(ownerUser) {
+            if (!githubToken || !ownerUser || window._friendMediaCleanupRunning) return;
+            window._friendMediaCleanupRunning = true;
+            try {
+                const snapshot = await getDocs(query(collection(db, 'media_cleanup'), where('owner', '==', ownerUser)));
+                for (const cleanupDoc of snapshot.docs) {
+                    const cleanup = cleanupDoc.data();
+                    if (cleanup.status !== 'scheduled' || Number(cleanup.deleteAt) > Date.now()) continue;
+                    try {
+                        await deleteGithubFile(cleanup.repo, cleanup.path, githubToken, cleanup.branch || 'main', `Expire friend media for ${cleanup.owner || 'user'}`);
+                        await updateDoc(cleanupDoc.ref, { status: 'deleted', deletedAt: serverTimestamp() });
+                    } catch (error) {
+                        console.warn('Scheduled GitHub media cleanup failed:', error);
+                    }
+                }
+            } catch (error) {
+                console.warn('Friend media cleanup queue unavailable:', error);
+            } finally {
+                window._friendMediaCleanupRunning = false;
+            }
+        }
+
+        async function processExpiredOwnStories(username) {
+            try {
+                const storiesSnapshot = await getDocs(collection(db, 'users', username, 'stories'));
+                const expiredStories = storiesSnapshot.docs.filter(storyDoc => {
+                    const expiry = storyDoc.data().expiresAt;
+                    const expiryTime = expiry?.toMillis ? expiry.toMillis() : expiry instanceof Date ? expiry.getTime() : 0;
+                    return expiryTime > 0 && expiryTime <= Date.now();
+                });
+                await Promise.all(expiredStories.map(storyDoc => deleteDoc(storyDoc.ref)));
+            } catch (error) {
+                console.warn('Expired own stories could not be cleaned up:', error);
+            }
+        }
+
+        async function cleanupBlockedFriendRequests(username) {
+            const outgoing = await getDocs(query(collection(db, 'friend_requests'), where('fromUser', '==', username)));
+            const incoming = await getDocs(query(collection(db, 'friend_requests'), where('toUser', '==', username)));
+            const requests = [...outgoing.docs, ...incoming.docs];
+            for (const requestDoc of requests) {
+                const request = requestDoc.data();
+                if (!['pending', 'accepted'].includes(request.status)) continue;
+                const pairId = friendPairDocumentId(request.fromUser, request.toUser);
+                const block = await getDoc(doc(db, 'friend_blocks', pairId));
+                if (block.exists() && block.data().status === 'blocked') {
+                    await updateDoc(requestDoc.ref, { status: 'blocked', blockedAt: serverTimestamp() });
+                }
             }
         }
 
@@ -9312,6 +9422,28 @@
             const voiceStatus = document.getElementById('voiceRecordingStatus');
             if (!scannerVideo || !incomingList || !friendsList || !chatMessages) return;
 
+            processFriendMediaCleanup(user);
+            if (window._friendMediaCleanupTimer) clearInterval(window._friendMediaCleanupTimer);
+            window._friendMediaCleanupTimer = setInterval(() => processFriendMediaCleanup(user), 6 * 60 * 60 * 1000);
+            const mediaRepoSelect = document.getElementById('friendMediaRepoSelect');
+            if (githubToken && mediaRepoSelect) fetchRepositories('friendmedia');
+            getDoc(doc(db, 'profiles', user)).then(profileSnapshot => {
+                const savedRepo = profileSnapshot.exists() ? profileSnapshot.data().friendMediaRepo || profileSnapshot.data().featuredPhotoRepo : '';
+                if (savedRepo && mediaRepoSelect) {
+                    mediaRepoSelect.dataset.savedRepo = savedRepo;
+                    if (Array.from(mediaRepoSelect.options).some(option => option.value === savedRepo)) mediaRepoSelect.value = savedRepo;
+                }
+            }).catch(error => console.debug('Could not load friend media repository:', error));
+            if (mediaRepoSelect && !mediaRepoSelect.dataset.friendMediaBound) {
+                mediaRepoSelect.dataset.friendMediaBound = 'true';
+                mediaRepoSelect.addEventListener('change', () => {
+                    if (!mediaRepoSelect.value) return;
+                    mediaRepoSelect.dataset.savedRepo = mediaRepoSelect.value;
+                    setDoc(doc(db, 'profiles', user), { friendMediaRepo: mediaRepoSelect.value, friendMediaBranch: mediaRepoSelect.selectedOptions?.[0]?.dataset.defaultBranch || 'main' }, { merge: true })
+                        .catch(error => console.error('Could not save friend media repository:', error));
+                });
+            }
+
             if (window._friendRequestUnsub) window._friendRequestUnsub();
             if (window._friendListUnsub) window._friendListUnsub();
             if (window._friendChatUnsub) window._friendChatUnsub();
@@ -9334,6 +9466,11 @@
                         try {
                             const friend = request.fromUser;
                             const pairId = friendPairDocumentId(user, friend);
+                            const blockSnapshot = await getDoc(doc(db, 'friend_blocks', pairId));
+                            if (blockSnapshot.exists() && blockSnapshot.data().status === 'blocked') {
+                                await updateDoc(requestDoc.ref, { status: 'blocked', blockedAt: serverTimestamp() });
+                                return;
+                            }
                             await setDoc(doc(db, 'friendships', pairId), {
                                 users: [user, friend].sort(),
                                 status: 'accepted',
@@ -9360,6 +9497,7 @@
                 console.error('Friend request listener failed:', error);
                 incomingList.innerHTML = '<p style="font-size:12px; color:#a22;">Unable to load requests.</p>';
             });
+            cleanupBlockedFriendRequests(user).catch(error => console.warn('Blocked friend request cleanup skipped:', error));
 
             const friendPairIds = new Map();
             window._friendListUnsub = onSnapshot(query(collection(db, 'friendships'), where('users', 'array-contains', user)), snapshot => {
@@ -9378,7 +9516,84 @@
                     const openButton = document.createElement('button');
                     openButton.textContent = 'Message';
                     openButton.onclick = () => openFriendChat(friend, friendDoc.id);
-                    row.append(label, openButton);
+                    const actions = document.createElement('div');
+                    actions.style.cssText = 'display:flex; gap:5px;';
+                    actions.appendChild(openButton);
+                    if (!['superadmin', 'admin'].includes(friend.toLowerCase())) {
+                        const unfriendButton = document.createElement('button');
+                        unfriendButton.textContent = 'Unfriend';
+                        unfriendButton.className = 'friend-action-muted';
+                        unfriendButton.onclick = async () => {
+                            if (!confirm(`Remove ${friend} from your friends?`)) return;
+                            try {
+                                await updateDoc(friendDoc.ref, { status: 'removed', removedBy: user, removedAt: serverTimestamp() });
+                                const requestsFromFriend = await getDocs(query(collection(db, 'friend_requests'), where('fromUser', '==', friend)));
+                                const requestsToFriend = await getDocs(query(collection(db, 'friend_requests'), where('toUser', '==', friend)));
+                                await Promise.all([...requestsFromFriend.docs, ...requestsToFriend.docs].map(requestDoc => {
+                                    const request = requestDoc.data();
+                                    return request.status === 'pending' && [request.fromUser, request.toUser].includes(user)
+                                        ? updateDoc(requestDoc.ref, { status: 'cancelled', cancelledAt: serverTimestamp() })
+                                        : Promise.resolve();
+                                }));
+                                await addActivityNotification(friend, 'Friendship ended', `${user} removed this friendship.`, '👥');
+                                if (activeFriend === friend) {
+                                    window._friendChatUnsub?.();
+                                    activeFriend = '';
+                                    activePairId = '';
+                                    chatHeading.textContent = 'Choose a friend to chat';
+                                    chatMessages.innerHTML = '<p style="font-size:12px; color:#888;">Select an accepted friend to chat.</p>';
+                                    messageInput.disabled = true;
+                                    sendMessageButton.disabled = true;
+                                    photoButton.disabled = true;
+                                    voiceButton.disabled = true;
+                                }
+                            } catch (error) {
+                                console.error('Unfriend action failed:', error);
+                                alert('Could not remove this friend.');
+                            }
+                        };
+                        const blockButton = document.createElement('button');
+                        blockButton.textContent = 'Block';
+                        blockButton.className = 'friend-action-danger';
+                        blockButton.onclick = async () => {
+                            if (!confirm(`Block ${friend}? They will no longer be your friend or message you here.`)) return;
+                            try {
+                                await setDoc(doc(db, 'friend_blocks', friendDoc.id), {
+                                    pairId: friendDoc.id,
+                                    users: [user, friend].sort(),
+                                    blockedBy: user,
+                                    blockedUser: friend,
+                                    status: 'blocked',
+                                    createdAt: serverTimestamp()
+                                }, { merge: true });
+                                await updateDoc(friendDoc.ref, { status: 'blocked', blockedBy: user, blockedAt: serverTimestamp() });
+                                const requestsFromFriend = await getDocs(query(collection(db, 'friend_requests'), where('fromUser', '==', friend)));
+                                const requestsToFriend = await getDocs(query(collection(db, 'friend_requests'), where('toUser', '==', friend)));
+                                await Promise.all([...requestsFromFriend.docs, ...requestsToFriend.docs].map(requestDoc => {
+                                    const request = requestDoc.data();
+                                    return request.status === 'pending' && [request.fromUser, request.toUser].includes(user)
+                                        ? updateDoc(requestDoc.ref, { status: 'blocked', blockedAt: serverTimestamp() })
+                                        : Promise.resolve();
+                                }));
+                                if (activeFriend === friend) {
+                                    window._friendChatUnsub?.();
+                                    activeFriend = '';
+                                    activePairId = '';
+                                    chatHeading.textContent = 'Choose a friend to chat';
+                                    chatMessages.innerHTML = '<p style="font-size:12px; color:#888;">This conversation is blocked.</p>';
+                                    messageInput.disabled = true;
+                                    sendMessageButton.disabled = true;
+                                    photoButton.disabled = true;
+                                    voiceButton.disabled = true;
+                                }
+                            } catch (error) {
+                                console.error('Block action failed:', error);
+                                alert('Could not block this friend.');
+                            }
+                        };
+                        actions.append(unfriendButton, blockButton);
+                    }
+                    row.append(label, actions);
                     friendsList.appendChild(row);
                 });
                 window.dispatchEvent(new CustomEvent('useracceptedfriendschange', { detail: { friends: [...friendPairIds.keys()] } }));
@@ -9496,6 +9711,11 @@
                         requestStatus.textContent = `${candidateUser} is already your friend.`;
                         return;
                     }
+                    const blockSnapshot = await getDoc(doc(db, 'friend_blocks', pairId));
+                    if (blockSnapshot.exists() && blockSnapshot.data().status === 'blocked') {
+                        requestStatus.textContent = 'A friend block exists for these accounts. The request cannot be sent.';
+                        return;
+                    }
                     const outgoing = await getDocs(query(collection(db, 'friend_requests'), where('fromUser', '==', user)));
                     const alreadyPending = outgoing.docs.some(requestDoc => requestDoc.data().toUser === candidateUser && requestDoc.data().status === 'pending');
                     if (alreadyPending) {
@@ -9569,12 +9789,23 @@
 
             const sendFriendChatMessage = async (message, conversationId = activePairId, recipient = activeFriend) => {
                 if (!recipient || !conversationId) throw new Error('Choose an accepted friend first.');
+                if (['admin', 'superadmin'].includes(recipient.toLowerCase()) || ['admin', 'superadmin'].includes(user.toLowerCase())) {
+                    throw new Error('This account is not available for user-to-user friend messaging.');
+                }
+                const [friendshipSnapshot, blockSnapshot] = await Promise.all([
+                    getDoc(doc(db, 'friendships', conversationId)),
+                    getDoc(doc(db, 'friend_blocks', conversationId))
+                ]);
+                if (!friendshipSnapshot.exists() || friendshipSnapshot.data().status !== 'accepted') throw new Error('This friendship is no longer active.');
+                if (blockSnapshot.exists() && blockSnapshot.data().status === 'blocked') throw new Error('Messaging is blocked for this friendship.');
                 await addDoc(collection(db, 'friend_chats', conversationId, 'messages'), {
                     ...message,
                     fromUser: user,
                     toUser: recipient,
                     createdAt: serverTimestamp()
                 });
+                const messageLabel = message.type === 'photo' ? 'sent a photo' : message.type === 'voice' ? 'sent a voice message' : message.text;
+                await addActivityNotification(recipient, `Message from ${user}`, messageLabel || 'New friend message', '💬');
             };
 
             sendMessageButton.onclick = async () => {
@@ -9608,10 +9839,9 @@
                 const photoFriend = activeFriend;
                 photoButton.disabled = true;
                 try {
-                    const path = `friend_messages/${photoPairId}/${Date.now()}_${encodeURIComponent(user)}_photo`;
-                    const uploaded = await uploadBytes(storageRef(storage, path), file);
-                    const url = await getDownloadURL(uploaded.ref);
-                    await sendFriendChatMessage({ type: 'photo', url, storagePath: path }, photoPairId, photoFriend);
+                    const githubMedia = await uploadFriendMediaToGithub(user, `friend-messages/${photoPairId}`, file);
+                    await queueFriendMediaDeletion(user, githubMedia);
+                    await sendFriendChatMessage({ type: 'photo', ...githubMedia }, photoPairId, photoFriend);
                 } catch (error) {
                     console.error('Friend photo upload failed:', error);
                     alert('Could not send photo.');
@@ -9656,10 +9886,10 @@
                         voiceStatus.textContent = 'Uploading voice message…';
                         try {
                             const extension = blob.type.includes('mp4') ? 'm4a' : 'webm';
-                            const path = `friend_messages/${recordingPairId}/${Date.now()}_${encodeURIComponent(user)}_voice.${extension}`;
-                            const uploaded = await uploadBytes(storageRef(storage, path), blob, { contentType: blob.type });
-                            const url = await getDownloadURL(uploaded.ref);
-                            await sendFriendChatMessage({ type: 'voice', url, duration, storagePath: path }, recordingPairId, recordingFriend);
+                            const voiceFile = new File([blob], `voice-message.${extension}`, { type: blob.type || 'audio/webm' });
+                            const githubMedia = await uploadFriendMediaToGithub(user, `friend-messages/${recordingPairId}`, voiceFile);
+                            await queueFriendMediaDeletion(user, githubMedia);
+                            await sendFriendChatMessage({ type: 'voice', ...githubMedia, duration }, recordingPairId, recordingFriend);
                             voiceStatus.textContent = 'Voice message sent.';
                         } catch (error) {
                             console.error('Friend voice upload failed:', error);
@@ -9687,6 +9917,7 @@
             const storyButton = document.getElementById('addFriendStoryButton');
             const storyInput = document.getElementById('friendStoryFileInput');
             const storyStatus = document.getElementById('friendStoryStatus');
+            const mediaRepoSelect = document.getElementById('friendMediaRepoSelect');
             const viewer = document.getElementById('friendStoryViewer');
             const viewerMedia = document.getElementById('friendStoryViewerMedia');
             const viewerOwner = document.getElementById('friendStoryViewerOwner');
@@ -9707,6 +9938,36 @@
             const now = () => Date.now();
             const toMillis = value => value?.toMillis ? value.toMillis() : value instanceof Date ? value.getTime() : 0;
             let storyExpiryTimer = null;
+
+            processExpiredOwnStories(user);
+            if (!window._friendStoryExpiryCleanupTimer) {
+                window._friendStoryExpiryCleanupTimer = setInterval(() => processExpiredOwnStories(user), 60 * 60 * 1000);
+            }
+            const loadStoryRepository = async () => {
+                if (githubToken && mediaRepoSelect) await fetchRepositories('friendmedia');
+                try {
+                    const profileSnapshot = await getDoc(doc(db, 'profiles', user));
+                    const profile = profileSnapshot.exists() ? profileSnapshot.data() : {};
+                    const savedRepo = profile.friendMediaRepo || profile.featuredPhotoRepo || profile.featuredPhotos?.find(photo => photo?.repo)?.repo || '';
+                    if (savedRepo && mediaRepoSelect) {
+                        mediaRepoSelect.dataset.savedRepo = savedRepo;
+                        if (Array.from(mediaRepoSelect.options).some(option => option.value === savedRepo)) mediaRepoSelect.value = savedRepo;
+                    }
+                } catch (error) {
+                    console.debug('Could not load story repository:', error);
+                }
+            };
+            loadStoryRepository();
+            if (mediaRepoSelect && !mediaRepoSelect.dataset.storyRepoBound) {
+                mediaRepoSelect.dataset.storyRepoBound = 'true';
+                mediaRepoSelect.addEventListener('change', () => {
+                    if (!mediaRepoSelect.value) return;
+                    setDoc(doc(db, 'profiles', user), {
+                        friendMediaRepo: mediaRepoSelect.value,
+                        friendMediaBranch: mediaRepoSelect.selectedOptions?.[0]?.dataset.defaultBranch || 'main'
+                    }, { merge: true }).catch(error => console.warn('Could not save story repository:', error));
+                });
+            }
 
             const closeStory = () => {
                 viewer?.classList.remove('active');
@@ -9770,18 +10031,21 @@
                 storiesStrip.innerHTML = '';
                 storiesStrip.appendChild(storyButton);
                 let soonestExpiry = Infinity;
-                friends.forEach(friend => {
-                    const featuredPhotos = featuredByFriend.get(friend) || [];
-                    featuredPhotos.slice(0, 4).forEach((photo, index) => {
-                        if (photo?.url) storiesStrip.appendChild(makeStoryItem(friend, photo.url, 'image', `Photo ${index + 1}`));
-                    });
+                const storyOwners = [user, ...friends];
+                storyOwners.forEach(friend => {
+                    if (friend !== user) {
+                        const featuredPhotos = featuredByFriend.get(friend) || [];
+                        featuredPhotos.slice(0, 4).forEach((photo, index) => {
+                            if (photo?.url) storiesStrip.appendChild(makeStoryItem(friend, photo.url, 'image', `Photo ${index + 1}`));
+                        });
+                    }
                     const friendStories = (storiesByFriend.get(friend) || [])
                         .filter(story => toMillis(story.expiresAt) > now())
                         .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
                     friendStories.forEach(story => {
                         const expiry = toMillis(story.expiresAt);
                         soonestExpiry = Math.min(soonestExpiry, expiry);
-                        storiesStrip.appendChild(makeStoryItem(friend, story.url, story.type || 'image', 'Story', expiry));
+                        storiesStrip.appendChild(makeStoryItem(friend, story.url, story.type || 'image', friend === user ? 'Your story' : 'Story', expiry));
                     });
                 });
                 if (soonestExpiry < Infinity) storyExpiryTimer = setTimeout(renderStories, Math.max(1000, soonestExpiry - now() + 1000));
@@ -9791,7 +10055,8 @@
                 const activeFriends = [...friends].filter(friend => {
                     const presence = presenceByFriend.get(friend) || {};
                     const lastActive = toMillis(presence.lastActive);
-                    return presence.online === true && now() - lastActive < 120000;
+                    const recentlySeen = lastActive > 0 && now() - lastActive < 90000;
+                    return (presence.online === true || recentlySeen) && now() - lastActive < 120000;
                 });
                 activeList.innerHTML = activeFriends.length ? '' : '<p style="font-size:12px; color:#89979c;">No friends online.</p>';
                 activeFriends.forEach((friend, index) => {
@@ -9856,6 +10121,19 @@
             };
             document.addEventListener('useracceptedfriendschange', window._friendStoriesChangeHandler);
 
+            if (window._ownFriendStoriesUnsub) window._ownFriendStoriesUnsub();
+            window._ownFriendStoriesUnsub = onSnapshot(collection(db, 'users', user, 'stories'), snapshot => {
+                const ownStories = snapshot.docs.map(storyDoc => ({ id: storyDoc.id, ...storyDoc.data() }));
+                storiesByFriend.set(user, ownStories);
+                snapshot.docs.forEach(storyDoc => {
+                    const story = storyDoc.data();
+                    if (toMillis(story.expiresAt) > 0 && toMillis(story.expiresAt) <= now()) {
+                        deleteDoc(storyDoc.ref).catch(error => console.warn('Expired story document cleanup failed:', error));
+                    }
+                });
+                renderStories();
+            }, error => console.warn('Own stories could not load:', error));
+
             storyButton.onclick = () => storyInput.click();
             storyInput.onchange = async () => {
                 const file = storyInput.files?.[0];
@@ -9867,25 +10145,27 @@
                 if (storyStatus) storyStatus.textContent = 'Uploading your story…';
                 try {
                     const storyId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                    const path = `friend_stories/${user}/${storyId}_${encodeURIComponent(file.name)}`;
-                    const upload = await uploadBytes(storageRef(storage, path), file);
-                    const url = await getDownloadURL(upload.ref);
+                    const uploadedMedia = await uploadFriendMediaToGithub(user, 'friend-stories', file);
                     const createdAt = new Date();
                     const expiresAt = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
                     await addDoc(collection(db, 'users', user, 'stories'), {
+                        storyId,
                         owner: user,
-                        url,
-                        storagePath: path,
+                        ...uploadedMedia,
                         type: file.type.startsWith('video/') ? 'video' : 'image',
                         createdAt: serverTimestamp(),
-                        expiresAt
+                        expiresAt,
+                        deleteAt: Date.now() + 30 * 24 * 60 * 60 * 1000
                     });
+                    await queueFriendMediaDeletion(user, uploadedMedia);
+                    storiesByFriend.set(user, [...(storiesByFriend.get(user) || []), { storyId, owner: user, ...uploadedMedia, type: file.type.startsWith('video/') ? 'video' : 'image', createdAt, expiresAt }]);
+                    renderStories();
                     if (storyStatus) storyStatus.textContent = 'Your story is live for 24 hours.';
                     showToast('Story added', 'Your friends can view it for 24 hours.', '📸');
                 } catch (error) {
                     console.error('Friend story upload failed:', error);
                     if (storyStatus) storyStatus.textContent = 'Could not publish your story.';
-                    alert('Could not upload story. Check your Firebase Storage rules and connection.');
+                    alert('Could not upload story. Check GitHub authorization/repository access and Firestore permissions.');
                 } finally {
                     storyButton.disabled = false;
                 }
