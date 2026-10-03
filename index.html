@@ -9,8 +9,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#ffd1dc">
-    <meta name="application-name" content="For You">
-    <meta name="apple-mobile-web-app-title" content="For You">
+    <meta name="application-name" content="Love Site">
+    <meta name="apple-mobile-web-app-title" content="Love Site">
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
@@ -23,7 +23,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
-    <title id="dynamicPageTitle">For You</title>
+    <title id="dynamicPageTitle">Love Site</title>
     
     <!-- Expanded Google Fonts for Customization -->
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;500;600&family=Pacifico&family=Caveat:wght@700&family=Lobster&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -307,6 +307,9 @@
         #loginContent .password-input { background:#f8fcfd; border-color:#c9dfe5; text-align:left; }
         #loginContent .password-input:focus { border-color:#5ba7b7; box-shadow:0 0 0 4px rgba(91,167,183,.12); }
         #loginContent #submitPassword { background:linear-gradient(100deg,#d81b60,#8e3d77,#2e7787); box-shadow:0 10px 22px rgba(101,48,87,.2); }
+        .login-secondary-button { width:100%; margin:6px 0 0; padding:10px 14px; border:1px solid #b9d4db; border-radius:9px; background:#f3fafb; color:#356675; cursor:pointer; font-size:12px; }
+        .login-secondary-button:hover { background:#e5f3f5; }
+        .login-verification-status { min-height:18px; margin:6px 0; color:#647b84; font-size:11px; }
         
         .password-content {
             background: white;
@@ -314,8 +317,13 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             text-align: center;
-            max-width: 400px;
+            flex:1 1 50%;
+            max-width: 560px;
             width: 90%;
+            min-height: 280px;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
             animation: bounceIn 1s forwards;
         }
 
@@ -3161,10 +3169,10 @@
     <div id="confettiContainer"></div>
 
     <!-- Password Modal with Dynamic Flow -->
-    <div id="siteOpeningScreen" aria-label="Opening For You">
+    <div id="siteOpeningScreen" aria-label="Opening Love Site">
         <div class="opening-core">
-            <div class="opening-logo">For You</div>
-            <div class="opening-subtitle">personal space · secure connection</div>
+            <div class="opening-logo">Love Site</div>
+            <div class="opening-subtitle">a diary of your journey in love</div>
             <div class="opening-lines" aria-hidden="true"></div>
             <div class="opening-scan-label">Initializing your space…</div>
         </div>
@@ -3183,7 +3191,8 @@
             <input type="text" class="password-input" id="loginUsername" placeholder="Username (Leave blank for secret word)" style="margin-bottom: 10px;">
             <input type="password" class="password-input" id="passwordInput" placeholder="The special word...">
             <button class="submit-btn" id="submitPassword" style="width: 100%; margin-bottom: 10px;">Enter</button>
-            <p id="showRegisterBtn" style="margin-top: 10px; font-size: 13px; color: #d81b60; cursor: pointer; text-decoration: underline;">Or register an account</p>
+            <button type="button" id="forgotPasswordBtn" class="login-secondary-button">Forgot password?</button>
+            <button type="button" id="showRegisterBtn" class="login-secondary-button">Create an account</button>
         </div>
 
         <!-- Registration Screen -->
@@ -3191,8 +3200,25 @@
             <h2>Create Account</h2>
             <input type="text" class="password-input" id="regUsername" placeholder="Choose a Username" style="margin-bottom: 10px;">
             <input type="password" class="password-input" id="regPassword" placeholder="Choose a Password" style="margin-bottom: 10px;">
-            <button class="submit-btn" id="submitRegister" style="width: 100%; margin-bottom: 10px;">Register</button>
-            <p id="showLoginBtn" style="margin-top: 10px; font-size: 13px; color: #888; cursor: pointer;">Back to Login</p>
+            <input type="email" class="password-input" id="regEmail" placeholder="Your registered email address" style="margin-bottom: 10px;">
+            <button type="button" id="sendRegistrationCodeBtn" class="login-secondary-button">Send verification code</button>
+            <input type="text" class="password-input" id="regEmailCode" placeholder="6-digit email code" inputmode="numeric" maxlength="6" style="margin:10px 0;">
+            <button type="button" id="verifyRegistrationCodeBtn" class="login-secondary-button">Verify email</button>
+            <p id="registrationVerificationStatus" class="login-verification-status"></p>
+            <button class="submit-btn" id="submitRegister" style="width: 100%; margin-bottom: 10px;" disabled>Register</button>
+            <button type="button" id="showLoginBtn" class="login-secondary-button">Back to Login</button>
+        </div>
+
+        <div class="password-content" id="recoveryContent" style="display:none;">
+            <h2>Recover Account</h2>
+            <input type="text" class="password-input" id="recoveryUsername" placeholder="Username">
+            <input type="email" class="password-input" id="recoveryEmail" placeholder="Registered email">
+            <button type="button" id="sendRecoveryCodeBtn" class="login-secondary-button">Send recovery code</button>
+            <input type="text" class="password-input" id="recoveryCode" placeholder="6-digit code" inputmode="numeric" maxlength="6" style="margin:10px 0;">
+            <input type="password" class="password-input" id="recoveryNewPassword" placeholder="New password">
+            <button type="button" id="resetPasswordBtn" class="submit-btn" style="width:100%;" disabled>Change password</button>
+            <p id="recoveryStatus" class="login-verification-status"></p>
+            <button type="button" id="recoveryBackBtn" class="login-secondary-button">Back to Login</button>
         </div>
 
         <!-- Account Pending Screen -->
@@ -8180,25 +8206,24 @@
                     btn.disabled = true;
 
                     try {
-                        const serviceID = "service_1z9ho2p"; 
+                        const serviceID = "service_h2bvhxa"; 
                         const templateID = "template_3bchwj9"; 
                         const publicKey = "fa315-qPA4h7IMyAJ"; 
                         let codeSent = false;
 
-                        if (window.emailjs && serviceID !== "service_1z9ho2p") {
-                            emailjs.init(publicKey);
-                            const templateParams = {
-                                to_name: adminTargetUser, 
-                                to_email: "cjbalog18@gmail.com",
-                                message: `Your deletion verification code is: ${randomCode}`
-                            };
-                            await emailjs.send(serviceID, templateID, templateParams);
-                            alert(`Verification code sent to email!`);
-                            codeSent = true;
-                        } else {
-                             alert(`[SIMULATION] Verification code sent to admin contact: ${randomCode}`);
-                             codeSent = true;
-                        }
+                        if (!window.emailjs) throw new Error('EmailJS is unavailable.');
+                        emailjs.init(publicKey);
+                        const templateParams = {
+                            to_name: adminTargetUser,
+                            email: "cjbalog18@gmail.com",
+                            passcode: String(randomCode),
+                            time: '5 minutes',
+                            purpose: 'deletion verification',
+                            message: `Your deletion verification code is: ${randomCode}`
+                        };
+                        await emailjs.send(serviceID, templateID, templateParams);
+                        alert('Verification code sent to the configured admin email.');
+                        codeSent = true;
 
                         if(codeSent) {
                             const userInput = prompt("Enter the 6-digit verification code:");
@@ -10565,6 +10590,7 @@
         // Modal Flow Elements
         const loginContent = document.getElementById('loginContent');
         const registerContent = document.getElementById('registerContent');
+        const recoveryContent = document.getElementById('recoveryContent');
         const pendingContent = document.getElementById('pendingContent');
         const deactivatedContent = document.getElementById('deactivatedContent');
         
@@ -10576,6 +10602,16 @@
         const submitRegister = document.getElementById('submitRegister');
         const regUsernameInput = document.getElementById('regUsername');
         const regPasswordInput = document.getElementById('regPassword');
+        const regEmailInput = document.getElementById('regEmail');
+        const regEmailCodeInput = document.getElementById('regEmailCode');
+        const registrationStatus = document.getElementById('registrationVerificationStatus');
+        const recoveryUsernameInput = document.getElementById('recoveryUsername');
+        const recoveryEmailInput = document.getElementById('recoveryEmail');
+        const recoveryCodeInput = document.getElementById('recoveryCode');
+        const recoveryNewPasswordInput = document.getElementById('recoveryNewPassword');
+        const recoveryStatus = document.getElementById('recoveryStatus');
+        let registrationCodeState = null;
+        let recoveryCodeState = null;
         
         const sendReactivationBtn = document.getElementById('sendReactivationBtn');
         const reactivationMsg = document.getElementById('reactivationMsg');
@@ -10583,6 +10619,26 @@
         const welcomeMsg = document.getElementById('welcomeMsg');
         const logoutMsg = document.getElementById('logoutMsg');
         const pageTitle = document.getElementById('dynamicPageTitle');
+
+        const emailServiceId = 'service_h2bvhxa';
+        const emailVerificationTemplateId = 'template_qb8qlz3';
+        const emailRecoveryTemplateId = 'template_3bchwj9';
+        const emailPublicKey = 'fa315-qPA4h7IMyAJ';
+        async function sendEmailVerificationCode(email, purpose) {
+            if (!window.emailjs) throw new Error('Email service is unavailable.');
+            const code = String(Math.floor(100000 + Math.random() * 900000));
+            emailjs.init(emailPublicKey);
+            const templateId = purpose === 'email verification' ? emailVerificationTemplateId : emailRecoveryTemplateId;
+            await emailjs.send(emailServiceId, templateId, {
+                email,
+                to_name: email.split('@')[0],
+                passcode: code,
+                time: '5 minutes',
+                purpose,
+                message: `Your Love Site ${purpose} code is ${code}. It expires in 5 minutes.`
+            });
+            return { code, expiresAt: Date.now() + 5 * 60 * 1000 };
+        }
 
         async function getFirestoreLoginCredential(documentId) {
             const credentialSnapshot = await window.getDoc(window.doc(window.db, 'login_credentials', documentId));
@@ -10596,12 +10652,83 @@
 
         document.getElementById('showRegisterBtn').onclick = () => {
             loginContent.style.display = 'none';
+            recoveryContent.style.display = 'none';
             registerContent.style.display = 'block';
+        };
+
+        document.getElementById('forgotPasswordBtn').onclick = () => {
+            loginContent.style.display = 'none';
+            registerContent.style.display = 'none';
+            recoveryContent.style.display = 'flex';
         };
         
         document.getElementById('showLoginBtn').onclick = () => {
             registerContent.style.display = 'none';
+            recoveryContent.style.display = 'none';
             loginContent.style.display = 'block';
+        };
+        document.getElementById('recoveryBackBtn').onclick = () => {
+            recoveryContent.style.display = 'none';
+            registerContent.style.display = 'none';
+            loginContent.style.display = 'block';
+        };
+
+        document.getElementById('sendRegistrationCodeBtn').onclick = async () => {
+            const email = regEmailInput.value.trim().toLowerCase();
+            if (!email || !email.includes('@')) return registrationStatus.textContent = 'Enter a valid email address.';
+            try {
+                const existingEmail = await window.getDocs(window.query(window.collection(window.db, 'app_users'), window.where('email', '==', email)));
+                if (!existingEmail.empty) return registrationStatus.textContent = 'That email is already registered.';
+                registrationStatus.textContent = 'Sending verification code…';
+                registrationCodeState = await sendEmailVerificationCode(email, 'email verification');
+                registrationStatus.textContent = 'Code sent. It is valid for 5 minutes.';
+            } catch (error) {
+                console.error('Registration email code failed:', error);
+                registrationStatus.textContent = 'Could not send the code. Check EmailJS configuration.';
+            }
+        };
+        document.getElementById('verifyRegistrationCodeBtn').onclick = () => {
+            const valid = registrationCodeState && Date.now() < registrationCodeState.expiresAt && regEmailCodeInput.value.trim() === registrationCodeState.code;
+            if (!valid) {
+                registrationStatus.textContent = registrationCodeState && Date.now() >= registrationCodeState.expiresAt ? 'Code expired. Request a new code.' : 'Incorrect verification code.';
+                submitRegister.disabled = true;
+                return;
+            }
+            registrationCodeState.verifiedEmail = regEmailInput.value.trim().toLowerCase();
+            registrationStatus.textContent = 'Email verified. You can register now.';
+            submitRegister.disabled = false;
+        };
+
+        document.getElementById('sendRecoveryCodeBtn').onclick = async () => {
+            const username = recoveryUsernameInput.value.trim().toLowerCase();
+            const email = recoveryEmailInput.value.trim().toLowerCase();
+            if (!username || !email) return recoveryStatus.textContent = 'Enter your username and registered email.';
+            try {
+                const matches = await window.getDocs(window.query(window.collection(window.db, 'app_users'), window.where('username', '==', username), window.where('email', '==', email)));
+                if (matches.empty) return recoveryStatus.textContent = 'No matching verified account was found.';
+                const account = matches.docs[0].data();
+                if (account.emailVerified !== true) return recoveryStatus.textContent = 'This email has not been verified.';
+                recoveryCodeState = { ...(await sendEmailVerificationCode(email, 'password recovery')), userId: matches.docs[0].id };
+                recoveryStatus.textContent = 'Recovery code sent. It is valid for 5 minutes.';
+            } catch (error) {
+                console.error('Recovery email code failed:', error);
+                recoveryStatus.textContent = 'Could not send the recovery code.';
+            }
+        };
+        document.getElementById('recoveryCode').addEventListener('input', () => {
+            document.getElementById('resetPasswordBtn').disabled = !(recoveryCodeState && Date.now() < recoveryCodeState.expiresAt && recoveryCodeInput.value.trim() === recoveryCodeState.code && recoveryNewPasswordInput.value.length >= 6);
+        });
+        recoveryNewPasswordInput.addEventListener('input', () => document.getElementById('recoveryCode').dispatchEvent(new Event('input')));
+        document.getElementById('resetPasswordBtn').onclick = async () => {
+            if (!recoveryCodeState || Date.now() >= recoveryCodeState.expiresAt || recoveryCodeInput.value.trim() !== recoveryCodeState.code) return recoveryStatus.textContent = 'Invalid or expired recovery code.';
+            try {
+                await window.updateDoc(window.doc(window.db, 'app_users', recoveryCodeState.userId), { password: recoveryNewPasswordInput.value, passwordUpdatedAt: window.serverTimestamp() });
+                recoveryStatus.textContent = 'Password changed. You can now log in.';
+                recoveryCodeState = null;
+            } catch (error) {
+                console.error('Password reset failed:', error);
+                recoveryStatus.textContent = 'Could not change the password.';
+            }
         };
         
         document.getElementById('pendingBackBtn').onclick = () => {
@@ -10713,6 +10840,10 @@
                         } else if (userData.status === 'rejected') {
                             alert("This account was rejected by the superadmin.");
                         } else if (userData.status === 'approved') {
+                            if (userData.emailVerified !== true || !userData.email) {
+                                alert('Verify your registered email before logging in.');
+                                return;
+                            }
                             doLogin(username, userData, userDoc.id);
                         }
                         return;
@@ -10754,8 +10885,10 @@
             submitRegister.addEventListener('click', async () => {
                 const u = regUsernameInput.value.trim().toLowerCase();
                 const p = regPasswordInput.value;
+                const email = regEmailInput.value.trim().toLowerCase();
                 
-                if (!u || !p) return alert("Please fill in all fields.");
+                if (!u || !p || !email) return alert("Please fill in username, password, and email.");
+                if (!registrationCodeState || registrationCodeState.verifiedEmail !== email || Date.now() >= registrationCodeState.expiresAt) return alert("Verify your email before registering.");
                 if (u === 'kate' || u === 'baby' || u === 'admin') return alert("This username is reserved.");
                 
                 try {
@@ -10773,6 +10906,9 @@
                     await window.addDoc(window.collection(window.db, 'app_users'), {
                         username: u,
                         password: p, 
+                        email,
+                        emailVerified: true,
+                        emailVerifiedAt: window.serverTimestamp(),
                         status: 'pending',
                         reactivationMessage: '',
                         timestamp: window.serverTimestamp()
@@ -10780,6 +10916,10 @@
                     
                     regUsernameInput.value = '';
                     regPasswordInput.value = '';
+                    regEmailInput.value = '';
+                    regEmailCodeInput.value = '';
+                    registrationCodeState = null;
+                    registrationStatus.textContent = '';
                     registerContent.style.display = 'none';
                     pendingContent.style.display = 'block';
                 } catch (e) {
@@ -11089,7 +11229,7 @@
             currentDisplayName = name;
             welcomeMsg.textContent = `Welcome ${name}, enjoy your stay!!`;
             logoutMsg.textContent = `Thank you ${name}`;
-            pageTitle.textContent = `For You ${name}`;
+            pageTitle.textContent = `Love Site · ${name}`;
         }
 
         // ===== PRESENCE & ACTIVITY (client-side) =====
