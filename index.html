@@ -8236,7 +8236,7 @@
                             purpose: 'deletion verification',
                             message: `Your deletion verification code is: ${randomCode}`
                         };
-                        await window.emailjs.send(serviceID, templateID, templateParams);
+                        await window.emailjs.send(serviceID, templateID, templateParams, publicKey);
                         alert('Verification code sent to the configured admin email.');
                         codeSent = true;
 
@@ -10655,8 +10655,16 @@
                 time: '5 minutes',
                 purpose,
                 message: `Your Love Site ${purpose} code is ${code}. It expires in 5 minutes.`
-            });
+            }, emailPublicKey);
             return { code, expiresAt: Date.now() + 5 * 60 * 1000 };
+        }
+
+        function formatEmailServiceError(error) {
+            const detail = error?.text || error?.message || 'Unknown EmailJS error.';
+            if (/account not found|service not found|invalid public key/i.test(detail)) {
+                return `${detail} Confirm EmailJS service ${emailServiceId}, public key, and Gmail connection.`;
+            }
+            return detail;
         }
 
         async function getFirestoreLoginCredential(documentId) {
@@ -10712,7 +10720,7 @@
                 status.textContent = 'Code sent. It is valid for 5 minutes.';
             } catch (error) {
                 console.error('Required email code failed:', error);
-                status.textContent = `Could not send the verification code: ${error?.text || error?.message || 'Check EmailJS configuration.'}`;
+                status.textContent = `Could not send the verification code: ${formatEmailServiceError(error)}`;
             }
         };
 
@@ -10781,7 +10789,7 @@
                 registrationStatus.textContent = 'Code sent. It is valid for 5 minutes.';
             } catch (error) {
                 console.error('Registration email code failed:', error);
-                registrationStatus.textContent = `Could not send the code: ${error?.text || error?.message || 'Check EmailJS configuration.'}`;
+                registrationStatus.textContent = `Could not send the code: ${formatEmailServiceError(error)}`;
             }
         };
         document.getElementById('verifyRegistrationCodeBtn').onclick = () => {
@@ -10809,7 +10817,7 @@
                 recoveryStatus.textContent = 'Recovery code sent. It is valid for 5 minutes.';
             } catch (error) {
                 console.error('Recovery email code failed:', error);
-                recoveryStatus.textContent = `Could not send the recovery code: ${error?.text || error?.message || 'Check EmailJS configuration.'}`;
+                recoveryStatus.textContent = `Could not send the recovery code: ${formatEmailServiceError(error)}`;
             }
         };
         document.getElementById('recoveryCode').addEventListener('input', () => {
