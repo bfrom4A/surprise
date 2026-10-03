@@ -1281,6 +1281,9 @@
         #friendStoryViewer img, #friendStoryViewer video { max-width:min(92vw,780px); max-height:84vh; border-radius:10px; object-fit:contain; }
         #friendStoryViewerClose { position:absolute; top:20px; right:20px; padding:9px 13px; border:0; border-radius:8px; background:white; color:#183747; cursor:pointer; }
         #friendStoryViewerOwner { position:absolute; top:22px; left:22px; color:white; font-weight:700; }
+        #friendStoryViewerActions { position:absolute; bottom:22px; left:50%; transform:translateX(-50%); display:flex; gap:8px; align-items:center; }
+        #friendStoryViewerHeart { border:0; border-radius:999px; padding:10px 15px; background:#fff; color:#b71550; cursor:pointer; font-weight:800; }
+        #friendStoryViewerStats { color:#fff; font-size:12px; }
         @media (max-width: 900px) {
             #mainContent { width:100%; margin:0; padding:78px 10px 146px; }
             #mainContent > .tabs {
@@ -4394,6 +4397,10 @@
         <span id="friendStoryViewerOwner"></span>
         <button type="button" id="friendStoryViewerClose">Close</button>
         <div id="friendStoryViewerMedia"></div>
+        <div id="friendStoryViewerActions">
+            <button type="button" id="friendStoryViewerHeart">♡ Heart</button>
+            <span id="friendStoryViewerStats">0 views · 0 hearts</span>
+        </div>
     </div>
 
     <!-- Decorative elements -->
@@ -9938,6 +9945,8 @@
             const viewerMedia = document.getElementById('friendStoryViewerMedia');
             const viewerOwner = document.getElementById('friendStoryViewerOwner');
             const viewerClose = document.getElementById('friendStoryViewerClose');
+            const viewerHeart = document.getElementById('friendStoryViewerHeart');
+            const viewerStats = document.getElementById('friendStoryViewerStats');
             const activeList = document.getElementById('activeFriendsList');
             if (!storiesStrip || !storyInput || !activeList) return;
 
@@ -9961,6 +9970,9 @@
             }
             const closeStory = () => {
                 viewer?.classList.remove('active');
+                if (activeStoryStatsUnsub) activeStoryStatsUnsub();
+                activeStoryStatsUnsub = null;
+                activeStory = null;
                 if (viewerMedia) {
                     const video = viewerMedia.querySelector('video');
                     if (video) video.pause();
@@ -9970,10 +9982,33 @@
             viewerClose?.addEventListener('click', closeStory);
             viewer?.addEventListener('click', event => { if (event.target === viewer) closeStory(); });
 
-            const openStory = (owner, url, type) => {
+            let activeStory = null;
+            let activeStoryStatsUnsub = null;
+            const openStory = async (owner, url, type, storyId = '') => {
                 if (!viewer || !viewerMedia || !url) return;
                 viewerMedia.innerHTML = '';
                 viewerOwner.textContent = owner === user ? 'Your story' : owner;
+                activeStory = { owner, storyId };
+                if (activeStoryStatsUnsub) activeStoryStatsUnsub();
+                if (storyId) {
+                    const storyRef = doc(db, 'users', owner, 'stories', storyId);
+                    await setDoc(doc(db, 'users', owner, 'stories', storyId, 'views', user), { user, viewedAt: serverTimestamp() }, { merge: true }).catch(error => console.warn('Story view receipt failed:', error));
+                    activeStoryStatsUnsub = onSnapshot(storyRef, async storySnapshot => {
+                        if (!storySnapshot.exists()) return;
+                        const story = storySnapshot.data();
+                        const views = await getDocs(collection(db, 'users', owner, 'stories', storyId, 'views')).catch(() => ({ size: 0 }));
+                        const reactions = await getDocs(collection(db, 'users', owner, 'stories', storyId, 'reactions')).catch(() => ({ size: 0 }));
+                        if (viewerStats) viewerStats.textContent = `${views.size || 0} views · ${reactions.size || 0} hearts`;
+                        if (viewerHeart) {
+                            const reacted = await getDoc(doc(db, 'users', owner, 'stories', storyId, 'reactions', user));
+                            viewerHeart.textContent = reacted.exists() ? '♥ Hearted' : '♡ Heart';
+                        }
+                    });
+                    if (viewerHeart) viewerHeart.style.display = owner === user ? 'none' : 'block';
+                } else if (viewerHeart) {
+                    viewerHeart.style.display = 'none';
+                    if (viewerStats) viewerStats.textContent = '';
+                }
                 if (type === 'video') {
                     const video = document.createElement('video');
                     video.src = url;
@@ -9990,8 +10025,22 @@
                 }
                 viewer.classList.add('active');
             };
+            viewerHeart?.addEventListener('click', async () => {
+                if (!activeStory?.storyId || activeStory.owner === user) return;
+                const reactionRef = doc(db, 'users', activeStory.owner, 'stories', activeStory.storyId, 'reactions', user);
+                try {
+                    const reaction = await getDoc(reactionRef);
+                    if (reaction.exists()) await deleteDoc(reactionRef);
+                    else {
+                        await setDoc(reactionRef, { user, type: 'heart', createdAt: serverTimestamp() });
+                        await addActivityNotification(activeStory.owner, 'Someone liked your story', `${user} sent a heart reaction.`, '♥');
+                    }
+                } catch (error) {
+                    console.warn('Story reaction failed:', error);
+                }
+            });
 
-            const makeStoryItem = (owner, url, type, label, expiry = 0) => {
+            const makeStoryItem = (owner, url, type, label, expiry = 0, storyId = '') => {
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = `friend-story-item${type === 'video' ? ' story-video' : ''}`;
@@ -10012,7 +10061,7 @@
                     expiryLabel.textContent = `${hoursLeft}h left`;
                     button.appendChild(expiryLabel);
                 }
-                button.onclick = () => openStory(owner, url, type);
+                button.onclick = () => openStory(owner, url, type, storyId);
                 return button;
             };
 
@@ -10035,7 +10084,7 @@
                     friendStories.forEach(story => {
                         const expiry = toMillis(story.expiresAt);
                         soonestExpiry = Math.min(soonestExpiry, expiry);
-                        storiesStrip.appendChild(makeStoryItem(friend, story.url, story.type || 'image', friend === user ? 'Your story' : 'Story', expiry));
+                        storiesStrip.appendChild(makeStoryItem(friend, story.url, story.type || 'image', friend === user ? 'Your story' : 'Story', expiry, story.id || story.storyId));
                     });
                 });
                 if (soonestExpiry < Infinity) storyExpiryTimer = setTimeout(renderStories, Math.max(1000, soonestExpiry - now() + 1000));
