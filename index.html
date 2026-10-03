@@ -8227,7 +8227,7 @@
                         let codeSent = false;
 
                         if (!window.emailjs) throw new Error('EmailJS is unavailable.');
-                        emailjs.init(publicKey);
+                        window.emailjs.init(publicKey);
                         const templateParams = {
                             to_name: adminTargetUser,
                             email: "cjbalog18@gmail.com",
@@ -8236,7 +8236,7 @@
                             purpose: 'deletion verification',
                             message: `Your deletion verification code is: ${randomCode}`
                         };
-                        await emailjs.send(serviceID, templateID, templateParams);
+                        await window.emailjs.send(serviceID, templateID, templateParams);
                         alert('Verification code sent to the configured admin email.');
                         codeSent = true;
 
@@ -10644,11 +10644,13 @@
         async function sendEmailVerificationCode(email, purpose) {
             if (!window.emailjs) throw new Error('Email service is unavailable.');
             const code = String(Math.floor(100000 + Math.random() * 900000));
-            emailjs.init(emailPublicKey);
+            window.emailjs.init(emailPublicKey);
             const templateId = purpose === 'email verification' ? emailVerificationTemplateId : emailRecoveryTemplateId;
-            await emailjs.send(emailServiceId, templateId, {
+            await window.emailjs.send(emailServiceId, templateId, {
                 email,
+                to_email: email,
                 to_name: email.split('@')[0],
+                reply_to: email,
                 passcode: code,
                 time: '5 minutes',
                 purpose,
@@ -10710,7 +10712,7 @@
                 status.textContent = 'Code sent. It is valid for 5 minutes.';
             } catch (error) {
                 console.error('Required email code failed:', error);
-                status.textContent = 'Could not send the verification code.';
+                status.textContent = `Could not send the verification code: ${error?.text || error?.message || 'Check EmailJS configuration.'}`;
             }
         };
 
@@ -10779,7 +10781,7 @@
                 registrationStatus.textContent = 'Code sent. It is valid for 5 minutes.';
             } catch (error) {
                 console.error('Registration email code failed:', error);
-                registrationStatus.textContent = 'Could not send the code. Check EmailJS configuration.';
+                registrationStatus.textContent = `Could not send the code: ${error?.text || error?.message || 'Check EmailJS configuration.'}`;
             }
         };
         document.getElementById('verifyRegistrationCodeBtn').onclick = () => {
@@ -10807,7 +10809,7 @@
                 recoveryStatus.textContent = 'Recovery code sent. It is valid for 5 minutes.';
             } catch (error) {
                 console.error('Recovery email code failed:', error);
-                recoveryStatus.textContent = 'Could not send the recovery code.';
+                recoveryStatus.textContent = `Could not send the recovery code: ${error?.text || error?.message || 'Check EmailJS configuration.'}`;
             }
         };
         document.getElementById('recoveryCode').addEventListener('input', () => {
