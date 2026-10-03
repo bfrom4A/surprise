@@ -1349,6 +1349,9 @@
         .active-friend-row { display:flex; align-items:center; gap:9px; width:100%; padding:8px; border:0; border-radius:8px; background:#f5fbfa; text-align:left; cursor:pointer; animation:activeFriendEnter .42s ease both; }
         .active-friend-row img { width:34px; height:34px; border-radius:50%; object-fit:cover; }
         .active-friend-dot { width:8px; height:8px; margin-left:auto; border-radius:50%; background:#24a76b; box-shadow:0 0 0 3px #dbf4e8; }
+        .active-friend-row.offline { background:#f6f7f8; color:#78868b; }
+        .active-friend-row.offline .active-friend-dot { background:#aab4b8; box-shadow:0 0 0 3px #e7eaeb; }
+        .active-friend-state { display:block; color:#71838a; font-size:10px; margin-top:2px; }
         #spotifyRail { grid-column:3; grid-row:1; min-width:0; }
         .active-friends-spotify { display:block; width:100%; height:calc(100vh - 260px); min-height:352px; margin:0; border:0; border-radius:12px; box-shadow:0 10px 28px rgba(89,35,60,.16); }
         @keyframes activeFriendEnter { from { opacity:0; transform:translateX(-24px); } to { opacity:1; transform:translateX(0); } }
@@ -9661,8 +9664,11 @@
             cleanupBlockedFriendRequests(user).catch(error => console.warn('Blocked friend request cleanup skipped:', error));
 
             const friendPairIds = new Map();
-            window._friendListUnsub = onSnapshot(query(collection(db, 'friendships'), where('users', 'array-contains', user)), snapshot => {
-                const friends = snapshot.docs.filter(friendDoc => friendDoc.data().status === 'accepted');
+            window._friendListUnsub = onSnapshot(collection(db, 'friendships'), snapshot => {
+                const friends = snapshot.docs.filter(friendDoc => {
+                    const data = friendDoc.data();
+                    return data.status === 'accepted' && Array.isArray(data.users) && data.users.includes(user);
+                });
                 friendPairIds.clear();
                 friendsList.innerHTML = friends.length ? '' : '<p style="font-size:12px; color:#888;">Accepted friends appear here.</p>';
                 friends.forEach(friendDoc => {
@@ -10229,26 +10235,35 @@
             };
 
             const renderActiveFriends = () => {
-                const activeFriends = [...friends].filter(friend => {
+                const visibleFriends = [...friends];
+                const activeFriends = visibleFriends.filter(friend => {
                     const presence = presenceByFriend.get(friend) || {};
                     const lastActive = toMillis(presence.lastActive);
                     const recentlySeen = lastActive > 0 && now() - lastActive < 90000;
-                    return (presence.online === true || recentlySeen) && now() - lastActive < 120000;
+                    return presence.online === true || (recentlySeen && now() - lastActive < 120000);
                 });
-                activeList.innerHTML = activeFriends.length ? '' : '<p style="font-size:12px; color:#89979c;">No friends online.</p>';
-                activeFriends.forEach((friend, index) => {
+                activeList.innerHTML = visibleFriends.length ? '' : '<p style="font-size:12px; color:#89979c;">No accepted friends yet.</p>';
+                visibleFriends.forEach((friend, index) => {
+                    const isOnline = activeFriends.includes(friend);
+                    const presence = presenceByFriend.get(friend) || {};
+                    const lastActive = toMillis(presence.lastActive);
                     const row = document.createElement('button');
                     row.type = 'button';
-                    row.className = 'active-friend-row';
+                    row.className = `active-friend-row${isOnline ? '' : ' offline'}`;
                     row.style.animationDelay = `${Math.min(index * 55, 330)}ms`;
                     const avatar = document.createElement('img');
                     avatar.src = featuredByFriend.get(friend)?.find(photo => photo?.url)?.url || 'https://placehold.co/72x72/e6f4f5/426a7b?text=U';
                     avatar.alt = '';
                     const name = document.createElement('span');
-                    name.textContent = friend;
+                    const nameWrap = document.createElement('span');
+                    const state = document.createElement('small');
+                    state.className = 'active-friend-state';
+                    state.textContent = isOnline ? 'Online now' : lastActive ? `Last seen ${new Date(lastActive).toLocaleString()}` : 'Offline';
+                    nameWrap.textContent = friend;
+                    nameWrap.appendChild(state);
                     const dot = document.createElement('span');
                     dot.className = 'active-friend-dot';
-                    row.append(avatar, name, dot);
+                    row.append(avatar, nameWrap, dot);
                     row.onclick = () => {
                         document.querySelector('[data-tab="friends"]')?.click();
                         window.openFriendConversation?.(friend);
