@@ -9757,7 +9757,8 @@
                     row.append(label, actions);
                     friendsList.appendChild(row);
                 });
-                window.dispatchEvent(new CustomEvent('useracceptedfriendschange', { detail: { friends: [...friendPairIds.keys()] } }));
+                window._acceptedFriendNames = [...friendPairIds.keys()];
+                window.dispatchEvent(new CustomEvent('useracceptedfriendschange', { detail: { friends: window._acceptedFriendNames } }));
             }, error => {
                 console.error('Friend list listener failed:', error);
                 friendsList.innerHTML = '<p style="font-size:12px; color:#a22;">Unable to load friends.</p>';
@@ -10296,6 +10297,9 @@
                 renderActiveFriends();
             };
             document.addEventListener('useracceptedfriendschange', window._friendStoriesChangeHandler);
+            if (Array.isArray(window._acceptedFriendNames)) {
+                window._friendStoriesChangeHandler({ detail: { friends: window._acceptedFriendNames } });
+            }
 
             if (window._ownFriendStoriesUnsub) window._ownFriendStoriesUnsub();
             window._ownFriendStoriesUnsub = onSnapshot(collection(db, 'users', user, 'stories'), snapshot => {
