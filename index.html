@@ -305,6 +305,24 @@
         #loginAnnouncementPanel > div { position:relative; z-index:1; }
         @keyframes announcementSheen { 0%, 25% { transform:translateX(-110%); } 55%, 100% { transform:translateX(110%); } }
         #loginContent { border:1px solid rgba(255,255,255,.9); background:linear-gradient(150deg,rgba(255,255,255,.98),rgba(255,246,250,.94)); box-shadow:0 22px 58px rgba(102,36,63,.2); }
+        #loginContent { position:relative; overflow:hidden; isolation:isolate; }
+        #loginContent::before { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(110deg, transparent 15%, rgba(255,255,255,.9) 46%, transparent 72%); transform:translateX(-120%); animation:loginCardSheen 5.5s 1.2s ease-in-out infinite; pointer-events:none; }
+        #loginContent::after { content:''; position:absolute; width:180px; height:180px; left:calc(var(--login-glow-x, 50%) - 90px); top:calc(var(--login-glow-y, 50%) - 90px); border-radius:50%; background:radial-gradient(circle, rgba(102,190,204,.17), transparent 68%); pointer-events:none; z-index:-1; transition:left .35s ease, top .35s ease; }
+        @keyframes loginCardSheen { 0%,25% { transform:translateX(-120%); } 58%,100% { transform:translateX(120%); } }
+        #loginTimeStatus { margin-top:14px; color:#567480; font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
+        #passwordModal { --login-accent:#d81b60; --login-cool:#d9eef2; background:linear-gradient(135deg, var(--login-cool), #ffd1dc 55%, #f3b1c4); transition:background 1.2s ease; }
+        #passwordModal[data-time-phase="sunrise"] { --login-cool:#f7d6b5; background:linear-gradient(135deg,#f7c99c,#ffe5c7 48%,#f6b7ca); }
+        #passwordModal[data-time-phase="morning"] { --login-cool:#bde7ec; background:linear-gradient(135deg,#bde7ec,#fff0d1 52%,#ffd1dc); }
+        #passwordModal[data-time-phase="noon"] { --login-cool:#a7dff0; background:linear-gradient(135deg,#9bd9ee,#fff8dc 54%,#ffc7d7); }
+        #passwordModal[data-time-phase="afternoon"] { --login-cool:#c3dff0; background:linear-gradient(135deg,#b9dced,#ffe0c3 55%,#f4b6c8); }
+        #passwordModal[data-time-phase="sunset"] { --login-cool:#f4b38f; background:linear-gradient(135deg,#ed9d9d,#f8c68e 50%,#c98ebd); }
+        #passwordModal[data-time-phase="evening"] { --login-cool:#a7afd9; background:linear-gradient(135deg,#8996c8,#d5b4d1 55%,#f3b6c9); }
+        #passwordModal[data-time-phase="midnight"] { --login-cool:#172e55; background:radial-gradient(circle at 25% 20%,#314d7c,#101b37 58%,#25182f); }
+        #passwordModal[data-time-phase="midnight"] #loginAnnouncementPanel,
+        #passwordModal[data-time-phase="midnight"] #loginContent { border-color:rgba(164,215,229,.45); }
+        #passwordModal[data-time-phase="midnight"] #loginAnnouncementPanel { background:rgba(16,31,55,.82); color:#e9f7fa; }
+        #passwordModal[data-time-phase="midnight"] #loginAnnouncementPanel p { color:#c2dbe2; }
+        #passwordModal[data-time-phase="midnight"] #loginContent { background:linear-gradient(150deg,rgba(240,250,253,.98),rgba(225,239,249,.95)); }
         #loginContent h2 { letter-spacing:.02em; }
         #loginContent .password-input { background:#f8fcfd; border-color:#c9dfe5; text-align:left; }
         #loginContent .password-input:focus { border-color:#5ba7b7; box-shadow:0 0 0 4px rgba(91,167,183,.12); }
@@ -3206,6 +3224,7 @@
             <button class="submit-btn" id="submitPassword" style="width: 100%; margin-bottom: 10px;">Enter</button>
             <button type="button" id="forgotPasswordBtn" class="login-secondary-button">Forgot password?</button>
             <button type="button" id="showRegisterBtn" class="login-secondary-button">Create an account</button>
+            <p id="loginTimeStatus">Loading local ambience…</p>
         </div>
 
         <!-- Registration Screen -->
@@ -10663,6 +10682,31 @@
         const welcomeMsg = document.getElementById('welcomeMsg');
         const logoutMsg = document.getElementById('logoutMsg');
         const pageTitle = document.getElementById('dynamicPageTitle');
+
+        function updateLoginAmbience() {
+            const loginModal = document.getElementById('passwordModal');
+            const timeStatus = document.getElementById('loginTimeStatus');
+            if (!loginModal) return;
+            const now = new Date();
+            const hour = now.getHours() + now.getMinutes() / 60;
+            const phases = hour < 6 ? ['midnight', 'Midnight']
+                : hour < 8 ? ['sunrise', 'Sunrise']
+                    : hour < 12 ? ['morning', 'Morning']
+                        : hour < 14 ? ['noon', 'Noon']
+                            : hour < 17 ? ['afternoon', 'Afternoon']
+                                : hour < 19 ? ['sunset', 'Sunset']
+                                    : ['evening', 'Evening'];
+            loginModal.dataset.timePhase = phases[0];
+            if (timeStatus) timeStatus.textContent = `${phases[1]} ambience · ${now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}`;
+        }
+        updateLoginAmbience();
+        setInterval(updateLoginAmbience, 60000);
+        const loginCard = document.getElementById('loginContent');
+        loginCard?.addEventListener('pointermove', event => {
+            const rect = loginCard.getBoundingClientRect();
+            loginCard.style.setProperty('--login-glow-x', `${event.clientX - rect.left}px`);
+            loginCard.style.setProperty('--login-glow-y', `${event.clientY - rect.top}px`);
+        });
 
         const emailServiceId = 'service_h2bvhxa';
         const emailVerificationTemplateId = 'template_qb8qlz3';
