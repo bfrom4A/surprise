@@ -212,6 +212,12 @@
             width: 450px;
             animation: bounceIn 1s forwards;
         }
+        #maintenance-overlay { background:radial-gradient(circle at 20% 20%,#233f68 0%,#101a36 48%,#251329 100%); }
+        #maintenance-overlay .maintenance-content { position:relative; overflow:hidden; color:#eaf8fb; background:linear-gradient(145deg,rgba(21,47,70,.9),rgba(83,39,91,.88)); border:1px solid rgba(126,238,255,.65); box-shadow:0 0 0 1px rgba(255,105,200,.2),0 18px 70px rgba(0,0,0,.38),0 0 35px rgba(66,226,255,.18); backdrop-filter:blur(16px); }
+        #maintenance-overlay .maintenance-content::before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(110deg,transparent 18%,rgba(69,232,255,.18) 40%,rgba(255,103,199,.2) 58%,transparent 80%); transform:translateX(-110%); animation:maintenanceHoloSheen 5s ease-in-out infinite; }
+        @keyframes maintenanceHoloSheen { 0%,25% { transform:translateX(-110%); } 60%,100% { transform:translateX(110%); } }
+        #maint-play-btn { position:relative; overflow:hidden; background:linear-gradient(135deg,#61e7ff,#d97aff 52%,#ff78bd) !important; color:#102f3b !important; border:1px solid rgba(255,255,255,.8) !important; box-shadow:0 0 18px rgba(80,230,255,.55), inset 0 0 12px rgba(255,255,255,.45) !important; }
+        #maint-play-btn:hover { transform:scale(1.1); }
 
         /* TOAST NOTIFICATION */
         #toast-container {
@@ -3733,11 +3739,11 @@
                             </div>
 
                             <div style="border-top: 1px solid #eee; margin: 15px 0; padding-top: 15px;">
-                                <h4 class="admin-section-title">Default Maintenance Music</h4>
-                                <select id="maintenanceMusicSelect" class="repo-select" style="margin-bottom: 10px;">
+                                <h4 class="admin-section-title">Maintenance Music Playlist</h4>
+                                <select id="maintenanceMusicSelect" class="repo-select" multiple size="5" style="margin-bottom: 10px; min-height: 150px;">
                                     <option value="">Loading music choices...</option>
                                 </select>
-                                <button id="setDefaultMaintBtn" class="submit-btn" style="width: 100%;">Set Default Maintenance Track</button>
+                                <button id="setDefaultMaintBtn" class="submit-btn" style="width: 100%;">Save up to 5 shuffled tracks</button>
                                 <p id="maintenanceDefaultStatus" style="margin-top: 10px; font-size: 12px; color: #555; text-align: center;"></p>
                             </div>
                             
@@ -4809,6 +4815,8 @@
         let maintMusicInitialized = false;
         let maintenanceDefaultSongUrl = null;
         let maintenanceDefaultSongTitle = null;
+        let maintenancePlaylist = [];
+        let maintenancePlaylistIndex = 0;
         let currentMaintenanceEnabled = false;
 
         async function initMaintMusic() {
@@ -4827,31 +4835,33 @@
             }
 
             try {
-                let songData = null;
-                if (maintenanceDefaultSongUrl) {
-                    songData = {
-                        url: maintenanceDefaultSongUrl,
-                        title: maintenanceDefaultSongTitle || "Maintenance Track"
-                    };
-                } else {
+                let playlist = maintenancePlaylist.slice();
+                if (!playlist.length && maintenanceDefaultSongUrl) {
+                    playlist = [{ url: maintenanceDefaultSongUrl, title: maintenanceDefaultSongTitle || 'Maintenance Track' }];
+                }
+                if (!playlist.length) {
                     const songsQuery = query(collection(db, 'songs'), orderBy('timestamp', 'desc'));
                     const songsSnap = await getDocs(songsQuery);
                     if (!songsSnap.empty) {
-                        songData = songsSnap.docs[0].data();
+                        playlist = [songsSnap.docs[0].data()];
                     }
                 }
 
-                if (songData) {
+                if (playlist.length) {
+                    maintenancePlaylist = playlist.sort(() => Math.random() - 0.5);
+                    maintenancePlaylistIndex = 0;
+                    const songData = maintenancePlaylist[maintenancePlaylistIndex];
                     maintAudio.src = songData.url;
-                    maintTitle.textContent = songData.title || "Unknown Song";
+                    maintTitle.textContent = songData.title || 'Maintenance Track';
                     maintAudio.preload = 'none';
-                    maintAudio.autoplay = false;
+                    maintAudio.autoplay = true;
                     maintPlayBtn.textContent = '▶️';
                     maintDisc.style.animationPlayState = 'paused';
 
                     if (window.notifyUser) {
                         window.notifyUser('Maintenance Music Ready', 'Click the play button to start the maintenance track.', '🎵');
                     }
+                    maintAudio.play().catch(() => showToast('Maintenance music ready', 'Tap play to start the shuffled playlist.', '🎵'));
                 } else {
                     maintTitle.textContent = "No music available";
                 }
@@ -4871,6 +4881,15 @@
             maintAudio.onplay = () => {
                 maintPlayBtn.textContent = '⏸️';
                 maintDisc.style.animationPlayState = 'running';
+            };
+
+            maintAudio.onended = () => {
+                if (!maintenancePlaylist.length) return;
+                maintenancePlaylistIndex = (maintenancePlaylistIndex + 1) % maintenancePlaylist.length;
+                const nextSong = maintenancePlaylist[maintenancePlaylistIndex];
+                maintAudio.src = nextSong.url;
+                maintTitle.textContent = nextSong.title || 'Maintenance Track';
+                maintAudio.play().catch(() => {});
             };
 
             maintAudio.onpause = () => {
@@ -4915,12 +4934,21 @@
             }, 3000); 
         }
 
-        onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
+        onSnapshot(doc(db, 'settings', 'maintenance'), async (docSnap) => {
             let maintData = { isActive: false, isScheduled: false, startTime: '', endTime: '', message: '' };
             if (docSnap.exists()) {
                 maintData = docSnap.data();
                 maintenanceDefaultSongUrl = maintData.defaultSongUrl || null;
                 maintenanceDefaultSongTitle = maintData.defaultSongTitle || null;
+                maintenancePlaylist = [];
+                if (Array.isArray(maintData.maintenanceSongIds) && maintData.maintenanceSongIds.length) {
+                    const selectedSongs = await Promise.all(maintData.maintenanceSongIds.slice(0, 5).map(songId => getDoc(doc(db, 'songs', songId))));
+                    maintenancePlaylist = selectedSongs.filter(songSnapshot => songSnapshot.exists()).map(songSnapshot => songSnapshot.data());
+                    if (isMaintenanceActiveLocally) {
+                        maintMusicInitialized = false;
+                        initMaintMusic();
+                    }
+                }
             } else {
                 maintenanceDefaultSongUrl = null;
                 maintenanceDefaultSongTitle = null;
@@ -9529,7 +9557,7 @@
             if (!select || !setBtn) return;
 
             const updateSelectorOptions = (snapshot) => {
-                select.innerHTML = '<option value="">Select a maintenance song</option>';
+                select.innerHTML = '';
                 snapshot.forEach((songDoc) => {
                     const song = songDoc.data();
                     const option = document.createElement('option');
@@ -9546,10 +9574,10 @@
             onSnapshot(doc(db, 'settings', 'maintenance'), (docSnap) => {
                 if (docSnap.exists()) {
                     const maintData = docSnap.data();
-                    if (maintData.defaultSongId) {
-                        select.value = maintData.defaultSongId;
+                    if (Array.isArray(maintData.maintenanceSongIds) && maintData.maintenanceSongIds.length) {
+                        Array.from(select.options).forEach(option => { option.selected = maintData.maintenanceSongIds.includes(option.value); });
                         if (statusText) {
-                            statusText.textContent = `Current default maintenance song: ${maintData.defaultSongArtist || ''} ${maintData.defaultSongTitle ? '- ' + maintData.defaultSongTitle : ''}`;
+                            statusText.textContent = `${Math.min(5, maintData.maintenanceSongIds.length)} shuffled tracks selected.`;
                         }
                     } else if (statusText) {
                         statusText.textContent = 'No default maintenance song selected.';
@@ -9560,24 +9588,27 @@
             });
 
             const handleSetDefaultMaintenance = async () => {
-                const songId = select.value;
-                if (!songId) return alert('Please select a song to set as maintenance default.');
+                const songIds = Array.from(select.selectedOptions).map(option => option.value).filter(Boolean).slice(0, 5);
+                if (!songIds.length) return alert('Please select at least one maintenance song.');
                 try {
-                    const songSnap = await getDoc(doc(db, 'songs', songId));
-                    if (!songSnap.exists()) return alert('Selected song no longer exists.');
-                    const songData = songSnap.data();
+                    const songSnapshots = await Promise.all(songIds.map(songId => getDoc(doc(db, 'songs', songId))));
+                    const songData = songSnapshots.find(songSnapshot => songSnapshot.exists())?.data();
+                    if (!songData) return alert('Selected music is no longer available.');
                     await setDoc(doc(db, 'settings', 'maintenance'), {
-                        defaultSongId: songId,
+                        maintenanceSongIds: songIds,
+                        defaultSongId: songIds[0],
                         defaultSongTitle: songData.title,
                         defaultSongArtist: songData.artist,
                         defaultSongUrl: songData.url
                     }, { merge: true });
+                    maintenancePlaylist = songSnapshots.filter(songSnapshot => songSnapshot.exists()).map(songSnapshot => songSnapshot.data());
                     maintenanceDefaultSongUrl = songData.url || null;
                     maintenanceDefaultSongTitle = songData.title || null;
+                    maintMusicInitialized = false;
                     if (document.getElementById('maintAudio') && typeof initMaintMusic === 'function') {
                         initMaintMusic();
                     }
-                    showToast('Default Maintenance Set', `${songData.title} will play during maintenance.`, '🎵');
+                    showToast('Maintenance Playlist Saved', `${songIds.length} tracks will shuffle during maintenance.`, '🎵');
                 } catch (e) {
                     console.error('Set default maintenance failed', e);
                     alert('Unable to set maintenance default song.');
