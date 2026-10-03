@@ -301,16 +301,19 @@
         @keyframes openingStatusReveal { to { opacity:1; } }
 
         #loginAnnouncementPanel { position:relative; overflow:hidden; }
-        #loginAnnouncementPanel::before { content:''; position:absolute; inset:0; background:linear-gradient(110deg, transparent 15%, rgba(255,255,255,.8) 45%, transparent 70%); transform:translateX(-110%); animation:announcementSheen 5s 1s ease-in-out infinite; pointer-events:none; }
+        #loginAnnouncementPanel::before { content:''; position:absolute; inset:0; background:linear-gradient(110deg, transparent 12%, rgba(90,230,255,.16) 30%, rgba(185,115,255,.38) 42%, rgba(255,112,184,.38) 54%, rgba(255,222,122,.34) 64%, transparent 82%); transform:translateX(-110%); animation:announcementSheen 5s 1s ease-in-out infinite; pointer-events:none; mix-blend-mode:screen; }
         #loginAnnouncementPanel > div { position:relative; z-index:1; }
         @keyframes announcementSheen { 0%, 25% { transform:translateX(-110%); } 55%, 100% { transform:translateX(110%); } }
         #loginContent { border:1px solid rgba(255,255,255,.9); background:linear-gradient(150deg,rgba(255,255,255,.98),rgba(255,246,250,.94)); box-shadow:0 22px 58px rgba(102,36,63,.2); }
         #loginContent { position:relative; overflow:hidden; isolation:isolate; }
-        #loginContent::before { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(110deg, transparent 15%, rgba(255,255,255,.9) 46%, transparent 72%); transform:translateX(-120%); animation:loginCardSheen 5.5s 1.2s ease-in-out infinite; pointer-events:none; }
+        #loginContent::before { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(110deg, transparent 10%, rgba(70,235,255,.2) 28%, rgba(160,110,255,.42) 41%, rgba(255,92,190,.42) 53%, rgba(255,218,104,.38) 65%, transparent 84%); transform:translateX(-120%); animation:loginCardSheen 5.5s 1.2s ease-in-out infinite; pointer-events:none; mix-blend-mode:screen; }
         #loginContent::after { content:''; position:absolute; width:180px; height:180px; left:calc(var(--login-glow-x, 50%) - 90px); top:calc(var(--login-glow-y, 50%) - 90px); border-radius:50%; background:radial-gradient(circle, rgba(102,190,204,.17), transparent 68%); pointer-events:none; z-index:-1; transition:left .35s ease, top .35s ease; }
         @keyframes loginCardSheen { 0%,25% { transform:translateX(-120%); } 58%,100% { transform:translateX(120%); } }
         #loginTimeStatus { margin-top:14px; color:#567480; font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
-        #passwordModal { --login-accent:#d81b60; --login-cool:#d9eef2; background:linear-gradient(135deg, var(--login-cool), #ffd1dc 55%, #f3b1c4); transition:background 1.2s ease; }
+        #passwordModal { --login-accent:#d81b60; --login-cool:#d9eef2; position:fixed; isolation:isolate; background:linear-gradient(135deg, var(--login-cool), #ffd1dc 55%, #f3b1c4); transition:background 1.2s ease; }
+        #passwordModal::before { content:''; position:absolute; inset:0; z-index:-1; opacity:0; pointer-events:none; background:linear-gradient(135deg,#d9eef2,#ffd1dc 55%,#f3b1c4); }
+        #passwordModal > * { position:relative; z-index:1; }
+        #passwordModal.phase-transition::before { animation:loginAmbienceBlend 1.8s ease both; }
         #passwordModal[data-time-phase="sunrise"] { --login-cool:#f7d6b5; background:linear-gradient(135deg,#f7c99c,#ffe5c7 48%,#f6b7ca); }
         #passwordModal[data-time-phase="morning"] { --login-cool:#bde7ec; background:linear-gradient(135deg,#bde7ec,#fff0d1 52%,#ffd1dc); }
         #passwordModal[data-time-phase="noon"] { --login-cool:#a7dff0; background:linear-gradient(135deg,#9bd9ee,#fff8dc 54%,#ffc7d7); }
@@ -323,6 +326,14 @@
         #passwordModal[data-time-phase="midnight"] #loginAnnouncementPanel { background:rgba(16,31,55,.82); color:#e9f7fa; }
         #passwordModal[data-time-phase="midnight"] #loginAnnouncementPanel p { color:#c2dbe2; }
         #passwordModal[data-time-phase="midnight"] #loginContent { background:linear-gradient(150deg,rgba(240,250,253,.98),rgba(225,239,249,.95)); }
+        #passwordModal[data-time-phase="sunrise"]::before { background:linear-gradient(135deg,#f7c99c,#ffe5c7 48%,#f6b7ca); }
+        #passwordModal[data-time-phase="morning"]::before { background:linear-gradient(135deg,#bde7ec,#fff0d1 52%,#ffd1dc); }
+        #passwordModal[data-time-phase="noon"]::before { background:linear-gradient(135deg,#9bd9ee,#fff8dc 54%,#ffc7d7); }
+        #passwordModal[data-time-phase="afternoon"]::before { background:linear-gradient(135deg,#b9dced,#ffe0c3 55%,#f4b6c8); }
+        #passwordModal[data-time-phase="sunset"]::before { background:linear-gradient(135deg,#ed9d9d,#f8c68e 50%,#c98ebd); }
+        #passwordModal[data-time-phase="evening"]::before { background:linear-gradient(135deg,#8996c8,#d5b4d1 55%,#f3b6c9); }
+        #passwordModal[data-time-phase="midnight"]::before { background:radial-gradient(circle at 25% 20%,#314d7c,#101b37 58%,#25182f); }
+        @keyframes loginAmbienceBlend { 0% { opacity:0; } 45% { opacity:.92; } 100% { opacity:0; } }
         #loginContent h2 { letter-spacing:.02em; }
         #loginContent .password-input { background:#f8fcfd; border-color:#c9dfe5; text-align:left; }
         #loginContent .password-input:focus { border-color:#5ba7b7; box-shadow:0 0 0 4px rgba(91,167,183,.12); }
@@ -10772,11 +10783,16 @@
                             : hour < 17 ? ['afternoon', 'Afternoon']
                                 : hour < 19 ? ['sunset', 'Sunset']
                                     : ['evening', 'Evening'];
+            if (loginModal.dataset.timePhase && loginModal.dataset.timePhase !== phases[0]) {
+                loginModal.classList.remove('phase-transition');
+                void loginModal.offsetWidth;
+                loginModal.classList.add('phase-transition');
+            }
             loginModal.dataset.timePhase = phases[0];
-            if (timeStatus) timeStatus.textContent = `${phases[1]} ambience · ${now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}`;
+            if (timeStatus) timeStatus.textContent = `${phases[1]} ambience · ${now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' })}`;
         }
         updateLoginAmbience();
-        setInterval(updateLoginAmbience, 60000);
+        setInterval(updateLoginAmbience, 1000);
         const loginCard = document.getElementById('loginContent');
         loginCard?.addEventListener('pointermove', event => {
             const rect = loginCard.getBoundingClientRect();
