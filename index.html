@@ -1411,6 +1411,82 @@
             .active-friends-spotify { height:352px; min-height:352px; }
             #emergencyRequestButton { right:14px; left:auto; bottom:12px; }
         }
+
+        @media (max-width: 600px) {
+            html, body { min-width:0; overflow-x:hidden; }
+            .password-modal {
+                min-height:100dvh;
+                height:auto;
+                justify-content:flex-start;
+                align-items:stretch;
+                overflow-y:auto;
+                gap:14px;
+                padding:18px 12px 28px;
+            }
+            #loginAnnouncementPanel,
+            .password-content { width:100%; max-width:none; min-height:0; flex:none; }
+            #loginAnnouncementPanel { padding:22px; }
+            #loginAnnouncementPanel h2 { font-size:34px; }
+            .password-content { padding:22px 18px; }
+            .password-content h2 { font-size:28px; margin-bottom:14px; }
+            .password-input { font-size:15px; padding:11px; }
+
+            #adminContainer {
+                position:fixed;
+                inset:0;
+                width:100vw;
+                min-height:100dvh;
+                height:100dvh;
+                padding:10px;
+                overflow-x:hidden;
+                overflow-y:auto;
+            }
+            .admin-dashboard-wrapper {
+                display:flex;
+                flex-direction:column;
+                gap:12px;
+                width:100%;
+                min-height:auto;
+            }
+            .admin-sidebar-left,
+            .admin-main-content,
+            .admin-sidebar-right {
+                width:100% !important;
+                max-width:none;
+                max-height:none !important;
+                overflow:visible !important;
+                border-radius:14px;
+            }
+            .admin-sidebar-left { padding:14px 12px; }
+            .admin-main-content { padding:14px 12px; }
+            .admin-sidebar-right { order:3; }
+            .admin-tabs {
+                justify-content:flex-start;
+                flex-wrap:nowrap;
+                overflow-x:auto;
+                overflow-y:hidden;
+                padding-bottom:9px;
+                margin-bottom:14px;
+                -webkit-overflow-scrolling:touch;
+            }
+            .admin-tab-btn { flex:0 0 auto; font-size:12px; padding:8px 11px; }
+            .admin-panel { min-width:0; }
+            .profile-drawer { width:min(92vw,360px); }
+            .admin-widget { padding:14px; border-radius:14px; }
+            .admin-form-group input,
+            .admin-form-group textarea,
+            .admin-form-group select,
+            .fw-input,
+            .fw-textarea,
+            .repo-select { max-width:100%; }
+            #adminFreedomWallMessages { height:36vh; min-height:160px; }
+            #pendingMusicRequests,
+            #adminGalleryList,
+            #adminLettersList,
+            #adminSongList { max-height:300px; overflow-y:auto; }
+            #chat-window { right:10px; bottom:82px; width:min(92vw,320px); height:min(68vh,450px); }
+            #superAdminEmergencyAlerts { top:10px; width:calc(100vw - 20px); max-height:55vh; }
+        }
         
         @keyframes slideInOpposite {
             from { transform: translateX(100%); opacity: 0; }
