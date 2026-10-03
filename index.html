@@ -310,6 +310,8 @@
         .login-secondary-button { width:100%; margin:6px 0 0; padding:10px 14px; border:1px solid #b9d4db; border-radius:9px; background:#f3fafb; color:#356675; cursor:pointer; font-size:12px; }
         .login-secondary-button:hover { background:#e5f3f5; }
         .login-verification-status { min-height:18px; margin:6px 0; color:#647b84; font-size:11px; }
+        #emailRequiredScreen { position:fixed; inset:0; z-index:999999; display:none; align-items:center; justify-content:center; padding:20px; background:linear-gradient(135deg,#ffd1dc,#d9eef2); }
+        #emailRequiredScreen .password-content { width:min(560px,100%); }
         
         .password-content {
             background: white;
@@ -3235,6 +3237,19 @@
             <textarea id="reactivationMsg" class="fw-textarea" placeholder="Write a message to request reactivation..." style="height: 80px;"></textarea>
             <button class="submit-btn" id="sendReactivationBtn" style="width: 100%; margin-bottom: 10px;">Send Request</button>
             <p id="deactivatedBackBtn" style="margin-top: 10px; font-size: 13px; color: #888; cursor: pointer;">Back to Login</p>
+        </div>
+    </div>
+
+    <div id="emailRequiredScreen">
+        <div class="password-content">
+            <h2>Verify your email</h2>
+            <p style="font-size:13px; color:#5a7078; line-height:1.5; margin-bottom:12px;">This account needs a verified email before access can continue.</p>
+            <input type="email" id="requiredEmailInput" class="password-input" placeholder="Enter your email">
+            <button type="button" id="sendRequiredEmailCodeBtn" class="login-secondary-button">Send verification code</button>
+            <input type="text" id="requiredEmailCodeInput" class="password-input" placeholder="6-digit verification code" inputmode="numeric" maxlength="6" style="margin:10px 0;">
+            <button type="button" id="verifyRequiredEmailBtn" class="submit-btn" style="width:100%;">Verify and continue</button>
+            <p id="requiredEmailStatus" class="login-verification-status"></p>
+            <button type="button" id="requiredEmailBackBtn" class="login-secondary-button">Back to login</button>
         </div>
     </div>
 
@@ -10612,6 +10627,8 @@
         const recoveryStatus = document.getElementById('recoveryStatus');
         let registrationCodeState = null;
         let recoveryCodeState = null;
+        let requiredEmailCodeState = null;
+        let requiredEmailContext = null;
         
         const sendReactivationBtn = document.getElementById('sendReactivationBtn');
         const reactivationMsg = document.getElementById('reactivationMsg');
@@ -10649,6 +10666,84 @@
             const credential = await getFirestoreLoginCredential(documentId);
             return credential && credential.role === expectedRole && credential.password === password ? credential : null;
         }
+
+        async function showRequiredEmailScreen(user, userData = null, userDocId = null, continuation = null) {
+            const screen = document.getElementById('emailRequiredScreen');
+            const emailInput = document.getElementById('requiredEmailInput');
+            const status = document.getElementById('requiredEmailStatus');
+            const knownEmail = userData?.email || '';
+            requiredEmailContext = { user, userData, userDocId, continuation };
+            emailInput.value = knownEmail;
+            status.textContent = knownEmail ? 'Confirm or replace the email, then request a code.' : 'Enter an email address to continue.';
+            screen.style.display = 'flex';
+            passwordModal.style.display = 'none';
+        }
+
+        async function ensureUserEmailBeforeLogin(user, userData = null, userDocId = null, continuation = null) {
+            let account = userData;
+            if (!account && userDocId) {
+                const accountSnapshot = await window.getDoc(window.doc(window.db, 'app_users', userDocId));
+                account = accountSnapshot.exists() ? accountSnapshot.data() : null;
+            }
+            if (!account) {
+                const accountQuery = await window.getDocs(window.query(window.collection(window.db, 'app_users'), window.where('username', '==', user)));
+                if (!accountQuery.empty) {
+                    account = accountQuery.docs[0].data();
+                    userDocId = accountQuery.docs[0].id;
+                }
+            }
+            const profileSnapshot = await window.getDoc(window.doc(window.db, 'profiles', user));
+            const profile = profileSnapshot.exists() ? profileSnapshot.data() : {};
+            if ((account?.emailVerified === true && account.email) || (profile.emailVerified === true && profile.email)) return true;
+            await showRequiredEmailScreen(user, account, userDocId, continuation);
+            return false;
+        }
+
+        document.getElementById('sendRequiredEmailCodeBtn').onclick = async () => {
+            const email = document.getElementById('requiredEmailInput').value.trim().toLowerCase();
+            const status = document.getElementById('requiredEmailStatus');
+            if (!email || !email.includes('@')) return status.textContent = 'Enter a valid email address.';
+            try {
+                status.textContent = 'Sending verification code…';
+                requiredEmailCodeState = await sendEmailVerificationCode(email, 'email verification');
+                requiredEmailCodeState.email = email;
+                status.textContent = 'Code sent. It is valid for 5 minutes.';
+            } catch (error) {
+                console.error('Required email code failed:', error);
+                status.textContent = 'Could not send the verification code.';
+            }
+        };
+
+        document.getElementById('verifyRequiredEmailBtn').onclick = async () => {
+            const email = document.getElementById('requiredEmailInput').value.trim().toLowerCase();
+            const code = document.getElementById('requiredEmailCodeInput').value.trim();
+            const status = document.getElementById('requiredEmailStatus');
+            if (!requiredEmailContext || !requiredEmailCodeState || requiredEmailCodeState.email !== email || Date.now() >= requiredEmailCodeState.expiresAt || code !== requiredEmailCodeState.code) {
+                status.textContent = requiredEmailCodeState && Date.now() >= requiredEmailCodeState.expiresAt ? 'Code expired. Request a new code.' : 'Incorrect verification code.';
+                return;
+            }
+            try {
+                const payload = { email, emailVerified: true, emailVerifiedAt: window.serverTimestamp() };
+                if (requiredEmailContext.userDocId) await window.updateDoc(window.doc(window.db, 'app_users', requiredEmailContext.userDocId), payload);
+                await window.setDoc(window.doc(window.db, 'profiles', requiredEmailContext.user), payload, { merge: true });
+                const context = requiredEmailContext;
+                requiredEmailContext = null;
+                requiredEmailCodeState = null;
+                document.getElementById('emailRequiredScreen').style.display = 'none';
+                if (context.continuation) context.continuation({ ...(context.userData || {}), ...payload }, context.userDocId);
+                else doLogin(context.user, { ...(context.userData || {}), ...payload }, context.userDocId);
+            } catch (error) {
+                console.error('Required email verification save failed:', error);
+                status.textContent = 'Could not save the verified email.';
+            }
+        };
+        document.getElementById('requiredEmailBackBtn').onclick = () => {
+            requiredEmailContext = null;
+            requiredEmailCodeState = null;
+            document.getElementById('emailRequiredScreen').style.display = 'none';
+            passwordModal.style.display = 'flex';
+            loginContent.style.display = 'block';
+        };
 
         document.getElementById('showRegisterBtn').onclick = () => {
             loginContent.style.display = 'none';
@@ -10777,9 +10872,15 @@
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             mainContent.style.display = 'block';
-            if (window.loadUserContent) window.loadUserContent(savedUser);
-            window.refreshMaintenanceStatus?.();
-            try { startPresenceHeartbeat(savedUser); ensureStatusControl(); } catch(e) { console.error('Presence start saved user failed', e); }
+            ensureUserEmailBeforeLogin(savedUser).then(emailReady => {
+                if (emailReady) {
+                    if (window.loadUserContent) window.loadUserContent(savedUser);
+                    window.refreshMaintenanceStatus?.();
+                    try { startPresenceHeartbeat(savedUser); ensureStatusControl(); } catch(e) { console.error('Presence start saved user failed', e); }
+                } else {
+                    mainContent.style.display = 'none';
+                }
+            }).catch(error => { console.error('Saved user email check failed:', error); mainContent.style.display = 'none'; });
         } else {
             submitPassword.addEventListener('click', async function() {
                 const username = loginUsernameInput.value.trim().toLowerCase();
@@ -10791,7 +10892,7 @@
                         for (const defaultUser of ['kate', 'baby']) {
                             const credential = await verifyFirestoreLoginCredential(defaultUser, pass, 'user');
                             if (credential) {
-                                doLogin(defaultUser);
+                                if (await ensureUserEmailBeforeLogin(defaultUser)) doLogin(defaultUser);
                                 return;
                             }
                         }
@@ -10819,7 +10920,7 @@
                     }
                     const bootstrapUserCredential = await verifyFirestoreLoginCredential(username, pass, 'user');
                     if (bootstrapUserCredential) {
-                        doLogin(username);
+                        if (await ensureUserEmailBeforeLogin(username)) doLogin(username);
                         return;
                     }
                     
@@ -10840,11 +10941,7 @@
                         } else if (userData.status === 'rejected') {
                             alert("This account was rejected by the superadmin.");
                         } else if (userData.status === 'approved') {
-                            if (userData.emailVerified !== true || !userData.email) {
-                                alert('Verify your registered email before logging in.');
-                                return;
-                            }
-                            doLogin(username, userData, userDoc.id);
+                            if (await ensureUserEmailBeforeLogin(username, userData, userDoc.id)) doLogin(username, userData, userDoc.id);
                         }
                         return;
                     }
@@ -10857,6 +10954,8 @@
                         const userData = userDoc.data();
 
                         if (userData.status === 'approved') {
+                            const targetEmailReady = await ensureUserEmailBeforeLogin(userData.username, userData, userDoc.id, () => triggerAdminLogin(false, false));
+                            if (!targetEmailReady) return;
                             const securityPassed = await runLoginSecurityCheck(userData.username);
                             if (!securityPassed) return;
                             sessionStorage.setItem('isSubAdminLoggedIn', 'true');
