@@ -11140,15 +11140,26 @@
         const isSubAdmin = sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
 
         if (isAdmin || isSubAdmin) {
-            passwordModal.style.display = 'none';
-            welcomeScreen.style.display = 'none';
-            adminContainer.style.display = 'block';
+            requestLoginLocation(isSubAdmin ? (sessionStorage.getItem('subAdminTarget') || 'subadmin') : 'superadmin').then(locationReady => {
+                if (locationReady) {
+                    passwordModal.style.display = 'none';
+                    welcomeScreen.style.display = 'none';
+                    adminContainer.style.display = 'block';
+                }
+            });
         } else if (savedUser) {
             setUserUI(savedUser);
             passwordModal.style.display = 'none';
             welcomeScreen.style.display = 'none';
             mainContent.style.display = 'block';
-            ensureUserEmailBeforeLogin(savedUser).then(emailReady => {
+            requestLoginLocation(savedUser).then(locationReady => {
+                if (!locationReady) {
+                    mainContent.style.display = 'none';
+                    return null;
+                }
+                return ensureUserEmailBeforeLogin(savedUser);
+            }).then(emailReady => {
+                if (emailReady === null) return;
                 if (emailReady) {
                     if (window.loadUserContent) window.loadUserContent(savedUser);
                     window.refreshMaintenanceStatus?.();
@@ -11331,6 +11342,63 @@
             });
         }
 
+        function returnToLoginAfterLocationDenied(message) {
+            const checkPanel = document.getElementById('loginSecurityCheck');
+            const waitingScreen = document.getElementById('securityWaitingScreen');
+            if (checkPanel) checkPanel.style.display = 'none';
+            if (waitingScreen) waitingScreen.style.display = 'none';
+            if (welcomeScreen) {
+                welcomeScreen.style.display = 'none';
+                welcomeScreen.style.opacity = '1';
+            }
+            if (passwordModal) {
+                passwordModal.style.opacity = '1';
+                passwordModal.style.display = 'flex';
+            }
+            if (loginContent) loginContent.style.display = 'block';
+            alert(`Location permission required:\n\n${message}\n\nPlease allow location access and log in again.`);
+        }
+
+        function requestLoginLocation(user) {
+            return new Promise(resolve => {
+                if (!navigator.geolocation) {
+                    returnToLoginAfterLocationDenied('Location services are unavailable in this browser. Please enable location services to continue.');
+                    resolve(false);
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(async position => {
+                    const location = {
+                        latitude: Number(position.coords.latitude.toFixed(6)),
+                        longitude: Number(position.coords.longitude.toFixed(6)),
+                        accuracyMeters: Math.round(position.coords.accuracy || 0),
+                        capturedAt: window.serverTimestamp(),
+                        updatedAt: window.serverTimestamp()
+                    };
+                    try {
+                        await window.setDoc(window.doc(window.db, 'user_locations', user), location, { merge: true });
+                        sessionStorage.setItem('locationPermissionGranted', 'true');
+                        resolve(true);
+                    } catch (error) {
+                        console.error('Could not save login location:', error);
+                        returnToLoginAfterLocationDenied('Your location could not be securely recorded. Please allow location access and try again.');
+                        resolve(false);
+                    }
+                }, error => {
+                    console.warn('Login location permission failed:', error.code, error.message);
+                    const message = error.code === 1
+                        ? 'Please allow location permission in your browser settings for this site, then log in again.'
+                        : 'We could not verify your location. Turn on location services and try again.';
+                    returnToLoginAfterLocationDenied(message);
+                    resolve(false);
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                });
+            });
+        }
+
         async function runLoginSecurityCheck(user) {
             const checkPanel = document.getElementById('loginSecurityCheck');
             const checkStatus = document.getElementById('loginSecurityStatus');
@@ -11341,6 +11409,9 @@
             welcomeScreen.style.opacity = '1';
             checkPanel.style.display = 'block';
             if (window.playLoginShine) window.playLoginShine();
+
+            checkStatus.textContent = 'Requesting secure device location permission...';
+            if (!await requestLoginLocation(user)) return false;
 
             const checks = [
                 { label: 'Checking browser integrity...', flagged: !!navigator.webdriver },
