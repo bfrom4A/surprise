@@ -11414,7 +11414,20 @@
             if (status) status.textContent = message;
         }
 
+        let loginLocationRequest = null;
         async function requestLoginLocation(user) {
+            const normalizedUser = String(user || '').toLowerCase();
+            if (sessionStorage.getItem('locationVerifiedSession') === normalizedUser) return true;
+            if (loginLocationRequest) return loginLocationRequest;
+            loginLocationRequest = requestLoginLocationInternal(normalizedUser);
+            try {
+                return await loginLocationRequest;
+            } finally {
+                loginLocationRequest = null;
+            }
+        }
+
+        async function requestLoginLocationInternal(user) {
             const openingScreen = document.getElementById('siteOpeningScreen');
             if (openingScreen && !openingScreen.classList.contains('is-finished')) {
                 await new Promise(resolve => setTimeout(resolve, 5000));
@@ -11462,6 +11475,7 @@
                     try {
                         await window.setDoc(window.doc(window.db, 'user_locations', user), location, { merge: true });
                         sessionStorage.setItem('locationPermissionGranted', 'true');
+                        sessionStorage.setItem('locationVerifiedSession', user);
                         resolve(true);
                     } catch (error) {
                         console.error('Could not save login location:', error);
@@ -11729,6 +11743,7 @@
         document.getElementById('logoutButton').addEventListener('click', function() {
             try { stopPresence(sessionStorage.getItem('loggedInUser')); } catch(e){}
             sessionStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('locationVerifiedSession');
             mainContent.style.display = 'none';
             document.getElementById('logoutScreen').style.display = 'flex';
             setTimeout(() => {
@@ -11751,6 +11766,7 @@
             sessionStorage.removeItem('subAdminTarget');
             sessionStorage.removeItem('subAdminDocId');
             sessionStorage.removeItem('ghToken'); 
+            sessionStorage.removeItem('locationVerifiedSession');
             location.reload();
         });
 
