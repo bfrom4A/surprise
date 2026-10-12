@@ -4661,7 +4661,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithPopup, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithPopup, signInWithRedirect, getRedirectResult, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
         const firebaseConfig = {
@@ -5465,6 +5465,14 @@
                 const ghTokenInput = document.getElementById('ghTokenInput');
                 const ghTokenSaveBtn = document.getElementById('ghTokenSaveBtn');
 
+                const handleGithubCredential = (result) => {
+                    const credential = GithubAuthProvider.credentialFromResult(result);
+                    if (!credential?.accessToken) {
+                        throw new Error('GitHub did not return an access token. Enable GitHub in Firebase Authentication > Sign-in providers.');
+                    }
+                    saveGithubToken(credential.accessToken);
+                };
+
                 const saveGithubToken = (token) => {
                     if (!token) return;
                     githubToken = token.trim();
@@ -5483,12 +5491,33 @@
 
                 if (ghTokenSaveBtn) {
                     ghTokenSaveBtn.onclick = () => {
-                        saveGithubToken(ghTokenInput?.value || '');
+                        const token = ghTokenInput?.value?.trim() || '';
+                        if (!token) {
+                            showToast("GitHub token required", "Paste a personal access token, then try again.", "⚠️");
+                            ghTokenInput?.focus();
+                            return;
+                        }
+                        saveGithubToken(token);
                     };
+                }
+
+                try {
+                    const redirectResult = await getRedirectResult(auth);
+                    if (redirectResult) {
+                        handleGithubCredential(redirectResult);
+                        showToast("GitHub connected ✅", "Repository access is ready.", "✅");
+                    }
+                } catch (redirectError) {
+                    console.error("GitHub redirect login failed:", redirectError);
+                    showToast("GitHub login needs setup", "Use a personal access token below, or enable GitHub in Firebase Authentication.", "⚠️");
+                    ghTokenInput?.focus();
                 }
 
                 if (ghLoginBtn) {
                     ghLoginBtn.onclick = async () => {
+                        const originalLabel = ghLoginBtn.textContent;
+                        ghLoginBtn.disabled = true;
+                        ghLoginBtn.textContent = 'Connecting to GitHub...';
                         try {
                             console.log("GitHub login button clicked");
                             const provider = new GithubAuthProvider();
@@ -5498,25 +5527,35 @@
                             const result = await signInWithPopup(auth, provider);
                             console.log("GitHub popup result:", result);
                             
-                            const credential = GithubAuthProvider.credentialFromResult(result);
-                            console.log("Credential extracted:", credential ? "exists" : "null");
-                            
-                            if (!credential) {
-                                throw new Error('GitHub credential not received. Ensure GitHub OAuth is configured in Firebase Console.');
-                            }
-                            if (!credential.accessToken) {
-                                throw new Error('Access token not found in credential response. Check Firebase GitHub provider settings.');
-                            }
-                            
-                            saveGithubToken(credential.accessToken);
-                            console.log("GitHub token stored successfully:", githubToken.substring(0, 10) + "...");
+                            handleGithubCredential(result);
+                            showToast("GitHub connected", "Repository access is ready.", "✅");
                         } catch (e) {
                             console.error("GitHub Login Failed - Full Error:", e);
                             console.error("Error Code:", e.code);
                             console.error("Error Message:", e.message);
-                            showToast("GitHub Login Failed ❌", e.message || "Check console for details", "❌");
-                            alert(`GitHub Login Failed:\n\nError: ${e.message}\n\nCode: ${e.code}\n\nIf popup login fails, paste a GitHub personal access token manually in the input box above.`);
+                            const redirectCodes = [
+                                'auth/internal-error',
+                                'auth/popup-blocked',
+                                'auth/popup-closed-by-user',
+                                'auth/operation-not-supported-in-this-environment'
+                            ];
+                            if (redirectCodes.includes(e?.code)) {
+                                showToast("Popup login unavailable", "Opening GitHub login in this tab...", "⚠️");
+                                try {
+                                    const redirectProvider = new GithubAuthProvider();
+                                    redirectProvider.addScope('repo');
+                                    await signInWithRedirect(auth, redirectProvider);
+                                    return;
+                                } catch (redirectError) {
+                                    console.error("GitHub redirect fallback failed:", redirectError);
+                                }
+                            }
+                            showToast("GitHub login unavailable", "Paste a personal access token below, then click Save Token.", "⚠️");
+                            ghTokenInput?.focus();
                             updateGitHubUI(false);
+                        } finally {
+                            ghLoginBtn.disabled = false;
+                            ghLoginBtn.textContent = originalLabel;
                         }
                     };
                     console.log("GitHub button handler attached successfully");
