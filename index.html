@@ -308,6 +308,23 @@
             transition:opacity .75s ease, visibility .75s ease;
         }
         #siteOpeningScreen.is-finished { opacity:0; visibility:hidden; pointer-events:none; }
+        #locationPermissionModal { position:fixed; inset:0; z-index:1000001; display:none; align-items:center; justify-content:center; padding:24px; background:radial-gradient(circle at 50% 35%,rgba(44,226,255,.18),transparent 32%),rgba(5,12,31,.86); backdrop-filter:blur(14px); }
+        .location-permission-card { position:relative; width:min(440px,100%); overflow:hidden; padding:34px 30px 28px; text-align:center; color:#eaffff; border:1px solid rgba(112,239,255,.7); border-radius:26px; background:linear-gradient(145deg,rgba(13,44,69,.94),rgba(56,23,76,.94)); box-shadow:0 0 0 1px rgba(255,103,204,.18),0 25px 90px rgba(0,0,0,.55),0 0 45px rgba(67,225,255,.3); animation:locationCardIn .5s cubic-bezier(.2,.8,.25,1) both; }
+        .location-permission-card::before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(110deg,transparent 18%,rgba(101,239,255,.2) 43%,rgba(255,114,213,.2) 57%,transparent 82%); transform:translateX(-110%); animation:locationSheen 4s ease-in-out infinite; }
+        .location-orbit { position:relative; display:grid; place-items:center; width:92px; height:92px; margin:0 auto 18px; border:1px solid rgba(105,239,255,.8); border-radius:50%; color:#82f2ff; font-size:40px; box-shadow:0 0 26px rgba(69,226,255,.4),inset 0 0 25px rgba(69,226,255,.18); }
+        .location-orbit::before,.location-orbit::after { content:''; position:absolute; inset:-11px 8px; border:1px solid rgba(255,123,213,.55); border-radius:50%; transform:rotate(48deg); animation:locationOrbit 4s linear infinite; }
+        .location-orbit::after { inset:8px -11px; transform:rotate(-48deg); animation-direction:reverse; }
+        .location-permission-card h2 { position:relative; margin:0 0 10px; color:#fff; font-size:1.65rem; letter-spacing:.02em; }
+        .location-permission-card p { position:relative; margin:0 auto 22px; color:#b9d5df; font-size:.92rem; line-height:1.6; }
+        .location-permission-status { position:relative; min-height:20px; margin-bottom:17px !important; color:#79efff !important; font-size:.78rem !important; }
+        .location-permission-actions { position:relative; display:flex; gap:10px; justify-content:center; }
+        .location-permission-actions button { min-width:130px; padding:11px 16px; border-radius:999px; cursor:pointer; font:inherit; font-weight:700; }
+        #allowLocationBtn { color:#061c29; border:1px solid #b6fbff; background:linear-gradient(110deg,#66edff,#bd9aff); box-shadow:0 0 20px rgba(86,230,255,.35); }
+        #denyLocationBtn { color:#c5d6e0; border:1px solid rgba(190,220,230,.35); background:rgba(255,255,255,.08); }
+        @keyframes locationCardIn { from { opacity:0; transform:translateY(18px) scale(.94) rotateX(8deg); } to { opacity:1; transform:none; } }
+        @keyframes locationSheen { 0%,30% { transform:translateX(-110%); } 65%,100% { transform:translateX(110%); } }
+        @keyframes locationOrbit { to { transform:rotate(408deg); } }
+        @media (prefers-reduced-motion:reduce) { .location-permission-card,.location-permission-card::before,.location-orbit::before,.location-orbit::after { animation:none; } }
         .opening-core { position:relative; width:min(520px,78vw); text-align:center; color:#183747; }
         .opening-logo { font-family:'Dancing Script', cursive; font-size:clamp(52px,8vw,90px); color:#d81b60; text-shadow:0 8px 24px rgba(183,21,80,.2); animation:openingLogoReveal 1.2s ease both; }
         .opening-subtitle { margin-top:4px; color:#557985; font-size:11px; letter-spacing:.34em; text-transform:uppercase; opacity:0; animation:openingSubtitleReveal .8s 1s ease forwards; }
@@ -4213,12 +4230,13 @@
             <div class="admin-sidebar-right">
                 <div class="admin-widget">
                     <h4 style="color: #28a745; margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px;">🔒 Security Status</h4>
-                    <ul style="font-size: 13px; color: #555; list-style: none; padding: 0; line-height: 2;">
-                        <li>✅ <span style="font-weight: bold; color: #333;">Codes:</span> Okay & No Risk</li>
-                        <li>✅ <span style="font-weight: bold; color: #333;">Firebase:</span> Secured</li>
-                        <li>✅ <span style="font-weight: bold; color: #333;">Connections:</span> Encrypted</li>
-                        <li>✅ <span style="font-weight: bold; color: #333;">Auth:</span> Verified Admin</li>
+                    <ul id="securityStatusList" style="font-size: 13px; color: #555; list-style: none; padding: 0; line-height: 1.7;">
+                        <li>⏳ <span style="font-weight: bold; color: #333;">Firebase:</span> Checking...</li>
+                        <li>⏳ <span style="font-weight: bold; color: #333;">GitHub auth:</span> Checking...</li>
+                        <li>⏳ <span style="font-weight: bold; color: #333;">Connection:</span> Checking...</li>
+                        <li>⏳ <span style="font-weight: bold; color: #333;">Location:</span> Checking...</li>
                     </ul>
+                    <p id="securityStatusUpdated" style="font-size:10px; color:#999; margin:8px 0 0;">Waiting for first live check...</p>
                 </div>
 
                 <!-- Realtime Users Online (replaces Fun Controls) -->
@@ -4238,6 +4256,7 @@
 
                 <div class="admin-widget" style="flex-grow: 1;">
                     <h4 style="color: #007bff; margin-bottom: 15px; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px;">📊 Live Scanner</h4>
+                    <p style="font-size:11px; color:#999; margin:-7px 0 12px;">Measured in this browser · not server CPU or Firebase traffic</p>
                     <div id="liveScannerData" style="font-size: 12px; color: #666;">
                         <div style="text-align: center; margin-top: 20px; font-style: italic;">Initializing scan...</div>
                     </div>
@@ -4333,8 +4352,20 @@
     <div class="logout-screen" id="logoutScreen">
         <h1 class="welcome-message" id="logoutMsg">Thank you </h1>
     </div>
-    
-    <!-- Main Content -->
+    <div id="locationPermissionModal" role="dialog" aria-modal="true" aria-labelledby="locationPermissionTitle">
+        <div class="location-permission-card">
+            <div class="location-orbit" aria-hidden="true">⌖</div>
+            <h2 id="locationPermissionTitle">Secure location check</h2>
+            <p>Before your account opens, allow location access so we can verify this login and protect your private space.</p>
+            <p class="location-permission-status" id="locationPermissionStatus">Your location is requested only after you choose Continue.</p>
+            <div class="location-permission-actions">
+                <button type="button" id="denyLocationBtn">Go back</button>
+                <button type="button" id="allowLocationBtn">Allow & continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
      <div id="phClock"></div>
 
     <button type="button" id="emergencyRequestButton">🚨 Emergency</button>
@@ -5509,6 +5540,8 @@
                             updatedAt: serverTimestamp()
                         }, { merge: true }).catch((error) => console.error('Shared GitHub authorization failed:', error));
                     }
+                    setGithubAuthStatus('checking', 'Verifying token...');
+                    verifyGithubApiStatus();
                     updateGitHubUI(true);
                     showToast("GitHub Token Saved ✅", "You can now manage repositories.", "✅");
                     if (ghTokenInput) ghTokenInput.value = '';
@@ -5559,6 +5592,7 @@
                             console.log("GitHub popup result:", result);
                             
                             handleGithubCredential(result);
+                            setGithubAuthStatus('connected', 'OAuth access token received');
                             showToast("GitHub connected", "Repository access is ready.", "✅");
                         } catch (e) {
                             console.error("GitHub Login Failed - Full Error:", e);
@@ -5584,6 +5618,7 @@
                                 }
                             }
                             showToast("GitHub login unavailable", "Paste a personal access token below, then click Save Token.", "⚠️");
+                            setGithubAuthStatus('error', e?.message || 'OAuth login failed');
                             ghTokenInput?.focus();
                             updateGitHubUI(false);
                         } finally {
@@ -6704,7 +6739,36 @@
         window.initAdminConsole = initAdminConsole; 
         
         let githubToken = sessionStorage.getItem('ghToken') || null; 
+        let githubAuthStatus = githubToken ? { state: 'checking', detail: 'Verifying token...' } : { state: 'not-connected', detail: 'Not connected' };
         let adminTargetUser = 'kate'; 
+
+        function setGithubAuthStatus(state, detail) {
+            githubAuthStatus = { state, detail };
+            window.dispatchEvent(new CustomEvent('github-auth-status', { detail: githubAuthStatus }));
+        }
+
+        async function verifyGithubApiStatus() {
+            if (!githubToken) {
+                setGithubAuthStatus('not-connected', 'Not connected');
+                return githubAuthStatus;
+            }
+            try {
+                const response = await fetch('https://api.github.com/user', {
+                    headers: { Authorization: `token ${githubToken}`, Accept: 'application/vnd.github+json' },
+                    cache: 'no-store'
+                });
+                if (!response.ok) {
+                    const detail = response.status === 401 ? 'Token rejected or expired' : `GitHub API HTTP ${response.status}`;
+                    setGithubAuthStatus('error', detail);
+                    return githubAuthStatus;
+                }
+                const account = await response.json();
+                setGithubAuthStatus('connected', `Connected as ${account.login || 'GitHub user'}`);
+            } catch (error) {
+                setGithubAuthStatus('error', 'GitHub API unreachable');
+            }
+            return githubAuthStatus;
+        }
 
         async function loadSharedGithubToken() {
             try {
@@ -6714,13 +6778,17 @@
                 if (sharedToken) {
                     githubToken = sharedToken;
                     sessionStorage.setItem('ghToken', githubToken);
+                    setGithubAuthStatus('checking', 'Verifying shared token...');
                 } else if (sessionStorage.getItem('isSubAdminLoggedIn') === 'true') {
                     githubToken = null;
                     sessionStorage.removeItem('ghToken');
+                    setGithubAuthStatus('not-connected', 'Superadmin GitHub server is closed');
                 }
             } catch (error) {
                 console.error('Shared GitHub authorization could not be loaded:', error);
+                setGithubAuthStatus('error', 'Cannot read shared authorization');
             }
+            await verifyGithubApiStatus();
             return githubToken;
         }
 
@@ -7369,33 +7437,93 @@
 
         function startLiveScanner() {
             const scannerDiv = document.getElementById('liveScannerData');
-            
-            function updateScanner() {
-                const htmlP = (20 + Math.random() * 15).toFixed(1);
-                const cssP = (40 + Math.random() * 10).toFixed(1);
-                const jsP = (100 - htmlP - cssP).toFixed(1);
+
+            if (!scannerDiv) return;
+
+            const escapeScannerText = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+            const statusIcon = state => state === 'ok' || state === 'connected' ? '✅' : state === 'error' || state === 'denied' ? '🔴' : state === 'warning' ? '⚠️' : '⏳';
+            const updateSecurityStatusPanel = (firebaseState, locationState, connectionState) => {
+                const list = document.getElementById('securityStatusList');
+                const updated = document.getElementById('securityStatusUpdated');
+                if (!list) return;
+                const github = githubAuthStatus || { state: 'checking', detail: 'Checking...' };
+                list.innerHTML = `
+                    <li>${statusIcon(firebaseState.state)} <b>Firebase:</b> ${escapeScannerText(firebaseState.detail)}</li>
+                    <li>${statusIcon(github.state)} <b>GitHub auth:</b> ${escapeScannerText(github.detail)}</li>
+                    <li>${statusIcon(connectionState.state)} <b>Connection:</b> ${escapeScannerText(connectionState.detail)}</li>
+                    <li>${statusIcon(locationState.state)} <b>Location:</b> ${escapeScannerText(locationState.detail)}</li>`;
+                if (updated) updated.textContent = `Live check: ${new Date().toLocaleTimeString()}`;
+            };
+
+            const getMetaPolicy = name => [...document.querySelectorAll(`meta[http-equiv="${name}"]`)].some(meta => meta.content);
+            const getCssRuleCount = () => [...document.styleSheets].reduce((count, sheet) => {
+                try { return count + (sheet.cssRules ? sheet.cssRules.length : 0); } catch (error) { return count; }
+            }, 0);
+            const getSecurityCoverage = async () => {
+                const firebaseState = window.auth?.currentUser
+                    ? { state: 'ok', detail: `Authenticated (${window.auth.currentUser.isAnonymous ? 'anonymous' : 'signed in'})` }
+                    : { state: 'error', detail: 'Firebase Auth session missing' };
+                const locationState = !navigator.geolocation
+                    ? { state: 'error', detail: 'Geolocation unavailable' }
+                    : { state: 'ok', detail: 'Browser API available' };
+                const connectionState = window.isSecureContext && getMetaPolicy('Content-Security-Policy') && getMetaPolicy('Referrer-Policy')
+                    ? { state: 'ok', detail: 'Secure context and policies present' }
+                    : { state: 'warning', detail: 'HTTPS or page policy is missing' };
+                const checks = [firebaseState.state === 'ok', locationState.state === 'ok', connectionState.state === 'ok', githubAuthStatus.state === 'connected'];
+                try {
+                    if (navigator.permissions?.query) {
+                        const permission = await navigator.permissions.query({ name: 'geolocation' });
+                        if (permission.state === 'denied') {
+                            locationState.state = 'denied';
+                            locationState.detail = 'Permission denied';
+                        } else {
+                            locationState.detail = `Permission ${permission.state}`;
+                        }
+                    }
+                } catch (error) {
+                    locationState.detail = 'Permission state unavailable';
+                }
+                updateSecurityStatusPanel(firebaseState, locationState, connectionState);
+                return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+            };
+
+            async function updateScanner() {
+                await verifyGithubApiStatus();
+                const htmlNodes = document.querySelectorAll('*').length;
+                const cssRules = getCssRuleCount();
+                const scriptNodes = document.scripts.length;
+                const scriptBytes = [...document.scripts].reduce((total, script) => total + (script.textContent || '').length, 0);
+                const resourceCount = performance.getEntriesByType('resource').length;
+                const htmlP = Math.min(100, Math.max(1, Math.round((htmlNodes / 2200) * 100)));
+                const cssP = Math.min(100, Math.max(1, Math.round((cssRules / 900) * 100)));
+                const jsP = Math.min(100, Math.max(1, Math.round(((scriptBytes / 180000) * 70) + (scriptNodes * 3) + (resourceCount * 0.5))));
+                const securityP = await getSecurityCoverage();
                 const now = new Date().toLocaleTimeString();
+                const securityStatus = securityP >= 80 ? '✅ Security coverage healthy' : securityP >= 60 ? '⚠️ Security coverage partial' : '🔴 Security coverage needs attention';
                 
                 scannerDiv.innerHTML = `
                     <div style="margin-bottom: 15px; font-size: 11px; color: #999;">Last verified check: ${now}</div>
                     
-                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>HTML5</span> <b>${htmlP}%</b></div>
+                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>HTML workload</span> <b>${htmlP}%</b></div>
                     <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${htmlP}%; background: #e34f26; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
 
-                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>CSS3</span> <b>${cssP}%</b></div>
+                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>CSS workload</span> <b>${cssP}%</b></div>
                     <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${cssP}%; background: #1572b6; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
 
-                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>JavaScript</span> <b>${jsP}%</b></div>
+                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>JavaScript workload</span> <b>${jsP}%</b></div>
                     <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${jsP}%; background: #f7df1e; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
+
+                    <div style="display:flex; justify-content: space-between; margin-bottom: 5px;"><span>Security coverage</span> <b>${securityP}%</b></div>
+                    <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-bottom: 12px;"><div style="width: ${securityP}%; background: ${securityP >= 80 ? '#28a745' : '#f0ad4e'}; height: 100%; border-radius: 3px; transition: width 1s;"></div></div>
                     
-                    <div style="margin-top: 20px; padding: 10px; background: #e8f5e9; border: 1px solid #c3e6cb; border-radius: 8px; color: #155724; font-weight: bold; text-align: center;">
-                        ✅ Status: Clear & Safe
+                    <div style="margin-top: 20px; padding: 10px; background: ${securityP >= 80 ? '#e8f5e9' : '#fff8e1'}; border: 1px solid ${securityP >= 80 ? '#c3e6cb' : '#ffe082'}; border-radius: 8px; color: ${securityP >= 80 ? '#155724' : '#8a5a00'}; font-weight: bold; text-align: center;">
+                        ${securityStatus}<br><small style="font-weight:normal;">${htmlNodes} DOM nodes · ${cssRules} CSS rules · ${scriptNodes} scripts · ${resourceCount} resources</small>
                     </div>
                 `;
             }
             
             updateScanner();
-            setInterval(updateScanner, 60000); 
+            setInterval(updateScanner, 10000);
         }
 
         function setupAdminFreedomWall() {
@@ -10737,6 +10865,7 @@
 
         initAuth();
         
+        window.auth = auth;
         window.db = db;
         window.collection = collection;
         window.query = query;
@@ -11345,8 +11474,10 @@
         function returnToLoginAfterLocationDenied(message) {
             const checkPanel = document.getElementById('loginSecurityCheck');
             const waitingScreen = document.getElementById('securityWaitingScreen');
+            const locationModal = document.getElementById('locationPermissionModal');
             if (checkPanel) checkPanel.style.display = 'none';
             if (waitingScreen) waitingScreen.style.display = 'none';
+            if (locationModal) locationModal.style.display = 'none';
             if (welcomeScreen) {
                 welcomeScreen.style.display = 'none';
                 welcomeScreen.style.opacity = '1';
@@ -11356,10 +11487,41 @@
                 passwordModal.style.display = 'flex';
             }
             if (loginContent) loginContent.style.display = 'block';
-            alert(`Location permission required:\n\n${message}\n\nPlease allow location access and log in again.`);
+            loginUsernameInput?.focus();
+            const status = document.getElementById('locationPermissionStatus');
+            if (status) status.textContent = message;
         }
 
-        function requestLoginLocation(user) {
+        async function requestLoginLocation(user) {
+            const openingScreen = document.getElementById('siteOpeningScreen');
+            if (openingScreen && !openingScreen.classList.contains('is-finished')) {
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+            const locationModal = document.getElementById('locationPermissionModal');
+            const allowButton = document.getElementById('allowLocationBtn');
+            const denyButton = document.getElementById('denyLocationBtn');
+            const status = document.getElementById('locationPermissionStatus');
+            if (!locationModal || !allowButton || !denyButton) return false;
+
+            const approved = await new Promise(resolve => {
+                locationModal.style.display = 'flex';
+                status.textContent = 'Your location is requested only after you choose Continue.';
+                const close = (value) => {
+                    locationModal.style.display = 'none';
+                    allowButton.removeEventListener('click', allow);
+                    denyButton.removeEventListener('click', deny);
+                    resolve(value);
+                };
+                const allow = () => close(true);
+                const deny = () => close(false);
+                allowButton.addEventListener('click', allow, { once: true });
+                denyButton.addEventListener('click', deny, { once: true });
+            });
+            if (!approved) {
+                returnToLoginAfterLocationDenied('Location access is required before this account can open.');
+                return false;
+            }
+
             return new Promise(resolve => {
                 if (!navigator.geolocation) {
                     returnToLoginAfterLocationDenied('Location services are unavailable in this browser. Please enable location services to continue.');
