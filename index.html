@@ -213,9 +213,27 @@
             animation: bounceIn 1s forwards;
         }
         #maintenance-overlay { background:radial-gradient(circle at 20% 20%,#233f68 0%,#101a36 48%,#251329 100%); }
-        #maintenance-overlay .maintenance-content { position:relative; overflow:hidden; color:#eaf8fb; background:linear-gradient(145deg,rgba(21,47,70,.9),rgba(83,39,91,.88)); border:1px solid rgba(126,238,255,.65); box-shadow:0 0 0 1px rgba(255,105,200,.2),0 18px 70px rgba(0,0,0,.38),0 0 35px rgba(66,226,255,.18); backdrop-filter:blur(16px); }
+        #maintenance-overlay { overflow:hidden; isolation:isolate; perspective:1100px; }
+        #maintenance-overlay::before { content:''; position:absolute; inset:-20%; pointer-events:none; background:radial-gradient(ellipse at 50% 68%,rgba(70,231,255,.26),transparent 35%),radial-gradient(ellipse at 18% 20%,rgba(111,155,255,.18),transparent 30%),radial-gradient(ellipse at 85% 16%,rgba(255,95,194,.15),transparent 28%); filter:blur(18px); animation:maintenanceAurora 9s ease-in-out infinite alternate; z-index:-3; }
+        #maintenance-overlay::after { content:''; position:absolute; left:-10%; right:-10%; bottom:-3%; height:48%; pointer-events:none; opacity:.38; background:repeating-linear-gradient(90deg,transparent 0 58px,rgba(91,232,255,.16) 59px 60px),repeating-linear-gradient(0deg,transparent 0 32px,rgba(91,232,255,.12) 33px 34px); transform:perspective(360px) rotateX(64deg) scale(1.4); transform-origin:bottom; mask-image:linear-gradient(to top,black,transparent 78%); z-index:-1; }
+        .maintenance-ocean { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:-2; }
+        .maintenance-horizon { position:absolute; left:-10%; right:-10%; top:54%; height:2px; background:linear-gradient(90deg,transparent,rgba(112,241,255,.85),rgba(255,127,220,.55),transparent); box-shadow:0 0 25px rgba(92,232,255,.9),0 0 70px rgba(92,232,255,.5); animation:maintenanceHorizon 4s ease-in-out infinite alternate; }
+        .maintenance-wave { position:absolute; left:-18%; width:136%; height:33%; bottom:0; border-radius:48% 52% 0 0 / 22% 25% 0 0; transform-origin:50% 100%; background:linear-gradient(180deg,rgba(94,236,255,.26),rgba(80,94,210,.12) 48%,rgba(9,18,55,.72)); border-top:1px solid rgba(120,243,255,.68); box-shadow:0 -8px 30px rgba(75,221,255,.24),inset 0 16px 25px rgba(117,239,255,.12); filter:drop-shadow(0 -4px 14px rgba(87,224,255,.25)); }
+        .maintenance-wave::before { content:''; position:absolute; inset:8% 0 0; opacity:.8; background:repeating-radial-gradient(ellipse at 50% 0%,transparent 0 20px,rgba(116,239,255,.16) 21px 23px,transparent 24px 41px); transform:scaleY(.4); mask-image:linear-gradient(to bottom,black,transparent 75%); }
+        .maintenance-wave.one { bottom:-12%; animation:maintenanceWaveBack 7s ease-in-out infinite alternate; }
+        .maintenance-wave.two { bottom:-20%; opacity:.72; height:40%; background:linear-gradient(180deg,rgba(170,121,255,.2),rgba(15,29,76,.62)); animation:maintenanceWaveForward 10s ease-in-out infinite alternate; }
+        .maintenance-wave.three { bottom:-28%; opacity:.52; height:48%; animation:maintenanceWaveBack 13s ease-in-out infinite alternate-reverse; }
+        .maintenance-sparkles { position:absolute; inset:0; opacity:.7; background-image:radial-gradient(circle at 14% 34%,rgba(145,249,255,.9) 0 1px,transparent 2px),radial-gradient(circle at 78% 43%,rgba(255,152,226,.8) 0 1px,transparent 2px),radial-gradient(circle at 62% 18%,rgba(145,249,255,.75) 0 1px,transparent 2px),radial-gradient(circle at 32% 70%,rgba(255,255,255,.55) 0 1px,transparent 2px); background-size:220px 170px,280px 220px,190px 240px,310px 260px; animation:maintenanceSparkle 7s linear infinite; }
+        #maintenance-overlay .maintenance-content { position:relative; z-index:2; overflow:hidden; color:#eaf8fb; background:linear-gradient(145deg,rgba(21,47,70,.86),rgba(83,39,91,.82)); border:1px solid rgba(126,238,255,.65); box-shadow:0 0 0 1px rgba(255,105,200,.2),0 18px 70px rgba(0,0,0,.38),0 0 35px rgba(66,226,255,.18); backdrop-filter:blur(16px); transform-style:preserve-3d; animation:maintenanceCardFloat 6s ease-in-out infinite; }
         #maintenance-overlay .maintenance-content::before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(110deg,transparent 18%,rgba(69,232,255,.18) 40%,rgba(255,103,199,.2) 58%,transparent 80%); transform:translateX(-110%); animation:maintenanceHoloSheen 5s ease-in-out infinite; }
         @keyframes maintenanceHoloSheen { 0%,25% { transform:translateX(-110%); } 60%,100% { transform:translateX(110%); } }
+        @keyframes maintenanceWaveBack { from { transform:translateX(-4%) rotate(-1deg) rotateX(2deg); } to { transform:translateX(5%) rotate(1deg) rotateX(-2deg); } }
+        @keyframes maintenanceWaveForward { from { transform:translateX(5%) rotate(1deg) rotateX(-2deg); } to { transform:translateX(-5%) rotate(-1deg) rotateX(2deg); } }
+        @keyframes maintenanceAurora { from { transform:translate3d(-2%,1%,0) scale(1); } to { transform:translate3d(3%,-2%,0) scale(1.08); } }
+        @keyframes maintenanceHorizon { from { opacity:.55; transform:scaleX(.85); } to { opacity:1; transform:scaleX(1.08); } }
+        @keyframes maintenanceSparkle { from { transform:translateY(2%); opacity:.35; } 50% { opacity:.85; } to { transform:translateY(-4%); opacity:.5; } }
+        @keyframes maintenanceCardFloat { 0%,100% { transform:translateY(0) rotateX(0deg) rotateY(0deg); } 50% { transform:translateY(-6px) rotateX(.6deg) rotateY(-.7deg); } }
+        @media (prefers-reduced-motion:reduce) { .maintenance-wave,.maintenance-horizon,.maintenance-sparkles,#maintenance-overlay::before,#maintenance-overlay .maintenance-content { animation:none !important; } }
         #maint-play-btn { position:relative; overflow:hidden; background:linear-gradient(135deg,#61e7ff,#d97aff 52%,#ff78bd) !important; color:#102f3b !important; border:1px solid rgba(255,255,255,.8) !important; box-shadow:0 0 18px rgba(80,230,255,.55), inset 0 0 12px rgba(255,255,255,.45) !important; }
         #maint-play-btn:hover { transform:scale(1.1); }
 
@@ -3236,6 +3254,13 @@
 
     <!-- MAINTENANCE OVERLAY -->
     <div id="maintenance-overlay">
+        <div class="maintenance-ocean" aria-hidden="true">
+            <div class="maintenance-sparkles"></div>
+            <div class="maintenance-horizon"></div>
+            <div class="maintenance-wave one"></div>
+            <div class="maintenance-wave two"></div>
+            <div class="maintenance-wave three"></div>
+        </div>
         <div class="maintenance-content" id="maint-active-content">
             <div id="maint-secret-icon" style="font-size: 60px; animation: float 3s ease-in-out infinite; cursor: pointer;">🛠️</div>
             <h2 style="color: #d81b60; font-family: 'Dancing Script', cursive; font-size: 40px;">Under Maintenance</h2>
