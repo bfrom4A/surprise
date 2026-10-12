@@ -5501,16 +5501,22 @@
                     };
                 }
 
-                try {
-                    const redirectResult = await getRedirectResult(auth);
-                    if (redirectResult) {
-                        handleGithubCredential(redirectResult);
-                        showToast("GitHub connected ✅", "Repository access is ready.", "✅");
+                const hasPendingGithubRedirect = sessionStorage.getItem('githubAuthRedirectPending') === 'true';
+                if (hasPendingGithubRedirect) {
+                    sessionStorage.removeItem('githubAuthRedirectPending');
+                    try {
+                        const redirectResult = await getRedirectResult(auth);
+                        if (redirectResult) {
+                            handleGithubCredential(redirectResult);
+                            showToast("GitHub connected ✅", "Repository access is ready.", "✅");
+                        } else {
+                            showToast("GitHub login cancelled", "No GitHub authorization was returned.", "⚠️");
+                        }
+                    } catch (redirectError) {
+                        console.error("GitHub redirect login failed:", redirectError);
+                        showToast("GitHub login failed", redirectError?.message || "Check the Firebase GitHub provider configuration.", "⚠️");
+                        ghTokenInput?.focus();
                     }
-                } catch (redirectError) {
-                    console.error("GitHub redirect login failed:", redirectError);
-                    showToast("GitHub login needs setup", "Use a personal access token below, or enable GitHub in Firebase Authentication.", "⚠️");
-                    ghTokenInput?.focus();
                 }
 
                 if (ghLoginBtn) {
@@ -5544,9 +5550,11 @@
                                 try {
                                     const redirectProvider = new GithubAuthProvider();
                                     redirectProvider.addScope('repo');
+                                    sessionStorage.setItem('githubAuthRedirectPending', 'true');
                                     await signInWithRedirect(auth, redirectProvider);
                                     return;
                                 } catch (redirectError) {
+                                    sessionStorage.removeItem('githubAuthRedirectPending');
                                     console.error("GitHub redirect fallback failed:", redirectError);
                                 }
                             }
