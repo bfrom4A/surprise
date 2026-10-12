@@ -4718,6 +4718,7 @@
         import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithPopup, signInWithRedirect, getRedirectResult, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        import { getAnalytics, isSupported as isAnalyticsSupported, logEvent } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
@@ -4734,6 +4735,24 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const storage = getStorage(app);
+        let analytics = null;
+        const analyticsReady = isAnalyticsSupported().then(supported => {
+            if (!supported) {
+                console.warn('Google Analytics is not supported in this browser context.');
+                return false;
+            }
+            analytics = getAnalytics(app);
+            return true;
+        }).catch(error => {
+            console.warn('Google Analytics could not be initialized:', error);
+            return false;
+        });
+
+        window.trackAnalyticsEvent = async function(eventName, eventParams = {}) {
+            if (await analyticsReady && analytics) {
+                logEvent(analytics, eventName, eventParams);
+            }
+        };
         
         let currentUser = sessionStorage.getItem('loggedInUser') || null; 
         let currentDeactivatedUserId = null; 
@@ -11960,6 +11979,7 @@
             tab.addEventListener('click', function() {
                 if (this.id === 'logoutButton' || this.id === 'adminLogoutBtn') return;
                 const targetTab = this.getAttribute('data-tab');
+                if (targetTab) window.trackAnalyticsEvent('app_tab_view', { tab_name: targetTab });
                 
                 tabs.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
