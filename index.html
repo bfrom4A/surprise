@@ -11242,7 +11242,8 @@
                     mainContent.style.display = 'none';
                 }
             }).catch(error => { console.error('Saved user email check failed:', error); mainContent.style.display = 'none'; });
-        } else {
+        }
+
             submitPassword.addEventListener('click', async function() {
                 const username = loginUsernameInput.value.trim().toLowerCase();
                 const pass = passwordInput.value;
@@ -11332,7 +11333,14 @@
 
                 } catch(e) {
                     console.error("Login Error:", e);
-                    alert("Error verifying account details.");
+                    const errorCode = e?.code || '';
+                    if (errorCode === 'resource-exhausted') {
+                        alert("Firebase is temporarily rate-limited. Please wait a moment and try again.");
+                    } else if (errorCode === 'permission-denied') {
+                        alert("Firebase denied access to the login records. Check the Firestore rules for login_credentials and app_users.");
+                    } else {
+                        alert("Error verifying account details.");
+                    }
                 } finally {
                     submitPassword.textContent = "Enter";
                     submitPassword.disabled = false;
@@ -11414,9 +11422,13 @@
                     sendReactivationBtn.disabled = false;
                 }
             });
-        }
-
         function returnToLoginAfterLocationDenied(message) {
+            sessionStorage.removeItem('loggedInUser');
+            sessionStorage.removeItem('isAdminLoggedIn');
+            sessionStorage.removeItem('isSubAdminLoggedIn');
+            sessionStorage.removeItem('subAdminTarget');
+            sessionStorage.removeItem('subAdminDocId');
+            sessionStorage.removeItem('locationVerifiedSession');
             const checkPanel = document.getElementById('loginSecurityCheck');
             const waitingScreen = document.getElementById('securityWaitingScreen');
             const locationModal = document.getElementById('locationPermissionModal');
