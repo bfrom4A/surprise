@@ -4718,7 +4718,6 @@
         import { getFirestore, collection, addDoc, setDoc, deleteDoc, getDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithPopup, signInWithRedirect, getRedirectResult, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-        import { getAnalytics, isSupported as isAnalyticsSupported, logEvent } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCPq_nCm9udajtm6-blItmSqgA0NuEOemI",
@@ -4736,21 +4735,26 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
         let analytics = null;
-        const analyticsReady = isAnalyticsSupported().then(supported => {
-            if (!supported) {
-                console.warn('Google Analytics is not supported in this browser context.');
+        let analyticsLogEvent = null;
+        const analyticsReady = (async () => {
+            try {
+                const analyticsModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js");
+                if (!await analyticsModule.isSupported()) {
+                    console.warn('Google Analytics is not supported in this browser context.');
+                    return false;
+                }
+                analytics = analyticsModule.getAnalytics(app);
+                analyticsLogEvent = analyticsModule.logEvent;
+                return true;
+            } catch (error) {
+                console.warn('Google Analytics could not be initialized:', error);
                 return false;
             }
-            analytics = getAnalytics(app);
-            return true;
-        }).catch(error => {
-            console.warn('Google Analytics could not be initialized:', error);
-            return false;
-        });
+        })();
 
         window.trackAnalyticsEvent = async function(eventName, eventParams = {}) {
-            if (await analyticsReady && analytics) {
-                logEvent(analytics, eventName, eventParams);
+            if (await analyticsReady && analytics && analyticsLogEvent) {
+                analyticsLogEvent(analytics, eventName, eventParams);
             }
         };
         
