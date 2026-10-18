@@ -326,9 +326,11 @@
         @keyframes locationOrbit { to { transform:rotate(408deg); } }
         @media (prefers-reduced-motion:reduce) { .location-permission-card,.location-permission-card::before,.location-orbit::before,.location-orbit::after { animation:none; } }
         .opening-core { position:relative; width:min(520px,78vw); text-align:center; color:#183747; }
-        .opening-logo { font-family:'Dancing Script', cursive; font-size:clamp(52px,8vw,90px); color:#d81b60; text-shadow:0 8px 24px rgba(183,21,80,.2); animation:openingLogoReveal 1.2s ease both; }
-        .opening-subtitle { margin-top:4px; color:#557985; font-size:11px; letter-spacing:.34em; text-transform:uppercase; opacity:0; animation:openingSubtitleReveal .8s 1s ease forwards; }
-        .opening-developer { margin-top:8px; color:#6d4a58; font-size:10px; letter-spacing:.12em; opacity:0; animation:openingStatusReveal .6s 1.25s ease forwards; }
+        .opening-logo { min-height:1.15em; font-family:'Dancing Script', cursive; font-size:clamp(52px,8vw,90px); color:#d81b60; text-shadow:0 8px 24px rgba(183,21,80,.2); }
+        .opening-logo::after { content:''; display:inline-block; width:3px; height:.78em; margin-left:7px; vertical-align:-.08em; background:#d81b60; box-shadow:0 0 10px rgba(216,27,96,.7); animation:openingCaret .7s steps(1,end) infinite; }
+        .opening-logo.is-complete::after { display:none; }
+        .opening-subtitle { margin-top:4px; color:#557985; font-size:11px; letter-spacing:.34em; text-transform:uppercase; opacity:0; }
+        .opening-developer { margin-top:8px; color:#6d4a58; font-size:10px; letter-spacing:.12em; opacity:0; }
         .user-spotify-player { display:block; width:min(100%,760px); height:352px; margin:0 auto 18px; border:0; border-radius:12px; box-shadow:0 10px 28px rgba(89,35,60,.16); }
         .opening-lines { position:relative; height:46px; margin-top:25px; overflow:hidden; opacity:0; animation:openingLinesReveal .5s 1.65s ease forwards; }
         .opening-lines::before, .opening-lines::after { content:''; position:absolute; left:-110%; width:100%; height:2px; background:linear-gradient(90deg, transparent, #d81b60, #fff, #d81b60, transparent); box-shadow:0 0 12px #d81b60; animation:openingLineSweep 1.25s 1.9s cubic-bezier(.2,.75,.3,1) forwards; }
@@ -340,6 +342,9 @@
         @keyframes openingLinesReveal { to { opacity:1; } }
         @keyframes openingLineSweep { to { left:110%; } }
         @keyframes openingStatusReveal { to { opacity:1; } }
+        @keyframes openingCaret { 50% { opacity:0; } }
+        .opening-subtitle.is-visible { animation:openingSubtitleReveal .8s ease forwards; }
+        .opening-developer.is-visible { animation:openingStatusReveal .6s ease forwards; }
 
         #loginAnnouncementPanel { position:relative; overflow:hidden; }
         #loginAnnouncementPanel::before { content:''; position:absolute; inset:0; background:linear-gradient(110deg, transparent 12%, rgba(90,230,255,.16) 30%, rgba(185,115,255,.38) 42%, rgba(255,112,184,.38) 54%, rgba(255,222,122,.34) 64%, transparent 82%); transform:translateX(-110%); animation:announcementSheen 5s 1s ease-in-out infinite; pointer-events:none; mix-blend-mode:screen; }
@@ -3336,7 +3341,7 @@
     <!-- Password Modal with Dynamic Flow -->
     <div id="siteOpeningScreen" aria-label="Opening Love Site">
         <div class="opening-core">
-            <div class="opening-logo">Love Site</div>
+            <div class="opening-logo" id="openingTitle" aria-label="Ink and Love"></div>
             <div class="opening-subtitle">a diary of your journey in love</div>
             <div class="opening-developer">Developed by Jc Balog</div>
             <div class="opening-lines" aria-hidden="true"></div>
@@ -4240,16 +4245,20 @@
 
                 <!-- Realtime Users Online (replaces Fun Controls) -->
                 <div class="admin-widget superadmin-only" id="superAdminUsersOnline" style="display:none;">
-                    <h4 style="color: #d81b60; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid #ffe4e9; padding-bottom: 8px;">👥 Users (Realtime)</h4>
+                    <h4 style="color: #d81b60; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid #ffe4e9; padding-bottom: 8px;">👥 Realtime User Activity</h4>
                     <div style="font-size:13px; color:#555; margin-bottom:8px;">
-                        <strong id="onlineUsersCount">0</strong> users
+                        <strong id="onlineUsersCount">0</strong> users online
                     </div>
-                    <div style="max-height:160px; overflow:auto; margin-bottom:10px;">
+                    <div style="max-height:220px; overflow:auto; margin-bottom:10px;">
                         <ul id="onlineUsersList" style="list-style:none; padding:0; margin:0; font-size:13px; color:#333;"></ul>
                     </div>
                     <div style="border-top:1px solid #f3f3f3; padding-top:8px; max-height:160px; overflow:auto;">
                         <h5 style="font-size:13px; margin:6px 0; color:#666;">Recent Activity</h5>
                         <ul id="activityLogList" style="list-style:none; padding:0; margin:0; font-size:12px; color:#444;"></ul>
+                    </div>
+                    <div style="border-top:1px solid #f3f3f3; padding-top:8px; margin-top:8px;">
+                        <h5 style="font-size:13px; margin:6px 0; color:#666;">Last login sessions</h5>
+                        <ul id="lastLoginList" style="list-style:none; padding:0; margin:0; font-size:12px; color:#444;"></ul>
                     </div>
                 </div>
 
@@ -5545,7 +5554,8 @@
 
         async function initAuth() {
             try {
-                if(!auth.currentUser) {
+                const pendingGithubRedirect = sessionStorage.getItem('githubAuthRedirectPending') === 'true';
+                if(!auth.currentUser && !pendingGithubRedirect) {
                     await signInAnonymously(auth);
                 }
                 console.log("Firebase Auth Successful");
@@ -5594,8 +5604,7 @@
                     };
                 }
 
-                const hasPendingGithubRedirect = sessionStorage.getItem('githubAuthRedirectPending') === 'true';
-                if (hasPendingGithubRedirect) {
+                if (pendingGithubRedirect) {
                     sessionStorage.removeItem('githubAuthRedirectPending');
                     try {
                         const redirectResult = await getRedirectResult(auth);
@@ -5610,6 +5619,9 @@
                         showToast("GitHub login failed", redirectError?.message || "Check the Firebase GitHub provider configuration.", "⚠️");
                         ghTokenInput?.focus();
                     }
+                }
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
                 }
 
                 if (ghLoginBtn) {
@@ -5633,9 +5645,7 @@
                             console.error("Error Code:", e.code);
                             console.error("Error Message:", e.message);
                             const redirectCodes = [
-                                'auth/internal-error',
                                 'auth/popup-blocked',
-                                'auth/popup-closed-by-user',
                                 'auth/operation-not-supported-in-this-environment'
                             ];
                             if (redirectCodes.includes(e?.code)) {
@@ -6442,16 +6452,22 @@
             onSnapshot(q, (snapshot) => {
                 activeList.innerHTML = '';
                 historyList.innerHTML = '';
+                const lastLoginList = document.getElementById('lastLoginList');
+                if (lastLoginList) lastLoginList.innerHTML = '';
                 if (snapshot.empty) {
                     activeList.innerHTML = '<p style="text-align:center;color:#999;">No logins recorded.</p>';
+                    if (lastLoginList) lastLoginList.innerHTML = '<li style="padding:6px 0;color:#999;">No login sessions recorded.</li>';
                     return;
                 }
                 const now = new Date();
                 const oneDayMs = 24 * 60 * 60 * 1000;
+                const latestByUser = new Map();
 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
                     const time = data.timestamp ? data.timestamp.toDate() : new Date();
+                    const loginUser = String(data.user || 'unknown');
+                    if (!latestByUser.has(loginUser)) latestByUser.set(loginUser, { data, time });
                     const isRecent = (now - time) < oneDayMs;
                     const dateStr = time.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                     const userName = data.user ? `(${data.user})` : '';
@@ -6498,6 +6514,15 @@
                     if (isRecent) activeList.appendChild(item);
                     else historyList.appendChild(item);
                 });
+                if (lastLoginList) {
+                    latestByUser.forEach(({ data, time }, loginUser) => {
+                        const li = document.createElement('li');
+                        li.style.padding = '6px 0';
+                        li.style.borderBottom = '1px solid #f6f6f6';
+                        li.textContent = `${loginUser} · ${time.toLocaleString()} · ${data.device || 'Unknown device'}`;
+                        lastLoginList.appendChild(li);
+                    });
+                }
             });
         }
 
@@ -6510,21 +6535,18 @@
 
             try {
                 const q = query(collection(db, collectionName), orderBy('timestamp', 'desc'));
-                const snapshot = await getDocs(q);
-                galleryContainer.innerHTML = '';
-
-                if(snapshot.empty) {
-                    galleryContainer.innerHTML = '<p style="text-align: center; width: 100%; color: #999;">No images uploaded yet.</p>';
-                    return;
-                }
-
-                snapshot.docs.forEach((doc, index) => {
-                    const data = doc.data();
-                    if (data.url) {
+                onSnapshot(q, (snapshot) => {
+                    galleryContainer.innerHTML = '';
+                    if (snapshot.empty) {
+                        galleryContainer.innerHTML = '<p style="text-align: center; width: 100%; color: #999;">No images uploaded yet.</p>';
+                        return;
+                    }
+                    snapshot.docs.forEach((galleryDoc, index) => {
+                        const data = galleryDoc.data();
+                        if (!data.url) return;
                         const item = document.createElement('div');
                         item.className = 'gallery-item';
-                        item.style.animationDelay = `${index * 0.1}s`; 
-                        
+                        item.style.animationDelay = `${index * 0.1}s`;
                         const imageUrl = safeMediaUrl(data.url);
                         if (!imageUrl) return;
                         item.innerHTML = `
@@ -6532,7 +6554,10 @@
                             ${data.caption ? `<div class="gallery-caption">${escapeHtml(data.caption)}</div>` : ''}
                         `;
                         galleryContainer.appendChild(item);
-                    }
+                    });
+                }, (error) => {
+                    console.error("Gallery realtime listener error:", error);
+                    galleryContainer.innerHTML = '<p>Error loading gallery.</p>';
                 });
             } catch (error) {
                 console.error("Gallery error:", error);
@@ -6561,7 +6586,7 @@
             try {
                 const lettersCol = collection(db, `${user}_love_letters`);
                 const lettersQuery = query(lettersCol, orderBy('timestamp', 'desc'));
-                const lettersSnap = await getDocs(lettersQuery);
+                onSnapshot(lettersQuery, (lettersSnap) => {
 
                 if (lettersSnap.empty) {
                     lettersContainer.innerHTML = '<p style="text-align:center; color: #888;">No letters yet.</p>';
@@ -6622,6 +6647,10 @@
                         });
                     });
                 }
+                }, (error) => {
+                    console.error('Letters realtime listener error:', error);
+                    lettersContainer.innerHTML = '<p style="text-align:center; color: #888;">Unable to load letters right now.</p>';
+                });
             } catch (error) {
                 console.error('Letters load error:', error);
                 lettersContainer.innerHTML = '<p style="text-align:center; color: #888;">Unable to load letters right now.</p>';
@@ -10904,6 +10933,24 @@
     document.addEventListener('DOMContentLoaded', function() {
         const siteOpeningScreen = document.getElementById('siteOpeningScreen');
         if (siteOpeningScreen) {
+            const openingTitle = document.getElementById('openingTitle');
+            const openingSubtitle = siteOpeningScreen.querySelector('.opening-subtitle');
+            const openingDeveloper = siteOpeningScreen.querySelector('.opening-developer');
+            const titleText = 'Ink and Love';
+            let titleIndex = 0;
+            const typeOpeningTitle = () => {
+                if (!openingTitle) return;
+                openingTitle.textContent = titleText.slice(0, titleIndex);
+                if (titleIndex < titleText.length) {
+                    titleIndex += 1;
+                    setTimeout(typeOpeningTitle, titleIndex === 1 ? 120 : 105);
+                } else {
+                    openingTitle.classList.add('is-complete');
+                    openingSubtitle?.classList.add('is-visible');
+                    setTimeout(() => openingDeveloper?.classList.add('is-visible'), 650);
+                }
+            };
+            typeOpeningTitle();
             setTimeout(() => siteOpeningScreen.classList.add('is-finished'), 5000);
         }
         const passwordModal = document.getElementById('passwordModal');
