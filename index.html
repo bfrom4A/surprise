@@ -423,9 +423,18 @@
         }
         #loginAnnouncementPanel h2 { margin:0 0 12px; color:#d81b60; font-family:'Dancing Script', cursive; font-size:clamp(30px, 4vw, 48px); }
         #loginAnnouncementPanel p { color:#5a7078; line-height:1.7; white-space:pre-wrap; }
+        #loginInfoPanels { display:flex; flex-direction:column; gap:14px; width:min(390px,34vw); }
+        #loginMaintenancePanel { display:none; position:relative; overflow:hidden; padding:20px 22px; border:1px solid rgba(255,255,255,.8); border-radius:18px; background:linear-gradient(145deg,rgba(21,47,70,.94),rgba(83,39,91,.92)); color:#eaf8fb; box-shadow:0 18px 42px rgba(48,26,58,.22); }
+        #loginMaintenancePanel::before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(110deg,transparent 18%,rgba(69,232,255,.16) 42%,rgba(255,103,199,.2) 58%,transparent 82%); transform:translateX(-110%); animation:announcementSheen 5s ease-in-out infinite; }
+        #loginMaintenancePanel > * { position:relative; z-index:1; }
+        #loginMaintenancePanel h3 { margin:0 0 7px; color:#8ff4ff; font-size:16px; }
+        #loginMaintenancePanel p { margin:0; color:#d0e7ed; font-size:12px; line-height:1.55; white-space:pre-wrap; }
+        #loginMaintenanceCountdown { display:block; margin:12px 0 5px; color:#fff; font:700 24px/1.1 monospace; letter-spacing:.04em; text-shadow:0 0 14px rgba(91,232,255,.7); }
+        #loginMaintenanceTiming { color:#9ed1db; font-size:10px; }
         @media (max-width: 760px) {
             .password-modal { flex-direction:column; justify-content:center; padding:20px; overflow-y:auto; }
-            #loginAnnouncementPanel { flex:none; width:100%; min-height:170px; padding:24px; }
+            #loginInfoPanels { width:100%; }
+            #loginAnnouncementPanel { width:100%; min-height:170px; padding:24px; }
             .password-content { width:100%; }
         }
         
@@ -3349,13 +3358,21 @@
         </div>
     </div>
     <div class="password-modal" id="passwordModal">
-        <aside id="loginAnnouncementPanel" aria-live="polite">
-            <div>
-                <div style="font-size:36px; margin-bottom:8px;">📢</div>
-                <h2 id="loginAnnouncementTitle">Welcome</h2>
-                <p id="loginAnnouncementMessage">Stay close. New announcements will appear here.</p>
-            </div>
-        </aside>
+        <div id="loginInfoPanels">
+            <aside id="loginAnnouncementPanel" aria-live="polite">
+                <div>
+                    <div style="font-size:36px; margin-bottom:8px;">📢</div>
+                    <h2 id="loginAnnouncementTitle">Welcome</h2>
+                    <p id="loginAnnouncementMessage">Stay close. New announcements will appear here.</p>
+                </div>
+            </aside>
+            <aside id="loginMaintenancePanel" aria-live="polite">
+                <h3>🛠️ Scheduled maintenance</h3>
+                <p id="loginMaintenanceDescription">The site has scheduled maintenance.</p>
+                <strong id="loginMaintenanceCountdown">--:--:--</strong>
+                <small id="loginMaintenanceTiming">Checking maintenance schedule…</small>
+            </aside>
+        </div>
         <!-- Main Login Screen -->
         <div class="password-content" id="loginContent">
             <h2>Welcome</h2>
@@ -3899,13 +3916,13 @@
 
                         <div class="admin-widget" style="margin-bottom:20px;">
                             <h4 style="color:#183747; margin-bottom:8px;">Security self-test</h4>
-                            <p style="font-size:12px; color:#667b84; margin-bottom:12px;">Runs browser-visible checks only. It does not attack the site or verify Firebase server rules.</p>
+                            <p style="font-size:12px; color:#667b84; margin-bottom:12px;">Advanced defensive checks for this browser session, page policy, unsafe inputs, and exposed attack surfaces. Server rules still provide the real protection.</p>
                             <button type="button" id="runSecuritySelfTest" class="submit-btn" style="width:100%;">Run security checks</button>
                             <p id="securitySelfTestSummary" role="status" style="margin:10px 0; font-size:12px; color:#526a73;">No test has been run this session.</p>
                             <div id="securitySelfTestResults" class="admin-list-container" aria-live="polite">
                                 <p style="font-size:12px; color:#888;">Test results will appear here.</p>
                             </div>
-                            <p style="font-size:11px; color:#8b4b20; margin-top:10px;">Firebase Firestore/Storage rules, App Check, backups, and server-side secrets require separate console/server verification.</p>
+                            <p style="font-size:11px; color:#8b4b20; margin-top:10px;">This test does not attack the site or guarantee protection. Firebase rules, App Check, rate limits, backups, and server-side secrets require separate verification.</p>
                         </div>
 
                         <div class="admin-widget" style="margin-bottom:20px;">
@@ -4098,10 +4115,11 @@
                                 <input type="datetime-local" id="videoBroadcastDateTime" class="fw-input">
                             </div>
                             <div class="video-form-group">
-                                <label>Auto-delete after viewing?</label>
-                                <select id="videoBroadcastAutoDelete" class="repo-select">
-                                    <option value="true">✓ Yes (Recommended)</option>
-                                    <option value="false">⊗ No (Manual Delete)</option>
+                                <label>Viewing limit per user</label>
+                                <select id="videoBroadcastViewLimit" class="repo-select">
+                                    <option value="1">Once</option>
+                                    <option value="2">Twice</option>
+                                    <option value="0">Unlimited</option>
                                 </select>
                             </div>
                         </div>
@@ -5021,6 +5039,54 @@
             }, 3000); 
         }
 
+        let loginMaintenanceData = null;
+        let loginMaintenanceInterval = null;
+        function updateLoginMaintenanceNotice() {
+            const panel = document.getElementById('loginMaintenancePanel');
+            const description = document.getElementById('loginMaintenanceDescription');
+            const countdown = document.getElementById('loginMaintenanceCountdown');
+            const timing = document.getElementById('loginMaintenanceTiming');
+            if (!panel || !description || !countdown || !timing) return;
+
+            const data = loginMaintenanceData;
+            if (!data || (!data.isActive && !data.isScheduled)) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            const now = Date.now();
+            const start = data.startTime ? new Date(data.startTime).getTime() : 0;
+            const end = data.endTime ? new Date(data.endTime).getTime() : 0;
+            const isActive = data.isActive || (data.isScheduled && start > 0 && now >= start && (!end || now < end));
+            const target = isActive ? end : start;
+            if (!isActive && target && target <= now) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            panel.style.display = 'block';
+            description.textContent = data.message || 'We are preparing a maintenance update.';
+            if (!target) {
+                countdown.textContent = isActive ? 'IN PROGRESS' : 'SCHEDULED';
+                timing.textContent = isActive ? 'Maintenance is currently in progress.' : 'Maintenance is scheduled.';
+                return;
+            }
+
+            const remaining = Math.max(0, target - now);
+            const days = Math.floor(remaining / 86400000);
+            const hours = Math.floor((remaining % 86400000) / 3600000);
+            const minutes = Math.floor((remaining % 3600000) / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            countdown.textContent = `${days > 0 ? `${days}d ` : ''}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            timing.textContent = isActive
+                ? `Estimated completion: ${new Date(target).toLocaleString()}`
+                : `Starts: ${new Date(target).toLocaleString()}`;
+        }
+
+        if (loginMaintenanceInterval) clearInterval(loginMaintenanceInterval);
+        loginMaintenanceInterval = setInterval(updateLoginMaintenanceNotice, 1000);
+        updateLoginMaintenanceNotice();
+
         onSnapshot(doc(db, 'settings', 'maintenance'), async (docSnap) => {
             let maintData = { isActive: false, isScheduled: false, startTime: '', endTime: '', message: '' };
             if (docSnap.exists()) {
@@ -5040,6 +5106,8 @@
                 maintenanceDefaultSongUrl = null;
                 maintenanceDefaultSongTitle = null;
             }
+            loginMaintenanceData = maintData;
+            updateLoginMaintenanceNotice();
 
             const btnToggleMaintenance = document.getElementById('btnToggleMaintenance');
             if (btnToggleMaintenance) {
@@ -6271,7 +6339,8 @@
         function startGifListener(user) {
             if (!window.db || !window.onSnapshot || !window.doc) { setTimeout(() => startGifListener(user), 400); return; }
             try {
-                onSnapshot(doc(db, `users/${user}/gifNotifs`, 'current'), (snap) => {
+                if (window._gifListenerUnsub) window._gifListenerUnsub();
+                window._gifListenerUnsub = onSnapshot(doc(db, `users/${user}/gifNotifs`, 'current'), (snap) => {
                     if (!snap.exists()) return;
                     const data = snap.data();
                     if (!data.gifUrl || data.dismissed) return;
@@ -6281,13 +6350,21 @@
                     const cap   = document.getElementById('gifNotifCaption');
                     if (!float || !img) return;
 
-                    img.src = data.gifUrl;
+                    const gifUrl = safeMediaUrl(data.gifUrl);
+                    if (!gifUrl) {
+                        console.warn('Rejected unsafe GIF URL from Firestore.');
+                        float.style.display = 'none';
+                        return;
+                    }
+                    img.src = gifUrl;
                     cap.textContent = data.caption || '😊';
                     float.style.display = 'flex';
 
                     // Auto-dismiss after 12 seconds
                     clearTimeout(window._gifDismissTimer);
                     window._gifDismissTimer = setTimeout(() => { float.style.display = 'none'; }, 12000);
+                }, error => {
+                    console.error('GIF realtime listener failed:', error);
                 });
             } catch(e) { console.error('GIF listener error:', e); }
 
@@ -7954,6 +8031,30 @@
                 hardcodedCredentialPattern.test(pageSource) ? 'A credential-like string literal is present in the downloaded page. Move it to server-side authentication.'
                     : 'No long password/secret string literal was found by this limited source scan.');
 
+            const unsafeInlineScriptCount = Array.from(document.scripts).filter(script => !script.src && script.textContent.trim()).length;
+            addResult(unsafeInlineScriptCount ? 'warning' : 'pass', 'Inline script attack surface',
+                unsafeInlineScriptCount
+                    ? `${unsafeInlineScriptCount} inline script block(s) require unsafe-inline in the current CSP. Move scripts to external files and use nonces or hashes when deployment allows.`
+                    : 'No inline script blocks were detected.');
+
+            const externalScripts = Array.from(document.scripts).filter(script => script.src && !script.src.startsWith(location.origin));
+            const missingIntegrity = externalScripts.filter(script => !script.integrity);
+            addResult(missingIntegrity.length ? 'warning' : 'pass', 'Third-party script integrity',
+                missingIntegrity.length
+                    ? `${missingIntegrity.length} external script(s) have no Subresource Integrity hash. Pin trusted versions and add integrity/crossorigin attributes where supported.`
+                    : 'External scripts have integrity metadata.');
+
+            const unsafeHtmlSinks = (pageSource.match(/\.innerHTML\s*=/g) || []).length;
+            addResult(unsafeHtmlSinks ? 'warning' : 'pass', 'Dynamic HTML sinks',
+                unsafeHtmlSinks
+                    ? `${unsafeHtmlSinks} innerHTML assignment(s) were found. Keep using escapeHtml/safeMediaUrl for every untrusted value and prefer textContent or DOM construction.`
+                    : 'No innerHTML assignments were found.');
+
+            addResult(document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content?.includes("'unsafe-inline'") ? 'warning' : 'pass', 'CSP script policy',
+                document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content?.includes("'unsafe-inline'")
+                    ? 'The current page policy permits inline scripts for compatibility. Replace this with nonces or hashes when the application is split into external scripts.'
+                    : 'The CSP does not permit unsafe inline scripts.');
+
             addResult('info', 'Backend access rules', 'Firestore/Storage rules, App Check, backups, rate limits, and server-side secrets cannot be verified or enforced by this browser test.');
             const counts = checks.reduce((result, check) => (result[check.level]++, result), { pass: 0, warning: 0, critical: 0, info: 0 });
             checks.forEach(check => {
@@ -8136,12 +8237,20 @@
                     const url     = urlOverride || document.getElementById('adminGifUrl')?.value.trim();
                     const caption = captionOverride || document.getElementById('adminGifCaption')?.value.trim() || '😊';
                     if (!url) return alert('Please enter a GIF URL first.');
+                    const safeUrl = safeMediaUrl(url);
+                    if (!safeUrl || !/^https:\/\/.+/i.test(safeUrl)) {
+                        return alert('Use a valid HTTPS GIF URL.');
+                    }
                     const users = targetUser === 'all' ? ['kate', 'baby'] : [targetUser];
                     const ts = Date.now();
                     for (const u of users) {
                         try {
-                            await setDoc(doc(db, `users/${u}/gifNotifs`, 'current'), { gifUrl: url, caption, dismissed: false, sentAt: ts });
-                        } catch(e) { console.error('GIF send error:', e); }
+                            await setDoc(doc(db, `users/${u}/gifNotifs`, 'current'), { gifUrl: safeUrl, caption, dismissed: false, sentAt: ts });
+                        } catch(e) {
+                            console.error('GIF send error:', e);
+                            alert(`Could not send the GIF to ${u}. Check Firestore permissions.`);
+                            return;
+                        }
                     }
                     showToast('🎀 GIF Sent!', `Delivered to ${targetUser}!`, '🎀');
                 };
@@ -8160,7 +8269,9 @@
                     const previewBox = document.getElementById('gifPreviewBox');
                     const previewImg = document.getElementById('gifPreviewImg');
                     if (!url) return alert('Enter a GIF URL first.');
-                    if (previewImg) previewImg.src = url;
+                    const safeUrl = safeMediaUrl(url);
+                    if (!safeUrl || !/^https:\/\/.+/i.test(safeUrl)) return alert('Use a valid HTTPS GIF URL.');
+                    if (previewImg) previewImg.src = safeUrl;
                     if (previewBox) previewBox.style.display = 'block';
                 });
 
@@ -12556,7 +12667,7 @@
             const title = document.getElementById('videoBroadcastTitle').value.trim();
             const description = document.getElementById('videoBroadcastDescription').value.trim();
             const dateTime = document.getElementById('videoBroadcastDateTime').value;
-            const autoDelete = document.getElementById('videoBroadcastAutoDelete').value === 'true';
+            const viewLimit = Number(document.getElementById('videoBroadcastViewLimit')?.value || 1);
             const broadcastBtn = document.getElementById('broadcastVideoBtn');
 
             let selectedVideoData = videoBroadcastFileData;
@@ -12612,7 +12723,8 @@
                 videoName: selectedVideoData.name || 'YouTube Video',
                 scheduledTime: new Date(dateTime).getTime(),
                 targetUser: targetUser,
-                autoDelete: autoDelete,
+                viewLimit: Number.isFinite(viewLimit) && viewLimit >= 0 ? viewLimit : 1,
+                expiresAt: new Date(new Date(dateTime).getTime() + 24 * 60 * 60 * 1000).getTime(),
                 createdAt: Date.now(),
                 status: 'scheduled',
                 adminUser: sessionStorage.getItem('loggedInUser') || 'Admin'
@@ -12732,7 +12844,7 @@
                         <div style="font-weight:bold;color:#333;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${broadcast.title}</div>
                         <div style="font-size:11px;color:#888;margin-top:2px;">👤 ${broadcast.targetUser} &nbsp;•&nbsp; 🕐 ${scheduledDate.toLocaleString()}</div>
                         <div style="font-size:11px;margin-top:2px;color:${isViewed ? '#4CAF50' : isPast ? '#ff9800' : '#2196F3'};">
-                            ${isViewed ? '✓ Viewed' : isPast ? '⏳ Pending' : '📅 Scheduled'}
+                            ${isViewed ? '✓ Viewed' : isPast ? '⏳ Pending' : '📅 Scheduled'} · ${broadcast.viewLimit === 0 ? 'Unlimited views' : `${broadcast.viewLimit || 1} view${Number(broadcast.viewLimit || 1) === 1 ? '' : 's'}`}
                         </div>
                     </div>
                     <button onclick="deleteBroadcast('${uid}')" style="background:#ff4d4d;color:white;border:none;border-radius:8px;padding:7px 13px;cursor:pointer;font-size:12px;font-weight:bold;flex-shrink:0;">🗑 Delete</button>
@@ -12795,6 +12907,56 @@
             processPendingVideos(currentUser);
         }
 
+        function getBroadcastViewCount(uid, user) {
+            const counts = JSON.parse(localStorage.getItem('videoViewCounts') || '{}');
+            return Number(counts[`${uid}:${user}`] || 0);
+        }
+
+        function hasReachedBroadcastViewLimit(broadcast, user) {
+            const limit = Number(broadcast.viewLimit ?? 1);
+            return limit > 0 && getBroadcastViewCount(broadcast.firestoreId || String(broadcast.id), user) >= limit;
+        }
+
+        function recordBroadcastView(uid, user) {
+            const counts = JSON.parse(localStorage.getItem('videoViewCounts') || '{}');
+            const key = `${uid}:${user}`;
+            counts[key] = Number(counts[key] || 0) + 1;
+            localStorage.setItem('videoViewCounts', JSON.stringify(counts));
+            return counts[key];
+        }
+
+        function renderVideoStore(broadcasts, user) {
+            const list = document.getElementById('videoStoreList');
+            if (!list) return;
+            const now = Date.now();
+            const available = broadcasts.filter(b => {
+                const scheduled = Number(b.scheduledTime || 0);
+                const expires = Number(b.expiresAt || (scheduled + 24 * 60 * 60 * 1000));
+                return b.targetUser === user && scheduled <= now && now < expires && !hasReachedBroadcastViewLimit(b, user);
+            }).sort((a, b) => Number(b.scheduledTime || 0) - Number(a.scheduledTime || 0));
+            if (!available.length) {
+                list.innerHTML = '<p style="text-align:center; color:#888;">No scheduled videos are available right now.</p>';
+                return;
+            }
+            list.innerHTML = '';
+            available.forEach(broadcast => {
+                const uid = broadcast.firestoreId || String(broadcast.id);
+                const used = getBroadcastViewCount(uid, user);
+                const limit = Number(broadcast.viewLimit ?? 1);
+                const card = document.createElement('article');
+                card.style.cssText = 'padding:16px;margin-bottom:12px;border:1px solid #ffd6e7;border-radius:14px;background:#fffafd;box-shadow:0 6px 18px rgba(89,35,60,.08);';
+                card.innerHTML = `<h3 style="margin:0 0 6px;color:#d81b60;">${escapeHtml(broadcast.title || 'Scheduled video')}</h3>
+                    <p style="margin:0 0 8px;color:#5a7078;font-size:13px;">${escapeHtml(broadcast.description || 'A video message is ready for you.')}</p>
+                    <small style="color:#89979c;">Views: ${used}/${limit === 0 ? '∞' : limit} · Available for 24 hours</small>
+                    <button type="button" class="submit-btn" style="display:block;margin-top:12px;">▶ Watch video</button>`;
+                card.querySelector('button').onclick = () => {
+                    playNextBroadcastVideo(broadcast);
+                    setTimeout(() => renderVideoStore(videoBroadcasts, user), 300);
+                };
+                list.appendChild(card);
+            });
+        }
+
         // Track scheduled timeouts so we never double-fire
         const _scheduledNotifTimers = {};
 
@@ -12806,7 +12968,7 @@
             videoBroadcasts.forEach(b => {
                 const uid = b.firestoreId || String(b.id);
                 if (b.targetUser !== currentUser) return;
-                if (viewedVideos.some(v => v.id === uid && v.user === currentUser)) return;
+                if (hasReachedBroadcastViewLimit(b, currentUser)) return;
                 if (_scheduledNotifTimers[uid]) return; // already scheduled
 
                 const delay = b.scheduledTime - now;
@@ -12817,7 +12979,7 @@
                         delete _scheduledNotifTimers[uid];
                         // Re-check not viewed in case user watched via another path
                         const viewed = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
-                        if (viewed.some(v => v.id === uid && v.user === currentUser)) return;
+                        if (hasReachedBroadcastViewLimit(b, currentUser)) return;
                         const playerModal = document.getElementById('videoBroadcastPlayerModal');
                         if (playerModal && playerModal.classList.contains('active')) return;
                         const notif = document.getElementById('videoNotifFloat');
@@ -12904,21 +13066,31 @@
                     if (called) return; called = true;
                     viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
                     const cu = sessionStorage.getItem('loggedInUser') || '';
-                    if (viewedVideos.some(v => v.id === uid && v.user === cu)) { closeBroadcastVideo(); return; }
-                    viewedVideos.push({ id: uid, user: cu, viewedAt: Date.now() });
+                    if (hasReachedBroadcastViewLimit(broadcast, cu)) { closeBroadcastVideo(); return; }
+                    const viewCount = recordBroadcastView(uid, cu);
+                    viewedVideos.push({ id: uid, user: cu, viewedAt: Date.now(), count: viewCount });
                     localStorage.setItem('viewedVideos', JSON.stringify(viewedVideos));
 
                     // Log to Firestore
                     if (window.db && window.collection && window.addDoc) {
-                        try { window.addDoc(window.collection(window.db, 'videoViews'), { broadcastId: uid, user: cu, viewedAt: Date.now() }).catch(()=>{}); } catch(e) {}
+                        try {
+                            window.addDoc(window.collection(window.db, 'videoViews'), {
+                                broadcastId: uid,
+                                user: cu,
+                                viewCount,
+                                viewedAt: Date.now()
+                            }).catch(()=>{});
+                        } catch(e) {}
                     }
 
-                    // Always remove from active list after viewed (view-once policy)
-                    videoBroadcasts = videoBroadcasts.filter(b => (b.firestoreId || String(b.id)) !== uid);
-                    localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                    const reachedLimit = Number(broadcast.viewLimit ?? 1) > 0 && viewCount >= Number(broadcast.viewLimit);
+                    if (reachedLimit) {
+                        videoBroadcasts = videoBroadcasts.filter(b => (b.firestoreId || String(b.id)) !== uid);
+                        localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                    }
 
-                    // Delete from Firestore so it never shows again — regardless of autoDelete setting
-                    if (window.db && window.deleteDoc && window.doc) {
+                    // Delete after the configured view limit, or when the 24-hour expiry has passed.
+                    if (reachedLimit && window.db && window.deleteDoc && window.doc) {
                         try {
                             const fsId = broadcast.firestoreId;
                             if (fsId) {
@@ -13015,9 +13187,14 @@
                         snap.docs.forEach(d => {
                             const broadcast = { firestoreId: d.id, ...d.data() };
                             const uid = d.id;
+                            const expiresAt = Number(broadcast.expiresAt || (Number(broadcast.scheduledTime || 0) + 24 * 60 * 60 * 1000));
+                            if (expiresAt && expiresAt <= now) {
+                                window.deleteDoc(window.doc(window.db, 'videoBroadcasts', d.id)).catch(error => console.warn('Expired video cleanup failed:', error));
+                                return;
+                            }
                             const exists = videoBroadcasts.some(b => b.firestoreId === uid);
                             if (!exists) videoBroadcasts.push(broadcast);
-                            const alreadyViewed = viewedVideos.some(v => v.id === uid && v.user === currentUser);
+                            const alreadyViewed = hasReachedBroadcastViewLimit(broadcast, currentUser);
                             if (alreadyViewed) return;
                             if (_scheduledNotifTimers[uid]) return; // already queued
 
@@ -13038,6 +13215,7 @@
                             // If delay <= 0 (past schedule) — skip, user missed it
                         });
                         localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
+                        renderVideoStore(videoBroadcasts, currentUser);
                     }, err => {
                         console.log('onSnapshot failed, polling fallback', err);
                         // Poll every 30s; processPendingVideos schedules exact-time timeouts
