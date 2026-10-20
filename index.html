@@ -13301,8 +13301,7 @@
                 try {
                     const q = window.query(
                         window.collection(window.db, 'videoBroadcasts'),
-                        window.where('targetUser', '==', currentUser),
-                        window.where('status', '==', 'scheduled')
+                        window.where('targetUser', '==', currentUser)
                     );
                     videoBroadcastUnsubscribe = window.onSnapshot(q, (snap) => {
                         try {
@@ -13313,16 +13312,17 @@
                             viewedVideos = [];
                         }
                         const now = Date.now();
+                        const firestoreBroadcasts = [];
                         snap.docs.forEach(d => {
                             const broadcast = { firestoreId: d.id, ...d.data() };
                             const uid = d.id;
+                            if (broadcast.status && broadcast.status !== 'scheduled') return;
                             const expiresAt = Number(broadcast.expiresAt || (Number(broadcast.scheduledTime || 0) + 24 * 60 * 60 * 1000));
                             if (expiresAt && expiresAt <= now) {
                                 window.deleteDoc(window.doc(window.db, 'videoBroadcasts', d.id)).catch(error => console.warn('Expired video cleanup failed:', error));
                                 return;
                             }
-                            const exists = videoBroadcasts.some(b => b.firestoreId === uid);
-                            if (!exists) videoBroadcasts.push(broadcast);
+                            firestoreBroadcasts.push(broadcast);
                             const alreadyViewed = hasReachedBroadcastViewLimit(broadcast, currentUser);
                             if (alreadyViewed) return;
                             if (_scheduledNotifTimers[uid]) return; // already queued
@@ -13343,12 +13343,22 @@
                             }
                             // If delay <= 0 (past schedule) — skip, user missed it
                         });
+                        // Firestore is authoritative for this user. Replacing this user's
+                        // cached entries also removes videos deleted by Superadmin.
+                        videoBroadcasts = [
+                            ...videoBroadcasts.filter(b => b.targetUser !== currentUser),
+                            ...firestoreBroadcasts
+                        ];
                         localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
                         renderVideoStore(videoBroadcasts, currentUser);
                     }, err => {
                         console.log('onSnapshot failed, polling fallback', err);
-                        // Poll every 30s; processPendingVideos schedules exact-time timeouts
-                        setInterval(checkAndPlayScheduledVideos, 30000);
+                        // Keep the local cache visible while retrying Firestore.
+                        renderVideoStore(videoBroadcasts, currentUser);
+                        setInterval(() => {
+                            checkAndPlayScheduledVideos();
+                            renderVideoStore(videoBroadcasts, currentUser);
+                        }, 30000);
                     });
                 } catch(err) {
                     console.log('Listener setup failed, polling fallback', err);
