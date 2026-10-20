@@ -5799,8 +5799,14 @@
             setupUserFriends(user);
             setupFriendStories(user);
             startActivityNotifications(user);
-            renderVideoStore(videoBroadcasts, user);
-            startVideoBroadcastChecker();
+            try {
+                renderVideoStore(videoBroadcasts, user);
+                startVideoBroadcastChecker();
+            } catch (error) {
+                console.error('Video library initialization failed:', error);
+                const videoList = document.getElementById('videoLibraryList');
+                if (videoList) videoList.innerHTML = '<p style="text-align:center;color:#999;grid-column:1/-1;">Videos are temporarily unavailable.</p>';
+            }
 
             // Start new notification listeners (using normalized username)
             startGifListener(user);
@@ -11428,7 +11434,12 @@
                 } else {
                     mainContent.style.display = 'none';
                 }
-            }).catch(error => { console.error('Saved user email check failed:', error); mainContent.style.display = 'none'; });
+            }).catch(error => {
+                console.error('Saved user content initialization failed:', error);
+                if (sessionStorage.getItem('loggedInUser') === savedUser) {
+                    mainContent.style.display = 'block';
+                }
+            });
         }
 
             submitPassword.addEventListener('click', async function() {
@@ -12456,8 +12467,16 @@
 
         // ================== VIDEO BROADCAST FEATURE ==================
         let videoBroadcastFileData = null;
-        let videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
-        let viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+        let videoBroadcasts = [];
+        let viewedVideos = [];
+        try {
+            const storedBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
+            videoBroadcasts = Array.isArray(storedBroadcasts) ? storedBroadcasts : [];
+            const storedViewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+            viewedVideos = Array.isArray(storedViewedVideos) ? storedViewedVideos : [];
+        } catch (error) {
+            console.warn('Invalid saved video state was ignored during startup:', error);
+        }
 
         // ── Upload source toggle (admin) ──
         let _videoUploadSource = 'link'; // 'link' | 'github'
@@ -12853,7 +12872,13 @@
         }
 
         function loadActiveBroadcasts() {
-            videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
+            try {
+                const storedBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
+                videoBroadcasts = Array.isArray(storedBroadcasts) ? storedBroadcasts : [];
+            } catch (error) {
+                console.warn('Invalid saved broadcasts were ignored:', error);
+                videoBroadcasts = [];
+            }
             const container = document.getElementById('activeBroadcastsList');
             if (!container) return;
 
@@ -12942,13 +12967,27 @@
         function checkAndPlayScheduledVideos() {
             const currentUser = sessionStorage.getItem('loggedInUser') || '';
             if (!currentUser) return;
-            videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
-            viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+            try {
+                const storedBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
+                videoBroadcasts = Array.isArray(storedBroadcasts) ? storedBroadcasts : [];
+                const storedViewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                viewedVideos = Array.isArray(storedViewedVideos) ? storedViewedVideos : [];
+            } catch (error) {
+                console.warn('Invalid saved video state was ignored:', error);
+                videoBroadcasts = [];
+                viewedVideos = [];
+            }
             processPendingVideos(currentUser);
         }
 
         function getBroadcastViewCount(uid, user) {
-            const counts = JSON.parse(localStorage.getItem('videoViewCounts') || '{}');
+            let counts = {};
+            try {
+                counts = JSON.parse(localStorage.getItem('videoViewCounts') || '{}');
+            } catch (error) {
+                console.warn('Invalid saved video view counts were ignored:', error);
+            }
+            if (!counts || typeof counts !== 'object' || Array.isArray(counts)) counts = {};
             return Number(counts[`${uid}:${user}`] || 0);
         }
 
@@ -12958,7 +12997,13 @@
         }
 
         function recordBroadcastView(uid, user) {
-            const counts = JSON.parse(localStorage.getItem('videoViewCounts') || '{}');
+            let counts = {};
+            try {
+                counts = JSON.parse(localStorage.getItem('videoViewCounts') || '{}');
+            } catch (error) {
+                console.warn('Invalid saved video view counts were reset:', error);
+            }
+            if (!counts || typeof counts !== 'object' || Array.isArray(counts)) counts = {};
             const key = `${uid}:${user}`;
             counts[key] = Number(counts[key] || 0) + 1;
             localStorage.setItem('videoViewCounts', JSON.stringify(counts));
@@ -13043,8 +13088,16 @@
         const _scheduledNotifTimers = {};
 
         function processPendingVideos(currentUser) {
-            videoBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
-            viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+            try {
+                const storedBroadcasts = JSON.parse(localStorage.getItem('videoBroadcasts') || '[]');
+                videoBroadcasts = Array.isArray(storedBroadcasts) ? storedBroadcasts : [];
+                const storedViewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                viewedVideos = Array.isArray(storedViewedVideos) ? storedViewedVideos : [];
+            } catch (error) {
+                console.warn('Invalid saved video state was ignored:', error);
+                videoBroadcasts = [];
+                viewedVideos = [];
+            }
             const now = Date.now();
 
             videoBroadcasts.forEach(b => {
@@ -13146,7 +13199,13 @@
                 let called = false;
                 return () => {
                     if (called) return; called = true;
-                    viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                    try {
+                        const storedViewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                        viewedVideos = Array.isArray(storedViewedVideos) ? storedViewedVideos : [];
+                    } catch (error) {
+                        console.warn('Invalid saved viewed-video state was reset:', error);
+                        viewedVideos = [];
+                    }
                     const cu = sessionStorage.getItem('loggedInUser') || '';
                     if (hasReachedBroadcastViewLimit(broadcast, cu)) { closeBroadcastVideo(); return; }
                     const viewCount = recordBroadcastView(uid, cu);
@@ -13246,7 +13305,13 @@
                         window.where('status', '==', 'scheduled')
                     );
                     videoBroadcastUnsubscribe = window.onSnapshot(q, (snap) => {
-                        viewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                        try {
+                            const storedViewedVideos = JSON.parse(localStorage.getItem('viewedVideos') || '[]');
+                            viewedVideos = Array.isArray(storedViewedVideos) ? storedViewedVideos : [];
+                        } catch (error) {
+                            console.warn('Invalid saved video view state was ignored:', error);
+                            viewedVideos = [];
+                        }
                         const now = Date.now();
                         snap.docs.forEach(d => {
                             const broadcast = { firestoreId: d.id, ...d.data() };
