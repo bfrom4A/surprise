@@ -4529,6 +4529,9 @@
             <button class="tab" data-tab="notifications">
                 <span>🔔</span> Notifications <b id="notificationUnreadBadge" style="display:none; background:#d81b60; color:#fff; border-radius:10px; padding:2px 6px; font-size:10px; margin-left:4px;"></b>
             </button>
+            <button class="tab" data-tab="video-library">
+                <span>🎬</span> Videos
+            </button>
             <!-- Video Chat removed -->
             <button class="tab" id="logoutButton">
                 <span>🔒</span> Log Out
@@ -4700,6 +4703,14 @@
                 <p style="font-size:12px; color:#777; margin-bottom:15px;">Recent activity and announcements.</p>
                 <div id="notificationList" class="notification-list">
                     <p style="text-align:center; color:#999;">No notifications yet.</p>
+                </div>
+            </div>
+
+            <div class="tab-content" id="video-library">
+                <h2>Video Library 🎬</h2>
+                <p style="font-size:12px; color:#777; margin-bottom:15px;">Your scheduled videos, available for 24 hours.</p>
+                <div id="videoLibraryList" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px;">
+                    <p style="text-align:center; color:#999; grid-column:1/-1;">Loading videos...</p>
                 </div>
             </div>
 
@@ -5788,6 +5799,8 @@
             setupUserFriends(user);
             setupFriendStories(user);
             startActivityNotifications(user);
+            renderVideoStore(videoBroadcasts, user);
+            startVideoBroadcastChecker();
 
             // Start new notification listeners (using normalized username)
             startGifListener(user);
@@ -12736,6 +12749,9 @@
                 title: title,
                 description: description,
                 videoUrl: selectedVideoData.url,
+                thumbnailUrl: selectedVideoData.videoId
+                    ? `https://img.youtube.com/vi/${selectedVideoData.videoId}/mqdefault.jpg`
+                    : '',
                 videoName: selectedVideoData.name || 'YouTube Video',
                 scheduledTime: new Date(dateTime).getTime(),
                 targetUser: targetUser,
@@ -12949,14 +12965,19 @@
             return counts[key];
         }
 
+        function getYoutubeVideoId(url) {
+            const match = String(url || '').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+            return match ? match[1] : '';
+        }
+
         function renderVideoStore(broadcasts, user) {
-            const list = document.getElementById('videoStoreList');
+            const list = document.getElementById('videoLibraryList') || document.getElementById('videoStoreList');
             if (!list) return;
             const now = Date.now();
             const available = broadcasts.filter(b => {
                 const scheduled = Number(b.scheduledTime || 0);
                 const expires = Number(b.expiresAt || (scheduled + 24 * 60 * 60 * 1000));
-                return b.targetUser === user && scheduled <= now && now < expires && !hasReachedBroadcastViewLimit(b, user);
+                return b.targetUser === user && scheduled <= now && now < expires;
             }).sort((a, b) => Number(b.scheduledTime || 0) - Number(a.scheduledTime || 0));
             if (!available.length) {
                 list.innerHTML = '<p style="text-align:center; color:#888;">No scheduled videos are available right now.</p>';
@@ -12969,6 +12990,23 @@
                 const limit = Number(broadcast.viewLimit ?? 1);
                 const card = document.createElement('article');
                 card.style.cssText = 'padding:16px;margin-bottom:12px;border:1px solid #ffd6e7;border-radius:14px;background:#fffafd;box-shadow:0 6px 18px rgba(89,35,60,.08);';
+                const videoId = getYoutubeVideoId(broadcast.videoUrl);
+                const thumbnailUrl = videoId
+                    ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                    : (typeof safeMediaUrl === 'function' ? safeMediaUrl(broadcast.thumbnailUrl || '') : '');
+                if (thumbnailUrl) {
+                    const thumbnail = document.createElement('img');
+                    thumbnail.src = thumbnailUrl;
+                    thumbnail.alt = `${broadcast.title || 'Scheduled video'} thumbnail`;
+                    thumbnail.loading = 'lazy';
+                    thumbnail.style.cssText = 'display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;margin-bottom:12px;';
+                    card.appendChild(thumbnail);
+                } else {
+                    const placeholder = document.createElement('div');
+                    placeholder.textContent = '🎬 Video';
+                    placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:16/9;border-radius:10px;margin-bottom:12px;background:linear-gradient(135deg,#ffd6e7,#fff4f7);color:#d81b60;font-size:28px;';
+                    card.appendChild(placeholder);
+                }
                 const title = document.createElement('h3');
                 title.style.cssText = 'margin:0 0 6px;color:#d81b60;';
                 title.textContent = broadcast.title || 'Scheduled video';
@@ -12977,14 +13015,23 @@
                 description.textContent = broadcast.description || 'A video message is ready for you.';
                 const details = document.createElement('small');
                 details.style.color = '#89979c';
-                details.textContent = `Views: ${used}/${limit === 0 ? 'unlimited' : limit} · Available for 24 hours`;
+                const uploadedDate = broadcast.createdAt || broadcast.uploadedAt || broadcast.scheduledTime;
+                details.textContent = `Uploaded: ${uploadedDate ? new Date(uploadedDate).toLocaleString() : 'Unknown'} · ${limit === 0 ? 'Unlimited views' : `${used}/${limit} view${limit === 1 ? '' : 's'}`}`;
                 const watchButton = document.createElement('button');
                 watchButton.type = 'button';
                 watchButton.className = 'submit-btn';
                 watchButton.style.cssText = 'display:block;margin-top:12px;';
-                watchButton.textContent = '▶ Watch video';
+                const reachedLimit = hasReachedBroadcastViewLimit(broadcast, user);
+                watchButton.textContent = reachedLimit ? '✓ Viewed' : '▶ Watch video';
+                watchButton.disabled = reachedLimit;
+                if (reachedLimit) {
+                    watchButton.title = 'You have used all available views for this video.';
+                    watchButton.style.opacity = '0.65';
+                    watchButton.style.cursor = 'not-allowed';
+                }
                 card.append(title, description, details, watchButton);
                 watchButton.addEventListener('click', () => {
+                    if (hasReachedBroadcastViewLimit(broadcast, user)) return;
                     playNextBroadcastVideo(broadcast);
                     setTimeout(() => renderVideoStore(videoBroadcasts, user), 300);
                 });
@@ -13103,7 +13150,9 @@
                     const cu = sessionStorage.getItem('loggedInUser') || '';
                     if (hasReachedBroadcastViewLimit(broadcast, cu)) { closeBroadcastVideo(); return; }
                     const viewCount = recordBroadcastView(uid, cu);
-                    viewedVideos.push({ id: uid, user: cu, viewedAt: Date.now(), count: viewCount });
+                    if (Number(broadcast.viewLimit ?? 1) > 0) {
+                        viewedVideos.push({ id: uid, user: cu, viewedAt: Date.now(), count: viewCount });
+                    }
                     localStorage.setItem('viewedVideos', JSON.stringify(viewedVideos));
 
                     // Log to Firestore
@@ -13119,26 +13168,6 @@
                     }
 
                     const reachedLimit = Number(broadcast.viewLimit ?? 1) > 0 && viewCount >= Number(broadcast.viewLimit);
-                    if (reachedLimit) {
-                        videoBroadcasts = videoBroadcasts.filter(b => (b.firestoreId || String(b.id)) !== uid);
-                        localStorage.setItem('videoBroadcasts', JSON.stringify(videoBroadcasts));
-                    }
-
-                    // Delete after the configured view limit, or when the 24-hour expiry has passed.
-                    if (reachedLimit && window.db && window.deleteDoc && window.doc) {
-                        try {
-                            const fsId = broadcast.firestoreId;
-                            if (fsId) {
-                                window.deleteDoc(window.doc(window.db, 'videoBroadcasts', fsId)).catch(()=>{});
-                            } else if (window.getDocs && window.query && window.where && window.collection) {
-                                window.getDocs(window.query(
-                                    window.collection(window.db, 'videoBroadcasts'),
-                                    window.where('id', '==', broadcast.id)
-                                )).then(snap => snap.docs.forEach(d => window.deleteDoc(d.ref))).catch(()=>{});
-                            }
-                        } catch(e) {}
-                    }
-
                     closeBroadcastVideo();
                     // Refresh active broadcasts list if admin panel is open
                     if (typeof loadActiveBroadcasts === 'function') loadActiveBroadcasts();
