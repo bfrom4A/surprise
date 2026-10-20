@@ -5629,7 +5629,14 @@
                 console.log("Firebase Auth Successful");
                 setupNotificationSystem();
                 initUserProfileDropdown();
-                await loadSharedGithubToken();
+                // Never expose the shared GitHub credential to ordinary users.
+                if (sessionStorage.getItem('isAdminLoggedIn') === 'true' ||
+                    sessionStorage.getItem('isSubAdminLoggedIn') === 'true') {
+                    await loadSharedGithubToken();
+                } else {
+                    githubToken = null;
+                    sessionStorage.removeItem('ghToken');
+                }
                 
                 // ===== GITHUB LOGIN BUTTON (Available to all users) =====
                 const ghLoginBtn = document.getElementById('ghLoginBtn');
@@ -6673,7 +6680,9 @@
                         const data = doc.data();
                         const letterId = `letter_${doc.id}`;
                         const formattedContent = (data.content || '').split('\n').map(line => line.trim()).map(line => line.length > 0 ? `<p>${escapeHtml(line)}</p>` : '<br>').join('');
-                        const songDataAttrs = data.songUrl ? `data-song-url="${data.songUrl}" data-song-title="${data.songTitle || ''}" data-song-artist="${data.songArtist || ''}"` : '';
+                        const songDataAttrs = data.songUrl
+                            ? `data-song-url="${escapeHtml(data.songUrl)}" data-song-title="${escapeHtml(data.songTitle || '')}" data-song-artist="${escapeHtml(data.songArtist || '')}"`
+                            : '';
                         const scheduledBadge = data.isScheduled ? ` <span style="color:#ff9800; font-size:12px; font-weight: bold;">📅 Scheduled</span>` : "";
                         const adminCredit = data.scheduledBy ? ` <span style="color:#999; font-size:11px; font-style: italic;">(by ${escapeHtml(data.scheduledBy)})</span>` : "";
                         html += `
@@ -6885,6 +6894,13 @@
         let adminTargetUser = 'kate'; 
 
         async function loadSharedGithubToken() {
+            const isPrivileged = sessionStorage.getItem('isAdminLoggedIn') === 'true' ||
+                sessionStorage.getItem('isSubAdminLoggedIn') === 'true';
+            if (!isPrivileged) {
+                githubToken = null;
+                sessionStorage.removeItem('ghToken');
+                return Promise.resolve(null);
+            }
             try {
                 const authSnap = await getDoc(doc(db, 'settings', 'githubAuth'));
                 const sharedData = authSnap.exists() ? authSnap.data() : {};
@@ -12839,16 +12855,24 @@
 
                 const item = document.createElement('div');
                 item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:white;border-radius:10px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid #ffe4e9;';
-                item.innerHTML = `
-                    <div style="flex:1;overflow:hidden;">
-                        <div style="font-weight:bold;color:#333;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${broadcast.title}</div>
-                        <div style="font-size:11px;color:#888;margin-top:2px;">👤 ${broadcast.targetUser} &nbsp;•&nbsp; 🕐 ${scheduledDate.toLocaleString()}</div>
-                        <div style="font-size:11px;margin-top:2px;color:${isViewed ? '#4CAF50' : isPast ? '#ff9800' : '#2196F3'};">
-                            ${isViewed ? '✓ Viewed' : isPast ? '⏳ Pending' : '📅 Scheduled'} · ${broadcast.viewLimit === 0 ? 'Unlimited views' : `${broadcast.viewLimit || 1} view${Number(broadcast.viewLimit || 1) === 1 ? '' : 's'}`}
-                        </div>
-                    </div>
-                    <button onclick="deleteBroadcast('${uid}')" style="background:#ff4d4d;color:white;border:none;border-radius:8px;padding:7px 13px;cursor:pointer;font-size:12px;font-weight:bold;flex-shrink:0;">🗑 Delete</button>
-                `;
+                const info = document.createElement('div');
+                info.style.cssText = 'flex:1;overflow:hidden;';
+                const title = document.createElement('div');
+                title.style.cssText = 'font-weight:bold;color:#333;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                title.textContent = broadcast.title || 'Untitled broadcast';
+                const metadata = document.createElement('div');
+                metadata.style.cssText = 'font-size:11px;color:#888;margin-top:2px;';
+                metadata.textContent = `User: ${broadcast.targetUser || 'unknown'} · ${scheduledDate.toLocaleString()}`;
+                const status = document.createElement('div');
+                status.style.cssText = `font-size:11px;margin-top:2px;color:${isViewed ? '#4CAF50' : isPast ? '#ff9800' : '#2196F3'};`;
+                status.textContent = `${isViewed ? 'Viewed' : isPast ? 'Pending' : 'Scheduled'} · ${broadcast.viewLimit === 0 ? 'Unlimited views' : `${broadcast.viewLimit || 1} view${Number(broadcast.viewLimit || 1) === 1 ? '' : 's'}`}`;
+                info.append(title, metadata, status);
+                const deleteButton = document.createElement('button');
+                deleteButton.type = 'button';
+                deleteButton.style.cssText = 'background:#ff4d4d;color:white;border:none;border-radius:8px;padding:7px 13px;cursor:pointer;font-size:12px;font-weight:bold;flex-shrink:0;';
+                deleteButton.textContent = 'Delete';
+                deleteButton.addEventListener('click', () => deleteBroadcast(uid));
+                item.append(info, deleteButton);
                 container.appendChild(item);
             });
         }
@@ -12945,14 +12969,25 @@
                 const limit = Number(broadcast.viewLimit ?? 1);
                 const card = document.createElement('article');
                 card.style.cssText = 'padding:16px;margin-bottom:12px;border:1px solid #ffd6e7;border-radius:14px;background:#fffafd;box-shadow:0 6px 18px rgba(89,35,60,.08);';
-                card.innerHTML = `<h3 style="margin:0 0 6px;color:#d81b60;">${escapeHtml(broadcast.title || 'Scheduled video')}</h3>
-                    <p style="margin:0 0 8px;color:#5a7078;font-size:13px;">${escapeHtml(broadcast.description || 'A video message is ready for you.')}</p>
-                    <small style="color:#89979c;">Views: ${used}/${limit === 0 ? '∞' : limit} · Available for 24 hours</small>
-                    <button type="button" class="submit-btn" style="display:block;margin-top:12px;">▶ Watch video</button>`;
-                card.querySelector('button').onclick = () => {
+                const title = document.createElement('h3');
+                title.style.cssText = 'margin:0 0 6px;color:#d81b60;';
+                title.textContent = broadcast.title || 'Scheduled video';
+                const description = document.createElement('p');
+                description.style.cssText = 'margin:0 0 8px;color:#5a7078;font-size:13px;';
+                description.textContent = broadcast.description || 'A video message is ready for you.';
+                const details = document.createElement('small');
+                details.style.color = '#89979c';
+                details.textContent = `Views: ${used}/${limit === 0 ? 'unlimited' : limit} · Available for 24 hours`;
+                const watchButton = document.createElement('button');
+                watchButton.type = 'button';
+                watchButton.className = 'submit-btn';
+                watchButton.style.cssText = 'display:block;margin-top:12px;';
+                watchButton.textContent = '▶ Watch video';
+                card.append(title, description, details, watchButton);
+                watchButton.addEventListener('click', () => {
                     playNextBroadcastVideo(broadcast);
                     setTimeout(() => renderVideoStore(videoBroadcasts, user), 300);
-                };
+                });
                 list.appendChild(card);
             });
         }
